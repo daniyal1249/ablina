@@ -1,6 +1,6 @@
 from numbers import Real, Complex
 import numpy as np
-from vector import Vector
+from vector import Vector, R, C
 from algebra_parser import to_matrix
 
 class VectorSpace:
@@ -13,12 +13,27 @@ class VectorSpace:
         return super().__new__(cls)
     
     def __init__(self, field, n, constraints=None, ns_matrix=None, rs_matrix=None):
+        if constraints is None:
+            constraints = set()
+
+        # Initialize ns_matrix
+        if ns_matrix is None:
+            ns_matrix = rs_to_ns(rs_matrix) if rs_matrix is not None else to_matrix(n, constraints)
+        else:
+            ns_matrix = np.array(ns_matrix, copy=True)
+
+        # Initialize rs_matrix
+        if rs_matrix is None:
+            rs_matrix = ns_to_rs(ns_matrix)
+        else:
+            rs_matrix = np.array(rs_matrix, copy=True)
 
         self.__field = field
         self.__n = n
         self.__constraints = constraints
         self.__ns_matrix = ns_matrix
         self.__rs_matrix = rs_matrix
+        self.__dim = int(np.linalg.matrix_rank(rs_matrix))
 
     @property
     def field(self):
@@ -34,13 +49,14 @@ class VectorSpace:
     
     @property
     def dim(self):
-        pass
+        return self.__dim
 
     def __contains__(self, vec):
         if not isinstance(vec, Vector):
-            raise TypeError
+            return False
         if self.field != vec.field or self.n != len(vec):
-            raise ValueError
+            return False
+        return all([abs(val) < 1e-8 for val in self.__ns_matrix @ vec])
 
     def __add__(self, vs2):
         if not isinstance(vs2, VectorSpace):
@@ -49,9 +65,12 @@ class VectorSpace:
     def __and__(self, vs2):
         return self.intersection(vs2)
     
-    # def vector(self, std=1):
-    #     size = len(self.__rs_matrix)
-    #     weights = np.random.normal(loc=0, scale=std, size=size)
+    def vector(self, std=1):
+        size = len(self.__rs_matrix)
+        weights = np.random.normal(loc=0, scale=std, size=size)
+        if isinstance(self.field, Real):
+            return R(*weights) @ self.__rs_matrix
+        return C(*weights) @ self.__rs_matrix
     
     def complement(self):
         constraints = {f'complement({str(self.constraints)[1:-1]})'}
@@ -66,6 +85,12 @@ class VectorSpace:
         
         matrix = None
         return VectorSpace(self.field, self.n, self.constraints | vs2.constraints)
+    
+def ns_to_rs(matrix):
+    pass
+
+def rs_to_ns(matrix):
+    pass
 
 def is_vectorspace(field, n, constraints):
     pass
@@ -91,10 +116,15 @@ def span(*vectors):
     return VectorSpace(field, n, constraints, rs_matrix=vectors)
 
 def columnspace(matrix, field=Real):
-    pass
+    constraints = {f'col({matrix})'}
 
 def rowspace(matrix, field=Real):
-    return VectorSpace(field, )
+    constraints = {f'row({matrix})'}
+    return VectorSpace(field,)
 
 def nullspace(matrix, field=Real):
-    pass
+    constraints = {f'null({matrix})'}
+
+def left_nullspace(matrix, field=Real):
+    matrix = np.array(matrix, copy=True).T
+    return nullspace(matrix, field)

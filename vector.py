@@ -22,7 +22,7 @@ class Vector:
         return type(self).__name__ + str(tuple(self.__vec))
     
     def __getitem__(self, idx):
-        return self.__vec[idx]
+        return self.__vec[idx].item()  # casts into a python scalar
     
     # Unary Operators
     def __neg__(self):
@@ -35,6 +35,11 @@ class Vector:
         return len(self.__vec)
     
     # Binary Operators
+    def __eq__(self, vec2):
+        if type(self) != type(vec2) or len(self) != len(vec2):
+            return False
+        return all(self.__vec == vec2.__vec)
+
     def __add__(self, vec2):
         self_type = type(self)
         if not isinstance(vec2, self_type):
@@ -80,18 +85,18 @@ class Vector:
     def __matmul__(self, matrix):
         self_type = type(self)
         result = self.__vec @ matrix
-        if isinstance(result, (np.ndarray, self_type)):  # handles vector-vector multiplication
+        if isinstance(result, self_type):  # handles vector-vector multiplication
+            return result
+        if isinstance(result, np.ndarray):
             return self_type(*result)
-        else:
-            return self_type(result)  # "result" is a numpy scalar
+        return self_type(result)  # "result" is a numpy scalar
     
     def __rmatmul__(self, matrix):
         self_type = type(self)
         result = matrix @ self.__vec
         if isinstance(result, np.ndarray):
             return self_type(*result)
-        else:
-            return self_type(result)
+        return self_type(result)
 
 
 class R(Vector):

@@ -1,11 +1,11 @@
 import numpy as np
 
 # <1> = <2>
-def split_equation(eq):
-    expressions = eq.split('=')
+def split_constraint(constraint):
+    expressions = constraint.split('=')
     expr_length = len(expressions)
     if expr_length == 1:
-        raise SyntaxError('Invalid equation')  # check error msg
+        raise SyntaxError('Invalid constraint')  # check error msg
     
     eqs = set()
     for i in range(expr_length - 1):
@@ -20,7 +20,7 @@ def parse_equation(n, eq):
     for char in eq:
         if char != ' ' and char not in symbols:
             raise SyntaxError(f'"{char}" not recognized.')
-        
 
-def to_matrix(n, eqs):
+
+def to_matrix(n, constraints):
     pass
