@@ -1,114 +1,131 @@
 from numbers import Real, Complex
-import numpy as np
+from sympy.matrices import Matrix, MatrixKind
 
 class Vector:
-    __array_priority__ = 1000
-
-    def __new__(cls, field, vals):
-        for val in vals:
-            if not isinstance(val, field):
-                raise TypeError(f'Expected {field.__name__} values, got {type(val).__name__} instead.')
-        return super().__new__(cls)
-
     def __init__(self, field, vals):
-        self.__field = field
-        self.__vec = np.array(vals)
+        self._field = field
+        self._vec = Matrix(vals)
 
     @property
     def field(self):
-        return self.__field
+        return self._field
 
     def __repr__(self):
-        return type(self).__name__ + str(tuple(self.__vec))
+        return type(self).__name__ + str(tuple(self._vec))  # look for better repr
     
     def __getitem__(self, idx):
-        return self.__vec[idx].item()  # casts into a python scalar
+        return self._vec[idx]
     
     # Unary Operators
     def __neg__(self):
-        return type(self)(*(-1 * self.__vec))
+        return type(self)(*(-1 * self._vec))
     
     def __pos__(self):
         return self
     
     def __len__(self):
-        return len(self.__vec)
+        return len(self._vec)
     
     # Binary Operators
     def __eq__(self, vec2):
-        if type(self) != type(vec2) or len(self) != len(vec2):
+        if type(self) != type(vec2):
             return False
-        return all(self.__vec == vec2.__vec)
+        return self._vec == vec2._vec
 
     def __add__(self, vec2):
         self_type = type(self)
         if not isinstance(vec2, self_type):
             raise TypeError(f'Cannot add type {type(vec2).__name__} to {self_type.__name__}.')
-        return self_type(*(self.__vec + vec2.__vec))
+        return self_type(*(self._vec + vec2._vec))
     
     def __radd__(self, vec2):
         self_type = type(self)
         if not isinstance(vec2, self_type):
             raise TypeError(f'Cannot add type {type(vec2).__name__} to {self_type.__name__}.')
-        return self_type(*(vec2.__vec + self.__vec))
+        return self_type(*(vec2._vec + self._vec))
     
     def __sub__(self, vec2):
         self_type = type(self)
         if not isinstance(vec2, self_type):
             raise TypeError(f'Cannot subtract type {type(vec2).__name__} from {self_type.__name__}.')
-        return self_type(*(self.__vec - vec2.__vec))
+        return self_type(*(self._vec - vec2._vec))
     
     def __rsub__(self, vec2):
         self_type = type(self)
         if not isinstance(vec2, self_type):
             raise TypeError(f'Cannot subtract {self_type.__name__} from type {type(vec2).__name__}.')
-        return self_type(*(vec2.__vec - self.__vec))
+        return self_type(*(vec2._vec - self._vec))
     
     def __mul__(self, const):
         self_type = type(self)
-        if not isinstance(const, self.field):
+        same_type = is_real(const) if self.field is Real else is_complex(const)
+        if same_type is False:
             raise TypeError(f'Cannot multiply {self_type.__name__} with type {type(const).__name__}.')
-        return self_type(*(self.__vec * const))
+        return self_type(*(self._vec * const))
     
     def __rmul__(self, const):
         self_type = type(self)
-        if not isinstance(const, self.field):
+        same_type = is_real(const) if self.field is Real else is_complex(const)
+        if same_type is False:
             raise TypeError(f'Cannot multiply {self_type.__name__} with type {type(const).__name__}.')
-        return self_type(*(const * self.__vec))
+        return self_type(*(const * self._vec))
     
     def __truediv__(self, const):
         self_type = type(self)
-        if not isinstance(const, self.field):
+        same_type = is_real(const) if self.field is Real else is_complex(const)
+        if same_type is False:
             raise TypeError(f'Cannot divide {self_type.__name__} with type {type(const).__name__}.')
-        return self_type(*(self.__vec * (1 / const)))
+        return self_type(*(self._vec * (1 / const)))
     
     def __matmul__(self, matrix):
         self_type = type(self)
-        result = self.__vec @ matrix
-        if isinstance(result, self_type):  # handles vector-vector multiplication
-            return result
-        if isinstance(result, np.ndarray):
-            return self_type(*result)
-        return self_type(result)  # "result" is a numpy scalar
+        if not hasattr(matrix, 'kind') or not isinstance(matrix.kind, MatrixKind):
+            raise TypeError(f'Cannot multiply {self_type.__name__} with type {type(matrix).__name__}.')
+        result = self._vec.T @ matrix  # transpose vector
+        return self_type(*result)
     
     def __rmatmul__(self, matrix):
         self_type = type(self)
-        result = matrix @ self.__vec
-        if isinstance(result, np.ndarray):
-            return self_type(*result)
-        return self_type(result)
+        if not hasattr(matrix, 'kind') or not isinstance(matrix.kind, MatrixKind):
+            raise TypeError(f'Cannot multiply {self_type.__name__} with type {type(matrix).__name__}.')
+        result = matrix @ self._vec
+        return self_type(*result)
 
 
 class R(Vector):
     def __new__(cls, *vals):
-        return super().__new__(cls, Real, vals)
+        for val in vals:
+            if is_real(val) is False:
+                raise TypeError(f'Expected real values or symbolic expressions, got {type(val).__name__} instead.')
+        return super().__new__(cls)
 
     def __init__(self, *vals):
         super().__init__(Real, vals)
 
 class C(Vector):
     def __new__(cls, *vals):
-        return super().__new__(cls, Complex, vals)
+        for val in vals:
+            if is_complex(val) is False:
+                raise TypeError(f'Expected complex values or symbolic expressions, got {type(val).__name__} instead.')
+        return super().__new__(cls)
 
     def __init__(self, *vals):
         super().__init__(Complex, vals)
+
+def is_real(expr):
+    '''
+    Returns True if the expression is Real, None if its indeterminate, and 
+    False otherwise.
+    '''
+    if hasattr(expr, 'is_real'):
+        return expr.is_real  # sympy's is_real attribute
+    return isinstance(expr, Real)
+
+def is_complex(expr):
+    '''
+    Returns True if the expression is Complex, None if its indeterminate, and 
+    False otherwise.
+    '''
+    if hasattr(expr, 'is_complex'):
+        return expr.is_complex  # sympy's is_complex attribute
+    return isinstance(expr, Complex)
