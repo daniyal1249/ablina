@@ -6,8 +6,8 @@ class ConstraintError(Exception):
 
 def split_constraint(constraint):
     '''
-    Splits a constraint involving multiple equal signs into separate equations. 
-    Returns a set of (expressions: str) of the form LHS - RHS.
+    Splits a constraint with multiple equal signs into separate equations. 
+    Returns a set of expressions (str) of the form LHS - RHS.
     '''
     exprs = constraint.split('=')
     expr_count = len(exprs)
@@ -22,7 +22,7 @@ def split_constraint(constraint):
 
 def is_linear(expr, vars=None):
     '''
-    Determines if an equation or expression is linear
+    Determines if an equation or expression is linear.
     '''
     if vars is None:
         vars = expr.free_symbols
@@ -31,9 +31,16 @@ def is_linear(expr, vars=None):
     if isinstance(expr, Eq):
         lhs, rhs = expr.lhs, expr.rhs
         expr = lhs - rhs
-    return all(degree(expr, var) == 1 for var in vars)
+    try:
+        return all(degree(expr, var) == 1 for var in vars)
+    except PolynomialError:
+        # Return false if not a polynomial
+        return False
 
 def parse_expression(n, expr):
+    '''
+    Checks the syntax/variables of an expression and returns a sympy expression
+    '''
     # # Filter unrecognized characters for safety (consider regex)
     # for char in expr:
     #     if char.isalpha() and char != 'x':
@@ -48,14 +55,11 @@ def parse_expression(n, expr):
     vars = expr.free_symbols
     if vars - allowed_vars:
         raise ConstraintError(f'Unrecognized variables found: {vars - allowed_vars}')
-
-    if not is_linear(expr, vars):
-        raise ConstraintError('Constraints must be linear.')
     return expr
 
 def to_ns_matrix(n, constraints):
     '''
-    Returns a sympy matrix representing a given set of constraints
+    Returns a sympy matrix representing the given set of constraints
     '''
     exprs = set()
     for constraint in constraints:
@@ -75,13 +79,3 @@ def to_ns_matrix(n, constraints):
     rref_matrix, _ = matrix.rref()
     ns_matrix = [row for row in rref_matrix.tolist() if any(val != 0 for val in row)]
     return Matrix(ns_matrix)
-
-
-# constraints = [
-#     "x0 + 2*x1 - x2 = 0",
-#     "2*x0 + 4*x1 - 2*x2 = 0",  # This is a dependent constraint (multiple of the first)
-#     "x3 - x1 = 0"
-# ]
-# n = 4
-# matrix = to_ns_matrix(n, constraints)
-# print(matrix)

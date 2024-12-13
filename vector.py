@@ -11,8 +11,11 @@ class Vector:
         return self._field
 
     def __repr__(self):
-        return type(self).__name__ + str(tuple(self._vec))  # look for better repr
+        return f'{type(self).__name__}{tuple(self._vec)}'
     
+    def __iter__(self):
+        return iter(self._vec)
+
     def __getitem__(self, idx):
         return self._vec[idx]
     
@@ -22,15 +25,24 @@ class Vector:
     
     def __pos__(self):
         return self
-    
+
     def __len__(self):
         return len(self._vec)
     
+    def __abs__(self):
+        return self._vec.norm()
+    
+    def __hash__(self):
+        return hash(tuple(self._vec))
+
     # Binary Operators
     def __eq__(self, vec2):
         if type(self) != type(vec2):
             return False
         return self._vec == vec2._vec
+    
+    def __contains__(self, val):
+        return val in self._vec
 
     def __add__(self, vec2):
         self_type = type(self)
@@ -58,22 +70,19 @@ class Vector:
     
     def __mul__(self, const):
         self_type = type(self)
-        same_type = is_real(const) if self.field is Real else is_complex(const)
-        if same_type is False:
+        if self.in_field(const) is False:
             raise TypeError(f'Cannot multiply {self_type.__name__} with type {type(const).__name__}.')
         return self_type(*(self._vec * const))
     
     def __rmul__(self, const):
         self_type = type(self)
-        same_type = is_real(const) if self.field is Real else is_complex(const)
-        if same_type is False:
+        if self.in_field(const) is False:
             raise TypeError(f'Cannot multiply {self_type.__name__} with type {type(const).__name__}.')
         return self_type(*(const * self._vec))
     
     def __truediv__(self, const):
         self_type = type(self)
-        same_type = is_real(const) if self.field is Real else is_complex(const)
-        if same_type is False:
+        if self.in_field(const) is False:
             raise TypeError(f'Cannot divide {self_type.__name__} with type {type(const).__name__}.')
         return self_type(*(self._vec * (1 / const)))
     
@@ -81,22 +90,31 @@ class Vector:
         self_type = type(self)
         if not hasattr(matrix, 'kind') or not isinstance(matrix.kind, MatrixKind):
             raise TypeError(f'Cannot multiply {self_type.__name__} with type {type(matrix).__name__}.')
-        result = self._vec.T @ matrix  # transpose vector
-        return self_type(*result)
+        return self_type(*(self._vec.T @ matrix))  # transpose vector
     
     def __rmatmul__(self, matrix):
         self_type = type(self)
         if not hasattr(matrix, 'kind') or not isinstance(matrix.kind, MatrixKind):
             raise TypeError(f'Cannot multiply {self_type.__name__} with type {type(matrix).__name__}.')
-        result = matrix @ self._vec
-        return self_type(*result)
+        return self_type(*(matrix @ self._vec))
+    
+    def in_field(self, const):
+        return is_real(const) if self.field is Real else is_complex(const)
+    
+    def normalize(self):
+        pass
+
+    def distance(self, vec2):
+        pass
+    
+    def angle(self, vec2):
+        pass
 
 
 class R(Vector):
     def __new__(cls, *vals):
-        for val in vals:
-            if is_real(val) is False:
-                raise TypeError(f'Expected real values or symbolic expressions, got {type(val).__name__} instead.')
+        if any(is_real(val) is False for val in vals):
+            raise TypeError(f'One or more values are not valid. Ensure all inputs are either real or symbolic.')
         return super().__new__(cls)
 
     def __init__(self, *vals):
@@ -104,9 +122,8 @@ class R(Vector):
 
 class C(Vector):
     def __new__(cls, *vals):
-        for val in vals:
-            if is_complex(val) is False:
-                raise TypeError(f'Expected complex values or symbolic expressions, got {type(val).__name__} instead.')
+        if any(is_complex(val) is False for val in vals):
+            raise TypeError(f'One or more values are not valid. Ensure all inputs are either complex or symbolic.')
         return super().__new__(cls)
 
     def __init__(self, *vals):

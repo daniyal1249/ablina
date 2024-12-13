@@ -1,21 +1,25 @@
 import random
 from numbers import Real
 
-from sympy import *
+from sympy.matrices import Matrix
 from vector import *
-from parser import to_ns_matrix
+from parser import *
+
+class NotAVectorSpaceError(Exception):
+    def __init__(self, msg=''):
+        super().__init__(msg)
 
 class VectorSpace:
-    def _new__(cls, field, n, constraints=None, ns_matrix=None, rs_matrix=None):
+    def __new__(cls, field, n, constraints=None, *, ns_matrix=None, rs_matrix=None):
         # Verify if constraints satisfy vector space properties
         if ns_matrix is None and rs_matrix is None:
             if constraints is None:
                 constraints = set()
-            if not is_vectorspace(field, n, constraints):
-                raise Exception  # add error msg
-        return super()._new__(cls)
+            if not is_vectorspace(n, constraints):
+                raise NotAVectorSpaceError()  # add error msg
+        return super().__new__(cls)
     
-    def __init__(self, field, n, constraints=None, ns_matrix=None, rs_matrix=None):
+    def __init__(self, field, n, constraints=None, *, ns_matrix=None, rs_matrix=None):
         # Initialize ns_matrix
         if ns_matrix is None:
             ns_matrix = rs_to_ns(rs_matrix) if rs_matrix is not None else to_ns_matrix(n, constraints)
@@ -56,11 +60,10 @@ class VectorSpace:
             return False
         if self.field != vec.field or self.n != len(vec):
             return False
-        return Matrix(self._ns_matrix @ vec).is_zero_matrix  # make more efficent
+        return Matrix(self._ns_matrix @ vec).is_zero_matrix
 
     def __add__(self, vs2):
-        if not isinstance(vs2, VectorSpace):
-            raise TypeError
+        return self.sum(vs2)
 
     def __and__(self, vs2):
         return self.intersection(vs2)
@@ -68,7 +71,7 @@ class VectorSpace:
     def vector(self, std=1):
         size = self._rs_matrix.rows
         weights = [round(random.gauss(0, std)) for _ in range(size)]
-        if isinstance(self.field, Real):
+        if self.field == Real:
             return R(*weights) @ self._rs_matrix
         return C(*weights) @ self._rs_matrix
     
@@ -77,13 +80,27 @@ class VectorSpace:
         return VectorSpace(self.field, self.n, constraints, ns_matrix=self._rs_matrix, 
                            rs_matrix=self._ns_matrix)
     
+    def sum(self, vs2):
+        if not isinstance(vs2, VectorSpace):
+            raise TypeError()
+        if self.field != vs2.field or self.n != vs2.n:
+            raise ValueError()
+        
+        rs_matrix = Matrix.vstack(self._rs_matrix, vs2._rs_matrix)
+        rs_matrix, _ = rs_matrix.rref()
+        constraints = self.constraints.intersection(vs2.constraints)
+        return VectorSpace(self.field, self.n, constraints, rs_matrix=rs_matrix)
+
     def intersection(self, vs2):
         if not isinstance(vs2, VectorSpace):
-            raise TypeError
+            raise TypeError()
         if self.field != vs2.field or self.n != vs2.n:
-            raise ValueError
+            raise ValueError()
         
-        return VectorSpace(self.field, self.n, self.constraints | vs2.constraints)
+        ns_matrix = Matrix.vstack(self._ns_matrix, vs2._ns_matrix)
+        ns_matrix, _ = ns_matrix.rref()
+        constraints = self.constraints.union(vs2.constraints)
+        return VectorSpace(self.field, self.n, constraints, ns_matrix=ns_matrix)
     
 def ns_to_rs(matrix):
     matrix = Matrix(matrix)
@@ -98,44 +115,70 @@ def rs_to_ns(matrix):
     ns_matrix, _ = Matrix.hstack(*ns_basis).rref()
     return ns_matrix
 
-def is_vectorspace(field, n, constraints):
-    pass
+def is_vectorspace(n, constraints):
+    exprs = set()
+    for constraint in constraints:
+        exprs.update(split_constraint(constraint))
+
+    for expr in exprs:
+        expr = parse_expression(n, expr)
+        if not is_linear(expr):
+            return False
+        # Check for nonzero constant terms
+        if any(term.is_constant() and term != 0 for term in expr.args):
+            return False
+    return True
 
 def is_subspace(vs1, vs2):
     if not isinstance(vs1, VectorSpace):
-        raise TypeError(f'Expected vector spaces, got {type(vs1)._name__} instead.')
+        raise TypeError(f'Expected vector spaces, got {type(vs1).__name__} instead.')
     if not isinstance(vs2, VectorSpace):
-        raise TypeError(f'Expected vector spaces, got {type(vs2)._name__} instead.')
+        raise TypeError(f'Expected vector spaces, got {type(vs2).__name__} instead.')
+    if vs1.field != vs2.field or vs1.n != vs2.n:
+        return False
     
-
+    for i in range(vs1._rs_matrix.rows):
+        vec = vs1._rs_matrix.row(i).T
+        if not (vs2._ns_matrix @ vec).is_zero_matrix:
+            return False
+    return True
+    
 def span(*vectors):
     for vec in vectors:
         if not isinstance(vec, Vector):
-            raise TypeError(f'Expected vectors, got {type(vec)._name__} instead.')
-
+            raise TypeError(f'Expected vectors, got {type(vec).__name__} instead.')
+        
     field, n = vectors[0].field, len(vectors[0])
     for vec in vectors:
         if field != vec.field or n != len(vec):
             raise ValueError('Vectors must be elements of the same subspace.')
-        
+
     constraints = {f'span{vectors}'}
     return VectorSpace(field, n, constraints, rs_matrix=vectors)
 
 def columnspace(matrix, field=Real):
+    matrix = Matrix(matrix)
+    n = matrix.rows
     constraints = {f'col({matrix})'}
+    return VectorSpace(field, n, constraints, rs_matrix=matrix.T)
 
 def rowspace(matrix, field=Real):
+    matrix = Matrix(matrix)
+    n = matrix.cols
     constraints = {f'row({matrix})'}
-    return VectorSpace(field)
+    return VectorSpace(field, n, constraints, rs_matrix=matrix)
 
 def nullspace(matrix, field=Real):
+    matrix = Matrix(matrix)
+    n = matrix.cols
     constraints = {f'null({matrix})'}
+    return VectorSpace(field, n, constraints, ns_matrix=matrix)
 
 def left_nullspace(matrix, field=Real):
     matrix = Matrix(matrix).T
     return nullspace(matrix, field)
 
 # x, y, z = symbols('x y z')
-# vs = VectorSpace(field=Complex, n=3, constraints={'x0 = x1 = 10*x2'})
-# print(C(10*x, 10*x, x) in vs)
-# print(vs.vector())
+# vs1 = VectorSpace(Real, 3, {'x0=x1 - x1'})
+# vs2 = VectorSpace(Real, 3, {'x0=2*x1'})
+# print(vs1.intersection(vs2).vector())
