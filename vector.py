@@ -99,10 +99,10 @@ class Vector:
         return self_type(*(matrix @ self._vec))
     
     def in_field(self, const):
-        return is_real(const) if self.field is Real else is_complex(const)
+        return is_real(const) if self.field == Real else is_complex(const)
     
     def normalize(self):
-        pass
+        return self / abs(self)
 
     def distance(self, vec2):
         pass

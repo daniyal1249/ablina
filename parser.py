@@ -34,8 +34,7 @@ def is_linear(expr, vars=None):
     try:
         return all(degree(expr, var) == 1 for var in vars)
     except PolynomialError:
-        # Return false if not a polynomial
-        return False
+        return False  # Return false if not a polynomial
 
 def parse_expression(n, expr):
     '''
@@ -61,6 +60,10 @@ def to_ns_matrix(n, constraints):
     '''
     Returns a sympy matrix representing the given set of constraints
     '''
+    # Return zero matrix if there are no constraints
+    if not constraints:
+        return zeros(1, n)
+
     exprs = set()
     for constraint in constraints:
         exprs.update(split_constraint(constraint))
@@ -76,6 +79,5 @@ def to_ns_matrix(n, constraints):
         rows.append(row)
     
     matrix = Matrix(rows)
-    rref_matrix, _ = matrix.rref()
-    ns_matrix = [row for row in rref_matrix.tolist() if any(val != 0 for val in row)]
+    ns_matrix, _ = matrix.rref()
     return Matrix(ns_matrix)

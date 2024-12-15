@@ -54,6 +54,10 @@ class VectorSpace:
     @property
     def dim(self):
         return self._dim
+    
+    @property
+    def basis(self):
+        return [Matrix(row) for row in self._rs_matrix.tolist() if any(row)]
 
     def __contains__(self, vec):
         if not isinstance(vec, Vector):
@@ -70,7 +74,7 @@ class VectorSpace:
     
     def vector(self, std=1):
         size = self._rs_matrix.rows
-        weights = [round(random.gauss(0, std)) for _ in range(size)]
+        weights = [round(random.gauss(0, std))] * size
         if self.field == Real:
             return R(*weights) @ self._rs_matrix
         return C(*weights) @ self._rs_matrix
@@ -104,16 +108,38 @@ class VectorSpace:
     
 def ns_to_rs(matrix):
     matrix = Matrix(matrix)
+    if is_empty(matrix):
+        return matrix
+    
     ns_basis = matrix.nullspace()
+    if not ns_basis:
+        return zeros(1, matrix.cols)
+    
     rs_matrix, _ = Matrix([vec.T for vec in ns_basis]).rref()
     return rs_matrix
 
 def rs_to_ns(matrix):
     matrix = Matrix(matrix)
+    if is_empty(matrix):
+        return matrix
+    
     rs_basis = matrix.rowspace()
+    if not rs_basis:
+        return eye(matrix.cols)
+    
     ns_basis = Matrix(rs_basis).nullspace()
-    ns_matrix, _ = Matrix.hstack(*ns_basis).rref()
+    if not ns_basis:
+        return zeros(1, matrix.cols)
+
+    ns_matrix, _ = Matrix([vec.T for vec in ns_basis]).rref()
     return ns_matrix
+
+def is_empty(matrix):
+    '''
+    Returns True if the matrix contains no elements otherwise False
+    '''
+    matrix = Matrix(matrix)
+    return matrix.cols == 0 or matrix.rows == 0
 
 def is_vectorspace(n, constraints):
     exprs = set()
@@ -177,8 +203,3 @@ def nullspace(matrix, field=Real):
 def left_nullspace(matrix, field=Real):
     matrix = Matrix(matrix).T
     return nullspace(matrix, field)
-
-# x, y, z = symbols('x y z')
-# vs1 = VectorSpace(Real, 3, {'x0=x1 - x1'})
-# vs2 = VectorSpace(Real, 3, {'x0=2*x1'})
-# print(vs1.intersection(vs2).vector())
