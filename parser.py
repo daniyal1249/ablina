@@ -1,4 +1,4 @@
-from sympy import *
+import sympy as sp
 
 class ConstraintError(Exception):
     def __init__(self, msg=''):
@@ -28,12 +28,12 @@ def is_linear(expr, vars=None):
         vars = expr.free_symbols
 
     # Convert equation into an expression
-    if isinstance(expr, Eq):
+    if isinstance(expr, sp.Eq):
         lhs, rhs = expr.lhs, expr.rhs
         expr = lhs - rhs
     try:
-        return all(degree(expr, var) == 1 for var in vars)
-    except PolynomialError:
+        return all(sp.degree(expr, var) == 1 for var in vars)
+    except sp.PolynomialError:
         return False  # Return false if not a polynomial
 
 def parse_expression(n, expr):
@@ -46,11 +46,11 @@ def parse_expression(n, expr):
     #         raise ConstraintError(f'"{char}" is not recognized.')
 
     try:
-        expr = sympify(expr)
+        expr = sp.sympify(expr)
     except Exception as e:
         raise ConstraintError(f'Invalid equation format: {e}')
 
-    allowed_vars = set(symbols(f'x0:{n}'))
+    allowed_vars = set(sp.symbols(f'x0:{n}'))
     vars = expr.free_symbols
     if vars - allowed_vars:
         raise ConstraintError(f'Unrecognized variables found: {vars - allowed_vars}')
@@ -62,7 +62,7 @@ def to_ns_matrix(n, constraints):
     '''
     # Return zero matrix if there are no constraints
     if not constraints:
-        return zeros(1, n)
+        return sp.zeros(1, n)
 
     exprs = set()
     for constraint in constraints:
@@ -78,6 +78,6 @@ def to_ns_matrix(n, constraints):
             row[var_idx] = var_coeff
         rows.append(row)
     
-    matrix = Matrix(rows)
+    matrix = sp.Matrix(rows)
     ns_matrix, _ = matrix.rref()
-    return Matrix(ns_matrix)
+    return sp.Matrix(ns_matrix)

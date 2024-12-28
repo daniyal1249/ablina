@@ -1,5 +1,11 @@
 __pycache__/
 *.pyc
 
+# Miscellaneous
 test.py
 notes.txt
+
+# Vector Space
+new_vector.py
+vectorspace.py
+new_vector_space.py

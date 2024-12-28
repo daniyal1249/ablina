@@ -2,7 +2,7 @@ import random
 from numbers import Real
 
 from sympy.matrices import Matrix
-from vector import *
+from Vector.vector import *
 from parser import *
 
 class NotAVectorSpaceError(Exception):
@@ -37,7 +37,9 @@ class VectorSpace:
         self._constraints = constraints
         self._ns_matrix = ns_matrix
         self._rs_matrix = rs_matrix
-        self._dim = rs_matrix.rank()
+
+        self._basis = [Matrix(row) for row in self._rs_matrix.tolist() if any(row)]
+        self._dim = len(self._basis)
 
     @property
     def field(self):
@@ -52,12 +54,15 @@ class VectorSpace:
         return self._constraints
     
     @property
+    def basis(self):
+        return self._basis
+    
+    @property
     def dim(self):
         return self._dim
     
-    @property
-    def basis(self):
-        return [Matrix(row) for row in self._rs_matrix.tolist() if any(row)]
+    def __repr__(self):
+        return f'VectorSpace(field={self.field.__name__}, n={self.n}, constraints={self.constraints})'
 
     def __contains__(self, vec):
         if not isinstance(vec, Vector):
@@ -65,6 +70,9 @@ class VectorSpace:
         if self.field != vec.field or self.n != len(vec):
             return False
         return Matrix(self._ns_matrix @ vec).is_zero_matrix
+    
+    def __eq__(self, vs2):
+        pass
 
     def __add__(self, vs2):
         return self.sum(vs2)
@@ -92,7 +100,7 @@ class VectorSpace:
         
         rs_matrix = Matrix.vstack(self._rs_matrix, vs2._rs_matrix)
         rs_matrix, _ = rs_matrix.rref()
-        constraints = self.constraints.intersection(vs2.constraints)
+        constraints = self.constraints.intersection(vs2.constraints)  # need to fix
         return VectorSpace(self.field, self.n, constraints, rs_matrix=rs_matrix)
 
     def intersection(self, vs2):
@@ -168,7 +176,7 @@ def is_subspace(vs1, vs2):
         if not (vs2._ns_matrix @ vec).is_zero_matrix:
             return False
     return True
-    
+
 def span(*vectors):
     for vec in vectors:
         if not isinstance(vec, Vector):
@@ -203,3 +211,16 @@ def nullspace(matrix, field=Real):
 def left_nullspace(matrix, field=Real):
     matrix = Matrix(matrix).T
     return nullspace(matrix, field)
+
+def is_independent(*vectors):
+    for vec in vectors:
+        if not isinstance(vec, Vector):
+            raise TypeError(f'Expected vectors, got {type(vec).__name__} instead.')
+
+    field, n = vectors[0].field, len(vectors[0])
+    for vec in vectors:
+        if field != vec.field or n != len(vec):
+            raise ValueError('Vectors must be elements of the same subspace.')
+
+    matrix = Matrix(vectors)
+    return matrix.rank() == matrix.rows
