@@ -1,6 +1,7 @@
 import random
 from numbers import Real
 
+from sympy import eye, zeros
 from sympy.matrices import Matrix
 from Vector.vector import *
 from parser import *
