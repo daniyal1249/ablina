@@ -1,19 +1,13 @@
 from utils import of_arity
 
 class MathematicalSet:
-    def __new__(cls, set_cls, *predicates):
-        if not isinstance(set_cls, type):
+    def __init__(self, cls, *predicates):
+        if not isinstance(cls, type):
             raise TypeError()
         if len(predicates) == 1 and isinstance(predicates[0], list):
             predicates = predicates[0]
         if not all(of_arity(pred, 1) for pred in predicates):  # make sure pred type is valid
             raise ValueError()
-        
-        return super().__new__(cls)
-
-    def __init__(self, cls, *predicates):
-        if len(predicates) == 1 and isinstance(predicates[0], list):
-            predicates = predicates[0]
 
         self._cls = cls
         self._predicates = remove_duplicates(predicates)
