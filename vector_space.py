@@ -141,7 +141,8 @@ class VectorSpace(Fn):
     #     return VectorSpace(new_vectors, (to_fn, from_fn))
 
     @classmethod
-    def fn(cls, field, n, constraints=None, add=None, mul=None):
+    def fn(cls, field, n, constraints=None, add=None, mul=None, 
+           *, ns_matrix=None, rs_matrix=None):
         def pred(vec):
             try:
                 return sp.Matrix(vec).shape == (n, 1)
@@ -181,14 +182,34 @@ class VectorSpace(Fn):
         to_fn = Isomorphism(vectors, fn, to_fn_mapping)
         from_fn = Isomorphism(fn, vectors, from_fn_mapping)
         return cls(vectors, (to_fn, from_fn))
+    
+
+def columnspace(matrix, field=Real):
+    matrix = sp.Matrix(matrix)
+    n = matrix.rows
+    constraints = [f'col({matrix})']
+    return VectorSpace.fn(field, n, constraints, rs_matrix=matrix.T)
+
+def rowspace(matrix, field=Real):
+    matrix = sp.Matrix(matrix)
+    n = matrix.cols
+    constraints = [f'row({matrix})']
+    return VectorSpace.fn(field, n, constraints, rs_matrix=matrix)
+
+def nullspace(matrix, field=Real):
+    matrix = sp.Matrix(matrix)
+    n = matrix.cols
+    constraints = [f'null({matrix})']
+    return VectorSpace.fn(field, n, constraints, ns_matrix=matrix)
+
+def left_nullspace(matrix, field=Real):
+    matrix = sp.Matrix(matrix).T
+    return nullspace(matrix, field)
 
 
-# field = Real
-# n = 3
-# constraints = []
 # to_iso = lambda vec: [sp.log(i) for i in vec]
 # from_iso = lambda vec: [sp.exp(i) for i in vec]
 
-# vs1 = VectorSpace.polynomial(field, n, constraints)
-# x, y, z = sp.symbols('x y z', real=True)
-# print(vs1.span(sp.Poly(x), sp.Poly(3*x**2)).basis)
+# vs1 = VectorSpace.polynomial(field=Real, max_degree=2)
+# x = sp.symbols('x', real=True)
+# print(vs1.basis)
