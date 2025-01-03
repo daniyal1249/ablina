@@ -1,5 +1,24 @@
+from numbers import Real, Complex
 import inspect
 import sympy as sp
+
+def is_real(expr):
+    '''
+    Returns True if the expression is Real, None if its indeterminate, 
+    and False otherwise.
+    '''
+    if hasattr(expr, 'is_real'):
+        return expr.is_real  # sympy's is_real attribute
+    return isinstance(expr, Real)
+
+def is_complex(expr):
+    '''
+    Returns True if the expression is Complex, None if its indeterminate, 
+    and False otherwise.
+    '''
+    if hasattr(expr, 'is_complex'):
+        return expr.is_complex  # sympy's is_complex attribute
+    return isinstance(expr, Complex)
 
 def ns_to_rs(matrix):
     matrix = sp.Matrix(matrix)
@@ -39,6 +58,7 @@ def is_empty(matrix):
 def of_arity(func, n):
     '''
     Returns True if the function can accept n positional arguments, otherwise False.
+    Raises a TypeError if func is not callable.
     '''
     sig = inspect.signature(func)
     if len(sig.parameters) < n:

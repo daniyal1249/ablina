@@ -31,14 +31,12 @@ class MathematicalSet:
     
     def __eq__(self, set2):
         # Order of the predicates matters
-        return self.__dict__ == set2.__dict__
+        return vars(self) == vars(set2)
     
     def __contains__(self, obj):
         if not isinstance(obj, self.cls):
             return False
-        if not all(pred(obj) for pred in self.predicates):
-            return False
-        return True
+        return all(pred(obj) for pred in self.predicates)
     
     def __neg__(self):
         return self.complement()
@@ -56,13 +54,9 @@ class MathematicalSet:
         return self.difference(set2)
 
     def complement(self):
-        if not self.predicates:
-            false_pred = lambda obj: False
-            false_pred.__name__ = 'false_predicate'
-            predicates = [false_pred]
-        else:
-            predicates = [negate(pred) for pred in self.predicates]
-        return Set(self.cls, predicates)
+        complement_pred = lambda obj: not all(pred(obj) for pred in self.predicates)
+        complement_pred.__name__ = 'complement_predicate'
+        return Set(self.cls, complement_pred)
     
     def intersection(self, set2):
         self._check_type(set2)
@@ -76,18 +70,14 @@ class MathematicalSet:
         return Set(self.cls, union_pred)
 
     def difference(self, set2):
-        self._check_type(set2)
-        return Set(self.cls, self.predicates + [negate(pred) for pred in set2.predicates])
+        return self.intersection(set2.complement())
     
     def is_subset(self, set2):
         '''
         Returns True if all the predicates in set2 are in self, otherwise False.
         '''
         self._check_type(set2)
-        for pred in set2.predicates:
-            if pred not in self.predicates:
-                return False
-        return True
+        return all(pred in self.predicates for pred in set2.predicates)
     
     def add_predicates(self, *predicates):
         if len(predicates) == 1 and isinstance(predicates[0], list):
@@ -97,20 +87,20 @@ class MathematicalSet:
     def _check_type(self, set2):
         if not isinstance(set2, Set):
             raise TypeError(f'Expected a MathematicalSet, got {type(set2).__name__} instead.')
-        if self.cls != set2.cls:
+        if self.cls is not set2.cls:
             raise ValueError('The cls attribute of both sets must be the same.')
 
 
 def remove_duplicates(seq):
     '''
-    Returns a list containing the items in seq in order with duplicates removed
+    Returns a list containing the items in seq in order with duplicates removed.
     '''
     elems = set()
     return [x for x in seq if not (x in elems or elems.add(x))]
 
 def negate(pred):
     '''
-    Returns a function that negates the output of pred
+    Returns a function that negates the output of pred.
     '''
     negation = lambda obj: not pred(obj)
     negation.__name__ = f'not_{pred.__name__}'
@@ -118,4 +108,3 @@ def negate(pred):
 
 # Set alias
 Set = MathematicalSet
-

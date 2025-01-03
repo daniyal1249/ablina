@@ -1,4 +1,9 @@
+import re
 import sympy as sp
+
+class ParsingError(Exception):
+    def __init__(self, msg=''):
+        super().__init__(msg)
 
 class ConstraintError(Exception):
     def __init__(self, msg=''):
@@ -6,78 +11,83 @@ class ConstraintError(Exception):
 
 def split_constraint(constraint):
     '''
-    Splits a constraint with multiple equal signs into separate equations. 
-    Returns a set of expressions (str) of the form LHS - RHS.
+    Splits a constraint with multiple relational operators into separate 
+    relations. Returns a set of relations as strings.
     '''
-    exprs = constraint.split('=')
+    operators = r'(==|!=|>=|<=|>|<)'
+    exprs = re.split(operators, constraint)
     expr_count = len(exprs)
     if expr_count == 1:
-        raise ConstraintError('Constraints must include an equal sign.')
+        raise ConstraintError('Constraints must include at least one ' \
+                              'relational operator from: ==, !=, >=, <=, >, <')
     
-    eqs = set()
-    for i in range(expr_count - 1):
-        eq = f'{exprs[i]} - ({exprs[i + 1]})'
-        eqs.add(eq)  # maybe .strip()
-    return eqs
+    relations = set()
+    for i in range(1, expr_count - 1, 2):
+        left_operand = exprs[i - 1].strip()
+        operator = exprs[i].strip()
+        right_operand = exprs[i + 1].strip()
+
+        if not (left_operand and right_operand):
+            raise ConstraintError(f'Missing operand for {operator}.')
+        relations.add(f'{left_operand} {operator} {right_operand}')
+    return relations
 
 def is_linear(expr, vars=None):
     '''
-    Determines if an equation or expression is linear.
+    Determines if an equation or expression is linear with respect to the 
+    variables in vars. If vars is None, all variables in expr are checked.
     '''
     if vars is None:
         vars = expr.free_symbols
 
-    # Convert equation into an expression
+    # Convert an equation into an expression
     if isinstance(expr, sp.Eq):
-        lhs, rhs = expr.lhs, expr.rhs
-        expr = lhs - rhs
+        expr = expr.lhs - expr.rhs
     try:
         return all(sp.degree(expr, var) == 1 for var in vars)
     except sp.PolynomialError:
         return False  # Return false if not a polynomial
 
-def parse_expression(n, expr):
+def sympify(expr, allowed_vars=None):
     '''
-    Checks the syntax/variables of an expression and returns a sympy expression
+    Returns the sympy representation of expr. Raises a ParsingError if 
+    allowed_vars is given and expr contains variables not in it.
     '''
-    # # Filter unrecognized characters for safety (consider regex)
-    # for char in expr:
-    #     if char.isalpha() and char != 'x':
-    #         raise ConstraintError(f'"{char}" is not recognized.')
-
-    try:
-        expr = sp.sympify(expr)
-    except Exception as e:
-        raise ConstraintError(f'Invalid equation format: {e}')
-
-    allowed_vars = set(sp.symbols(f'x0:{n}'))
-    vars = expr.free_symbols
-    if vars - allowed_vars:
-        raise ConstraintError(f'Unrecognized variables found: {vars - allowed_vars}')
+    # Filter unrecognized characters for safety (consider regex)
+    expr = sp.sympify(expr, rational=True, evaluate=False)
+    if allowed_vars is not None:
+        if not all(var in allowed_vars for var in expr.free_symbols):
+            invalid_vars = expr.free_symbols - set(allowed_vars)
+            raise ParsingError(f'Unrecognized variables found: {invalid_vars}')
     return expr
 
-def to_ns_matrix(n, constraints):
+def to_ns_matrix(n, lin_constraints):
     '''
-    Returns a sympy matrix representing the given set of constraints
+    Returns a sympy matrix with the linear constraints as rows.
     '''
     # Return zero matrix if there are no constraints
-    if not constraints:
+    if not lin_constraints:
         return sp.zeros(1, n)
 
     exprs = set()
-    for constraint in constraints:
+    for constraint in lin_constraints:
         exprs.update(split_constraint(constraint))
 
-    rows = []
+    rows, allowed_vars = [], sp.symbols(f'v:{n}')
     for expr in exprs:
         row = [0] * n
-        expr = parse_expression(n, expr)
+        try:
+            expr = sympify(expr, allowed_vars)
+            expr = expr.lhs - expr.rhs  # convert equation to an expression
+        except Exception as e:
+            raise ConstraintError(f'Invalid constraint format: {e}')
+
         for var in expr.free_symbols:
-            var_idx = int(var.name.lstrip('x'))
+            var_idx = int(var.name.lstrip('v'))
             var_coeff = expr.coeff(var, 1)
             row[var_idx] = var_coeff
         rows.append(row)
     
     matrix = sp.Matrix(rows)
     ns_matrix, _ = matrix.rref()
-    return sp.Matrix(ns_matrix)
+    return ns_matrix

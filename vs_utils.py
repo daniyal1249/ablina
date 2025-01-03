@@ -1,4 +1,5 @@
 from numbers import Real
+
 import sympy as sp
 from sympy.solvers.solveset import NonlinearError
 
@@ -27,7 +28,7 @@ def additive_id(field, n, add):
             valid_ids.append(list(id))
     return valid_ids
 
-def additive_inv(field, n, add, additive_id, lambdify=True):
+def additive_inv(field, n, add, additive_id, lambdify=False):
     # Initialize an arbitrary vector (xs) and the inverse (ys)
     if field is Real:
         xs, ys = sp.symbols((f'x:{n}', f'y:{n}'), real=True)
@@ -109,10 +110,10 @@ def is_associative(field, n, operation):
 # to test associativity of multiplication (2 scalars one vector), define
 # operation to be normal mul if both are scalars, and scalar mul otherwise
 
-
 def solve_func_eq(equation, func):
     """
-    Attempts to solve a univariate functional equation by guessing common forms of solutions.
+    Attempts to solve a univariate functional equation by guessing common 
+    forms of solutions.
     """
     _a, _b, x = sp.symbols('_a _b x')
     w = sp.Wild('w')
@@ -127,6 +128,7 @@ def solve_func_eq(equation, func):
     for form in solution_forms:
         # Substitute the forms into the equation
         subbed_eq = equation.replace(func(w), form(w))
+        invalid_vars = subbed_eq.free_symbols - {_a, _b}
         try:
             sols = sp.solve(subbed_eq, [_a, _b], rational=True, dict=True)
             sols = [dict()] if not sols else sols
@@ -135,8 +137,7 @@ def solve_func_eq(equation, func):
 
         for sol in sols:
             invalid_expr = False
-            for expr in sol.copy().values():
-                invalid_vars = subbed_eq.free_symbols.difference({_a, _b})
+            for expr in sol.values():
                 if expr.free_symbols.intersection(invalid_vars):
                     invalid_expr = True
                     break
@@ -155,12 +156,54 @@ def is_tautology(equation):
     eq = sp.simplify(equation)
     if isinstance(eq, sp.Eq):
         return False
-    return bool(eq)  # must be a bool if not Eq
+    return bool(eq)  # must be a sympy bool if not Eq
+
+def standard_isomorphism(field, n, add, mul):
+    # need to support custom domains
+    # need to implement an intersection function
+
+    f = sp.Function('f')
+    if field is Real:
+        xs, ys = sp.symbols((f'x:{n}', f'y:{n}'), real=True)
+    else:
+        xs, ys = sp.symbols((f'x:{n}', f'y:{n}'))
+
+    init_set = False
+    for i in range(len(add)):
+        func_eq = sp.Eq(f(xs[i]) + f(ys[i]), f(add[i]))
+        if not init_set:
+            valid_funcs = solve_func_eq(func_eq, f)
+            init_set = True
+        else:
+            valid_funcs.intersection_update(solve_func_eq(func_eq, f))
+        if not valid_funcs:
+            return valid_funcs
+    
+    for i in range(len(mul)):
+        func_eq = sp.Eq(f(xs[i]) * f(ys[i]), f(mul[i]))
+        valid_funcs.intersection_update(solve_func_eq(func_eq, f))
+        if not valid_funcs:
+            return valid_funcs
+    return valid_funcs
+
+# For testing
+def standard_isomorphism(field, n, add, mul):
+    return lambda x: x, lambda x: x
+
+def map_constraints(mapping, constraints):
+    return constraints
+
 
 # Need to account for nested functions using while loop
 
-# x, y, a, b, c = symbols('x y a b c', positive=True)
-# f = Function('f')
-# g = Function('g')
-# eq = Eq(f(x) + f(y), f(a) + 1)
-# print(solve_func_eq(eq, f))
+# x, y, a, b, c = sp.symbols('x y a b c', real=True)
+# xs, ys = sp.symbols((f'x:3', f'y:3'), real=True)
+# f = sp.Function('f')
+# g = sp.Function('g')
+# eq = sp.Eq(f(x) * f(y), f(x + y))
+# # print(solve_func_eq(eq, f))
+
+# add = [i + j for i, j in zip(xs, ys)]
+# mul = [i * j for i, j in zip(xs, ys)]
+
+# print(isomorphism(Real, 3, add, mul))

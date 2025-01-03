@@ -7,5 +7,6 @@ notes.txt
 
 # Vector Space
 new_vector.py
-vectorspace.py
-new_vector_space.py
+vs_old.py
+vs.py
+standard_fn.py
