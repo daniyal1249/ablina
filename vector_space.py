@@ -1,5 +1,4 @@
-from numbers import Real, Complex
-from random import gauss
+from numbers import Real
 import sympy as sp
 
 from linear_map import Isomorphism, IsomorphismError
@@ -22,7 +21,7 @@ class Fn(StandardFn):
         super().__init__(field, n, mapped_constraints, ns_matrix=ns_matrix, 
                          rs_matrix=rs_matrix)
         
-        # Reassign constraints correctly
+        # Reassign constraints
         self._constraints = constraints
 
     @staticmethod
@@ -61,6 +60,34 @@ class Fn(StandardFn):
         standard_vec = super().vector(std)
         return self._from_standard(standard_vec)
     
+    def complement(self):
+        constraints = [f'complement({', '.join(self.constraints)})']
+        return Fn(self.field, self.n, constraints, self.add, self.mul, 
+                  isomorphism=(self._to_standard, self._from_standard), 
+                  ns_matrix=self._rs_matrix, rs_matrix=self._ns_matrix)
+    
+    def sum(self, vs2):
+        if not self.share_ambient_space(vs2):
+            raise VectorSpaceError('Vector spaces must share the same ambient space.')
+        
+        rs_matrix = sp.Matrix.vstack(self._rs_matrix, vs2._rs_matrix)
+        rs_matrix, _ = rs_matrix.rref()
+        constraints = self.constraints  # need to fix
+        return Fn(self.field, self.n, constraints, self.add, self.mul, 
+                  isomorphism=(self._to_standard, self._from_standard), 
+                  rs_matrix=rs_matrix)
+    
+    def intersection(self, vs2):
+        if not self.share_ambient_space(vs2):
+            raise VectorSpaceError('Vector spaces must share the same ambient space.')
+        
+        ns_matrix = sp.Matrix.vstack(self._ns_matrix, vs2._ns_matrix)
+        ns_matrix, _ = ns_matrix.rref()
+        constraints = self.constraints + vs2.constraints
+        return Fn(self.field, self.n, constraints, self.add, self.mul, 
+                  isomorphism=(self._to_standard, self._from_standard), 
+                  ns_matrix=ns_matrix)
+    
     def span(self, *vectors):
         if not all(vec in self for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
@@ -76,11 +103,13 @@ class Fn(StandardFn):
         vectors = [self._to_standard(vec) for vec in vectors]
         return super().is_independent(vectors)
     
-    def share_ambient_space(self, vs2):
-        if not super().share_ambient_space(vs2):
-            return False
-        return self.add == vs2.add and self.mul == vs2.mul
-        
+    # def share_ambient_space(self, vs2):
+    #     if not super().share_ambient_space(vs2):
+    #         return False
+    #     return (self.add == vs2.add and self.mul == vs2.mul and 
+    #             self._to_standard == vs2._to_standard and 
+    #             self._from_standard == vs2._from_standard)
+
 
 class VectorSpace(Fn):
     def __init__(self, vectors, isomorphism):
@@ -96,10 +125,10 @@ class VectorSpace(Fn):
                   'ns_matrix': fn._ns_matrix, 'rs_matrix': fn._rs_matrix}
         super().__init__(*args, **kwargs)
 
-        self._to_fn, self._from_fn = to_fn.mapping, from_fn.mapping
         fn_to_std, std_to_fn = self._to_standard, self._from_standard
-        self._to_standard = lambda vec: fn_to_std(self._to_fn(vec))
-        self._from_standard = lambda vec: self._from_fn(std_to_fn(vec))
+        self._to_fn, self._from_fn = to_fn, from_fn
+        self._to_standard = lambda vec: fn_to_std(to_fn.mapping(vec))
+        self._from_standard = lambda vec: from_fn.mapping(std_to_fn(vec))
         self._vectors = vectors
 
     @staticmethod
@@ -121,7 +150,7 @@ class VectorSpace(Fn):
             raise TypeError('isomorphism must be an Isomorphism or a 2-tuple '
                             'of Isomorphisms.')
         return iso
-    
+
     @property
     def vectors(self):
         return self._vectors
@@ -130,15 +159,27 @@ class VectorSpace(Fn):
         if vec not in self.vectors:
             return False
         return super().__contains__(vec)
+    
+    def complement(self):
+        fn = Fn.complement(self._to_fn.codomain)
+        return self._replace_fn(fn)
+    
+    def sum(self, vs2):
+        fn = Fn.sum(self._to_fn.codomain, vs2._to_fn.codomain)
+        return self._replace_fn(fn)
+    
+    def intersection(self, vs2):
+        fn = Fn.intersection(self._to_fn.codomain, vs2._to_fn.codomain)
+        return self._replace_fn(fn)
+    
+    def span(self, *vectors):
+        fn = Fn.span(self._to_fn.codomain, *vectors)
+        return self._replace_fn(fn)
 
-    # def span(self, *vectors):
-    #     # Need to rework
-    #     fn = super().span(vectors)
-    #     pred = lambda vec: self._to_fn(vec) in fn  # modify pred
-    #     new_vectors = self.vectors.add_predicates(pred)
-    #     to_fn = Isomorphism(new_vectors, fn, self._to_fn)
-    #     from_fn = Isomorphism(fn, new_vectors, self._from_fn)
-    #     return VectorSpace(new_vectors, (to_fn, from_fn))
+    def _replace_fn(self, fn):
+        to_fn = Isomorphism(self.vectors, fn, self._to_fn.mapping)
+        from_fn = Isomorphism(fn, self.vectors, self._from_fn.mapping)
+        return VectorSpace(self.vectors, (to_fn, from_fn))
 
     @classmethod
     def fn(cls, field, n, constraints=None, add=None, mul=None, 
@@ -211,6 +252,6 @@ def left_nullspace(matrix, field=Real):
 # to_iso = lambda vec: [sp.log(i) for i in vec]
 # from_iso = lambda vec: [sp.exp(i) for i in vec]
 
-# vs1 = VectorSpace.polynomial(field=Real, max_degree=2)
+# vs1 = VectorSpace.matrix(field=Real, shape=(2, 2), constraints=['v0==v1==v2==v3'])
 # x = sp.symbols('x', real=True)
-# print(vs1.basis)
+# print(vs1.complement().basis)

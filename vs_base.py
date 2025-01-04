@@ -110,18 +110,37 @@ class StandardFn:
         return StandardFn(self.field, self.n, constraints, 
                           ns_matrix=self._rs_matrix, 
                           rs_matrix=self._ns_matrix)
-    
+
     def sum(self, vs2):
         if not self.share_ambient_space(vs2):
-            raise VectorSpaceError()
- 
+            raise VectorSpaceError('Vector spaces must share the same ambient space.')
+        
+        rs_matrix = sp.Matrix.vstack(self._rs_matrix, vs2._rs_matrix)
+        rs_matrix, _ = rs_matrix.rref()
+        constraints = self.constraints  # need to fix
+        return StandardFn(self.field, self.n, constraints, rs_matrix=rs_matrix)
+
     def intersection(self, vs2):
         if not self.share_ambient_space(vs2):
-            raise VectorSpaceError()
+            raise VectorSpaceError('Vector spaces must share the same ambient space.')
+        
+        ns_matrix = sp.Matrix.vstack(self._ns_matrix, vs2._ns_matrix)
+        ns_matrix, _ = ns_matrix.rref()
+        constraints = self.constraints + vs2.constraints
+        return StandardFn(self.field, self.n, constraints, ns_matrix=ns_matrix)
 
     def is_subspace(self, vs2):
+        '''
+        Returns True if self is a subspace of vs2, otherwise False.
+        '''
         if not self.share_ambient_space(vs2):
-            raise VectorSpaceError()
+            raise VectorSpaceError('Vector spaces must share the same ambient space.')
+        
+        for i in range(self._rs_matrix.rows):
+            vec = self._rs_matrix.row(i).T
+            if not (vs2._ns_matrix @ vec).is_zero_matrix:
+                return False
+        return True
 
     def span(self, *vectors):
         # include type check
