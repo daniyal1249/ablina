@@ -87,6 +87,7 @@ def is_commutative(field, n, operation):
     else:
         xs, ys = sp.symbols((f'x:{n}', f'y:{n}'))
 
+    xs, ys = list(xs), list(ys)
     for lhs, rhs in zip(operation(xs, ys), operation(ys, xs)):
         if not sp.sympify(lhs).equals(sp.sympify(rhs)):
             return False
@@ -99,6 +100,7 @@ def is_associative(field, n, operation):
     else:
         xs, ys, zs = sp.symbols((f'x:{n}', f'y:{n}', f'z:{n}'))
 
+    xs, ys, zs = list(xs), list(ys), list(zs)
     lhs_vec = operation(xs, operation(ys, zs))
     rhs_vec = operation(operation(xs, ys), zs)
     
