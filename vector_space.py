@@ -89,8 +89,7 @@ class Fn(StandardFn):
                   ns_matrix=ns_matrix)
     
     def span(self, *vectors):
-        if not all(vec in self for vec in vectors):
-            raise TypeError('Vectors must be elements of the vector space.')
+        # Type check in VectorSpace class
         constraints = [f'span{vectors}']
         vectors = [self._to_standard(vec) for vec in vectors]
         return Fn(self.field, self.n, constraints, self.add, self.mul, 
@@ -173,7 +172,13 @@ class VectorSpace(Fn):
         return self._replace_fn(fn)
     
     def span(self, *vectors):
-        fn = Fn.span(self._to_fn.codomain, *vectors)
+        if not all(vec in self for vec in vectors):
+            raise TypeError('Vectors must be elements of the vector space.')
+        
+        fn_vectors = [self._to_fn.mapping(vec) for vec in vectors]
+        fn = Fn.span(self._to_fn.codomain, *fn_vectors)
+        # Reassign constraints
+        fn._constraints = [f'span{vectors}']  # rework
         return self._replace_fn(fn)
 
     def _replace_fn(self, fn):
@@ -229,19 +234,19 @@ class VectorSpace(Fn):
 def columnspace(matrix, field=Real):
     matrix = sp.Matrix(matrix)
     n = matrix.rows
-    constraints = [f'col({matrix})']
+    constraints = [f'col({matrix.tolist()})']
     return VectorSpace.fn(field, n, constraints, rs_matrix=matrix.T)
 
 def rowspace(matrix, field=Real):
     matrix = sp.Matrix(matrix)
     n = matrix.cols
-    constraints = [f'row({matrix})']
+    constraints = [f'row({matrix.tolist()})']
     return VectorSpace.fn(field, n, constraints, rs_matrix=matrix)
 
 def nullspace(matrix, field=Real):
     matrix = sp.Matrix(matrix)
     n = matrix.cols
-    constraints = [f'null({matrix})']
+    constraints = [f'null({matrix.tolist()})']
     return VectorSpace.fn(field, n, constraints, ns_matrix=matrix)
 
 def left_nullspace(matrix, field=Real):
@@ -252,6 +257,7 @@ def left_nullspace(matrix, field=Real):
 # to_iso = lambda vec: [sp.log(i) for i in vec]
 # from_iso = lambda vec: [sp.exp(i) for i in vec]
 
-# vs1 = VectorSpace.matrix(field=Real, shape=(2, 2), constraints=['v0==v1==v2==v3'])
+# vectors = Set(sp.Poly, lambda poly: sp.degree(poly) <= 3)
+# vs1 = VectorSpace.polynomial(field=Real, max_degree=3, constraints=[])
 # x = sp.symbols('x', real=True)
-# print(vs1.complement().basis)
+# print(vs1.span(sp.Poly(x**1 + 2*x**2)).constraints)
