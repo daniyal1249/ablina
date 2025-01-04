@@ -2,7 +2,7 @@ from numbers import Real, Complex
 from random import gauss
 import sympy as sp
 
-from linear_map import Isomorphism, IdentityMap, IsomorphismError
+from linear_map import Isomorphism, IsomorphismError
 from vs_base import *
 from math_set import *
 from vs_utils import *
@@ -150,14 +150,15 @@ class VectorSpace(Fn):
                 return False
 
         vectors = Set(object, pred)
-        fn = Fn(field, n, constraints, add, mul)
-        to_fn = IdentityMap(fn)
+        fn = Fn(field, n, constraints, add, mul, ns_matrix=ns_matrix, 
+                rs_matrix=rs_matrix)
+        to_fn = Isomorphism(vectors, fn, lambda vec: vec)
         return cls(vectors, to_fn)
 
     @classmethod
     def matrix(cls, field, shape, constraints=None, add=None, mul=None):
         def to_fn_mapping(mat):
-            return mat.shape == shape
+            return mat.flat()
         def from_fn_mapping(vec):
             return sp.Matrix(*shape, vec)
         
@@ -182,7 +183,7 @@ class VectorSpace(Fn):
         to_fn = Isomorphism(vectors, fn, to_fn_mapping)
         from_fn = Isomorphism(fn, vectors, from_fn_mapping)
         return cls(vectors, (to_fn, from_fn))
-    
+
 
 def columnspace(matrix, field=Real):
     matrix = sp.Matrix(matrix)
