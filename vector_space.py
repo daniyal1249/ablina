@@ -1,7 +1,7 @@
 from numbers import Real
 import sympy as sp
 
-from linear_map import Isomorphism, IsomorphismError
+from linear_map import LinearMap, Isomorphism, IsomorphismError
 from vs_base import *
 from math_set import *
 from vs_utils import *
@@ -235,6 +235,15 @@ class VectorSpace(Fn):
         to_fn = Isomorphism(vectors, fn, to_fn_mapping)
         from_fn = Isomorphism(fn, vectors, from_fn_mapping)
         return cls(vectors, (to_fn, from_fn))
+    
+    @classmethod
+    def hom(cls, vs1, vs2):
+        if not (isinstance(vs1, VectorSpace) and isinstance(vs2, VectorSpace)):
+            raise TypeError()
+        if vs1.field is not vs2.field:
+            raise VectorSpaceError()
+        
+        vectors = Set(LinearMap)
 
 
 def columnspace(matrix, field=Real):
