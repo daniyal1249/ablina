@@ -1,9 +1,9 @@
 from numbers import Real
 import sympy as sp
 
-from linear_map import LinearMap, Isomorphism, IsomorphismError
-from vs_base import *
+from linear_map import LinearMap
 from math_set import *
+from vs_base import *
 from vs_utils import *
 
 class Fn(StandardFn):
@@ -117,44 +117,37 @@ class Fn(StandardFn):
 
 
 class VectorSpace(Fn):
-    def __init__(self, vectors, isomorphism):
+    def __init__(self, vectors, fn, isomorphism):
         if not isinstance(vectors, MathematicalSet):
             raise TypeError('vectors must be a MathematicalSet.')
-        iso = VectorSpace._check_isomorphism(vectors, isomorphism)
+        if not isinstance(fn, Fn):
+            raise TypeError('fn must be of type Fn.')
+        iso = VectorSpace._check_isomorphism(isomorphism)
 
         # Call super init
-        to_fn, from_fn = iso
-        fn = to_fn.codomain
         args = (fn.field, fn.n, fn.constraints, fn.add, fn.mul)
         kwargs = {'isomorphism': (fn._to_standard, fn._from_standard), 
                   'ns_matrix': fn._ns_matrix, 'rs_matrix': fn._rs_matrix}
         super().__init__(*args, **kwargs)
 
+        self._to_fn, self._from_fn = iso
         fn_to_std, std_to_fn = self._to_standard, self._from_standard
-        self._to_fn, self._from_fn = to_fn, from_fn
-        self._to_standard = lambda vec: fn_to_std(to_fn.mapping(vec))
-        self._from_standard = lambda vec: from_fn.mapping(std_to_fn(vec))
+        self._to_standard = lambda vec: fn_to_std(self._to_fn(vec))
+        self._from_standard = lambda vec: self._from_fn(std_to_fn(vec))
         self._vectors = vectors
+        self._fn = fn
 
     @staticmethod
-    def _check_isomorphism(vectors, iso):
-        if isinstance(iso, Isomorphism):
-            if not (iso.domain is vectors and isinstance(iso.codomain, Fn)):
-                raise IsomorphismError()
-            from_fn = Isomorphism(iso.codomain, iso.domain, lambda vec: vec)
-            iso = (iso, from_fn)
-
-        elif (isinstance(iso, tuple) and len(iso) == 2 and 
-              all(isinstance(i, Isomorphism) for i in iso)):
-            to_fn, from_fn = iso
-            if not (to_fn.domain is vectors and isinstance(to_fn.codomain, Fn)):
-                raise IsomorphismError()
-            if not (from_fn.codomain is vectors and isinstance(from_fn.domain, Fn)):
-                raise IsomorphismError()
+    def _check_isomorphism(iso):
+        if (isinstance(iso, tuple) and len(iso) == 2 and 
+            all(of_arity(i, 1) for i in iso)):
+            return iso
+        
+        if of_arity(iso, 1):
+            return (iso, lambda vec: vec)
         else:
-            raise TypeError('isomorphism must be an Isomorphism or a 2-tuple '
-                            'of Isomorphisms.')
-        return iso
+            raise TypeError('isomorphism must be a callable or a 2-tuple '
+                            'of callables.')
 
     @property
     def vectors(self):
@@ -166,31 +159,26 @@ class VectorSpace(Fn):
         return super().__contains__(vec)
     
     def complement(self):
-        fn = Fn.complement(self._to_fn.codomain)
-        return self._replace_fn(fn)
+        fn = Fn.complement(self._fn)
+        return VectorSpace(self.vectors, fn, (self._to_fn, self._from_fn))
     
     def sum(self, vs2):
-        fn = Fn.sum(self._to_fn.codomain, vs2._to_fn.codomain)
-        return self._replace_fn(fn)
+        fn = Fn.sum(self._fn, vs2._fn)
+        return VectorSpace(self.vectors, fn, (self._to_fn, self._from_fn))
     
     def intersection(self, vs2):
-        fn = Fn.intersection(self._to_fn.codomain, vs2._to_fn.codomain)
-        return self._replace_fn(fn)
+        fn = Fn.intersection(self._fn, vs2._fn)
+        return VectorSpace(self.vectors, fn, (self._to_fn, self._from_fn))
     
     def span(self, *vectors):
         if not all(vec in self for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
         
-        fn_vectors = [self._to_fn.mapping(vec) for vec in vectors]
-        fn = Fn.span(self._to_fn.codomain, *fn_vectors)
+        fn_vectors = [self._to_fn(vec) for vec in vectors]
+        fn = Fn.span(self._fn, *fn_vectors)
         # Reassign constraints
         fn._constraints = [f'span{vectors}']  # rework
-        return self._replace_fn(fn)
-
-    def _replace_fn(self, fn):
-        to_fn = Isomorphism(self.vectors, fn, self._to_fn.mapping)
-        from_fn = Isomorphism(fn, self.vectors, self._from_fn.mapping)
-        return VectorSpace(self.vectors, (to_fn, from_fn))
+        return VectorSpace(self.vectors, fn, (self._to_fn, self._from_fn))
 
     @classmethod
     def fn(cls, field, n, constraints=None, add=None, mul=None, 
@@ -204,37 +192,32 @@ class VectorSpace(Fn):
         vectors = Set(object, pred)
         fn = Fn(field, n, constraints, add, mul, ns_matrix=ns_matrix, 
                 rs_matrix=rs_matrix)
-        to_fn = Isomorphism(vectors, fn, lambda vec: vec)
-        return cls(vectors, to_fn)
+        return cls(vectors, fn, lambda vec: vec)
 
     @classmethod
     def matrix(cls, field, shape, constraints=None, add=None, mul=None):
-        def to_fn_mapping(mat):
+        def to_fn(mat):
             return mat.flat()
-        def from_fn_mapping(vec):
+        def from_fn(vec):
             return sp.Matrix(*shape, vec)
         
         vectors = Set(sp.Matrix, lambda mat: mat.shape == shape)
         fn = Fn(field, sp.prod(shape), constraints, add, mul)
-        to_fn = Isomorphism(vectors, fn, to_fn_mapping)
-        from_fn = Isomorphism(fn, vectors, from_fn_mapping)
-        return cls(vectors, (to_fn, from_fn))
+        return cls(vectors, fn, (to_fn, from_fn))
 
     @classmethod
     def polynomial(cls, field, max_degree, constraints=None, add=None, mul=None):
-        def to_fn_mapping(poly):
+        def to_fn(poly):
             coeffs = poly.all_coeffs()
             degree_diff = max_degree - len(coeffs) + 1
             return ([0] * degree_diff) + coeffs
-        def from_fn_mapping(vec):
+        def from_fn(vec):
             x = sp.symbols('x')
             return sp.Poly.from_list(vec, x)
 
         vectors = Set(sp.Poly, lambda poly: sp.degree(poly) <= max_degree)
         fn = Fn(field, max_degree + 1, constraints, add, mul)
-        to_fn = Isomorphism(vectors, fn, to_fn_mapping)
-        from_fn = Isomorphism(fn, vectors, from_fn_mapping)
-        return cls(vectors, (to_fn, from_fn))
+        return cls(vectors, fn, (to_fn, from_fn))
     
     @classmethod
     def hom(cls, vs1, vs2):
@@ -242,7 +225,7 @@ class VectorSpace(Fn):
             raise TypeError()
         if vs1.field is not vs2.field:
             raise VectorSpaceError()
-        
+
         vectors = Set(LinearMap)
 
 
@@ -273,6 +256,6 @@ def left_nullspace(matrix, field=Real):
 # from_iso = lambda vec: [sp.exp(i) for i in vec]
 
 # vectors = Set(sp.Poly, lambda poly: sp.degree(poly) <= 3)
-# vs1 = VectorSpace.polynomial(field=Real, max_degree=3, constraints=[])
+# vs1 = VectorSpace.fn(field=Real, n=3, constraints=['v0==v1==v2'])
 # x = sp.symbols('x', real=True)
-# print(vs1.span(sp.Poly(x**1 + 2*x**2)).constraints)
+# print(vs1.complement().basis)
