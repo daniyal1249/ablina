@@ -56,6 +56,12 @@ class Fn(StandardFn):
         standard_vec = self._to_standard(vec)
         return super().__contains__(standard_vec)
     
+    def __add__(self, vs2):
+        return self.sum(vs2)
+    
+    def __and__(self, vs2):
+        return self.intersection(vs2)
+    
     def vector(self, std=1):
         standard_vec = super().vector(std)
         return self._from_standard(standard_vec)

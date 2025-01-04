@@ -71,10 +71,6 @@ class StandardFn:
     def dim(self):
         return len(self.basis)
     
-    # def __repr__(self):
-    #     return (f'StandardFn(field={self.field.__name__}, n={self.n}, '
-    #             f'constraints={self.constraints})')
-
     def __contains__(self, vec):
         try:
             if self.field is Real:
@@ -89,45 +85,15 @@ class StandardFn:
             return bool((self._ns_matrix @ vec).is_zero_matrix)
         except Exception:
             return False
-        
+    
     def __eq__(self, vs2):
         return self.is_subspace(vs2) and vs2.is_subspace(self)
-    
-    def __add__(self, vs2):
-        return self.sum(vs2)
-    
-    def __and__(self, vs2):
-        return self.intersection(vs2)
     
     def vector(self, std=1):
         size = self._rs_matrix.rows
         weights = [round(gauss(0, std))] * size
         vec = sp.Matrix([weights]) @ self._rs_matrix
         return vec.tolist()  # return list
-
-    def complement(self):
-        constraints = [f'complement({', '.join(self.constraints)})']
-        return StandardFn(self.field, self.n, constraints, 
-                          ns_matrix=self._rs_matrix, 
-                          rs_matrix=self._ns_matrix)
-
-    def sum(self, vs2):
-        if not self.share_ambient_space(vs2):
-            raise VectorSpaceError('Vector spaces must share the same ambient space.')
-        
-        rs_matrix = sp.Matrix.vstack(self._rs_matrix, vs2._rs_matrix)
-        rs_matrix, _ = rs_matrix.rref()
-        constraints = self.constraints  # need to fix
-        return StandardFn(self.field, self.n, constraints, rs_matrix=rs_matrix)
-
-    def intersection(self, vs2):
-        if not self.share_ambient_space(vs2):
-            raise VectorSpaceError('Vector spaces must share the same ambient space.')
-        
-        ns_matrix = sp.Matrix.vstack(self._ns_matrix, vs2._ns_matrix)
-        ns_matrix, _ = ns_matrix.rref()
-        constraints = self.constraints + vs2.constraints
-        return StandardFn(self.field, self.n, constraints, ns_matrix=ns_matrix)
 
     def is_subspace(self, vs2):
         '''
@@ -141,12 +107,7 @@ class StandardFn:
             if not (vs2._ns_matrix @ vec).is_zero_matrix:
                 return False
         return True
-
-    def span(self, *vectors):
-        # include type check
-        constraints = [f'span{vectors}']
-        return StandardFn(self.field, self.n, constraints, rs_matrix=vectors)
-        
+    
     def is_independent(self, *vectors):
         matrix = sp.Matrix(vectors)
         return matrix.rank() == matrix.rows
