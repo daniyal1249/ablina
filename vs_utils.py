@@ -163,6 +163,7 @@ def is_tautology(equation):
 def standard_isomorphism(field, n, add, mul):
     # need to support custom domains
     # need to implement an intersection function
+    # return separate functions for each coordinate
 
     f = sp.Function('f')
     if field is Real:

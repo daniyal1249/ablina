@@ -1,5 +1,5 @@
 from math_set import *
-from vs_base import StandardFn
+from vector_space import VectorSpace
 from utils import of_arity
 
 class LinearMapError(Exception):
@@ -12,15 +12,15 @@ class IsomorphismError(Exception):
 
 class LinearMap:  # implement matrix representation
     def __init__(self, domain, codomain, mapping, name=None):
-        if not isinstance(domain, (MathematicalSet, StandardFn)):
-            raise TypeError('The domain must be a MathematicalSet or '
-                            'VectorSpace.')
-        if not isinstance(codomain, (MathematicalSet, StandardFn)):
-            raise TypeError('The codomain must be a MathematicalSet or '
-                            'VectorSpace.')
+        if not isinstance(domain, VectorSpace):
+            raise TypeError('The domain must be a VectorSpace.')
+        if not isinstance(codomain, VectorSpace):
+            raise TypeError('The codomain must be a VectorSpace.')
         if not of_arity(mapping, 1):
             raise TypeError('The mapping must be able to accept a single '
                             'positional argument.')
+        if domain.field is not codomain.field:
+            raise LinearMapError()
 
         self._domain = domain
         self._codomain = codomain
@@ -28,7 +28,6 @@ class LinearMap:  # implement matrix representation
         if name:
             self.__name__ = name
 
-    @staticmethod
     def _as_matrix():
         pass
 
@@ -56,6 +55,13 @@ class LinearMap:  # implement matrix representation
 
     def __eq__(self, map2):
         return vars(self) == vars(map2)
+    
+    def __add__(self, map2):
+        mapping = lambda vec: self.mapping(vec) + map2.mapping(vec)
+        return LinearMap(self.domain, self.codomain, mapping)
+    
+    def __rmul__(self, scalar):
+        pass
     
     def __call__(self, vec):
         if vec not in self.domain:
