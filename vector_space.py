@@ -16,7 +16,7 @@ class NotAVectorSpaceError(Exception):
     def __init__(self, msg=''):
         super().__init__(msg)
 
-class StandardFn:
+class _StandardFn:
     def __init__(self, field, n, constraints=None, *, ns_matrix=None, rs_matrix=None):
         if field not in (Real, Complex):
             raise TypeError('Field must be either Real or Complex.')
@@ -27,7 +27,7 @@ class StandardFn:
             if not is_vectorspace(n, constraints):
                 raise NotAVectorSpaceError()  # add error msg
 
-        ns, rs = StandardFn._init_matrices(n, constraints, ns_matrix, rs_matrix)
+        ns, rs = _StandardFn._init_matrices(n, constraints, ns_matrix, rs_matrix)
 
         self._field = field
         self._n = n
@@ -74,11 +74,6 @@ class StandardFn:
     def dim(self):
         return len(self.basis)
     
-    def __eq__(self, vs2):
-        if self is vs2:
-            return True
-        return self.is_subspace(vs2) and vs2.is_subspace(self)
-    
     def __contains__(self, vec):
         try:
             if self.field is Real:
@@ -92,6 +87,11 @@ class StandardFn:
             return bool((self._ns_matrix @ vec).is_zero_matrix)
         except Exception:
             return False
+    
+    def __eq__(self, vs2):
+        if self is vs2:
+            return True
+        return self.is_subspace(vs2) and vs2.is_subspace(self)
     
     def vector(self, std=1):
         size = self._rs_matrix.rows
@@ -125,7 +125,7 @@ class StandardFn:
         return self.field is vs2.field and self.n == vs2.n
 
 
-class Fn(StandardFn):
+class Fn(_StandardFn):
     def __init__(self, field, n, constraints=None, add=None, mul=None, 
                  *, isomorphism=None, ns_matrix=None, rs_matrix=None):
         
@@ -297,6 +297,11 @@ class VectorSpace:
             return False
         return self._to_fn(vec) in self._fn
     
+    def __eq__(self, vs2):
+        if self is vs2:
+            return True
+        return self.is_subspace(vs2) and vs2.is_subspace(self)
+    
     def __add__(self, vs2):
         return self.sum(vs2)
     
@@ -363,7 +368,7 @@ class VectorSpace:
             except Exception:
                 return False
 
-        vectors = Set(object, pred)
+        vectors = Set(object, pred, name=f'F^{n}')
         fn = Fn(field, n, constraints, add, mul, ns_matrix=ns_matrix, 
                 rs_matrix=rs_matrix)
         return cls(vectors, fn, lambda vec: vec)
@@ -375,7 +380,8 @@ class VectorSpace:
         def from_fn(vec):
             return sp.Matrix(*shape, vec)
         
-        vectors = Set(sp.Matrix, lambda mat: mat.shape == shape)
+        name = f'{shape[0]} by {shape[1]} matrices'
+        vectors = Set(sp.Matrix, lambda mat: mat.shape == shape, name=name)
         fn = Fn(field, sp.prod(shape), constraints, add, mul)
         return cls(vectors, fn, (to_fn, from_fn))
 
@@ -389,7 +395,8 @@ class VectorSpace:
             x = sp.symbols('x')
             return sp.Poly.from_list(vec, x)
 
-        vectors = Set(sp.Poly, lambda poly: sp.degree(poly) <= max_degree)
+        name = f'P_{max_degree}(F)'
+        vectors = Set(sp.Poly, lambda poly: sp.degree(poly) <= max_degree, name=name)
         fn = Fn(field, max_degree + 1, constraints, add, mul)
         return cls(vectors, fn, (to_fn, from_fn))
     
@@ -399,7 +406,9 @@ class VectorSpace:
             raise TypeError()
         if vs1.field is not vs2.field:
             raise VectorSpaceError()
-        return cls.matrix(vs1.field, (vs2.dim, vs1.dim))
+        vs = cls.matrix(vs1.field, (vs2.dim, vs1.dim))
+        vs.vectors.__name__ = f'hom'  # rework
+        return vs
 
 
 def is_vectorspace(n, constraints):
@@ -456,4 +465,3 @@ kernel = nullspace
 # vs1 = VectorSpace.poly(field=Real, max_degree=3, constraints=[])
 # vs2 = VectorSpace.poly(field=Real, max_degree=3, constraints=['v0==0'])
 # x = sp.symbols('x', real=True)
-# print(vs1.is_subspace(vs2))
