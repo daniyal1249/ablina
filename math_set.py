@@ -1,16 +1,18 @@
 from utils import of_arity
 
 class MathematicalSet:
-    def __init__(self, cls, *predicates):
+    def __init__(self, cls, *predicates, name=None):
         if not isinstance(cls, type):
             raise TypeError()
         if len(predicates) == 1 and isinstance(predicates[0], list):
             predicates = predicates[0]
         if not all(of_arity(pred, 1) for pred in predicates):  # make sure pred type is valid
             raise ValueError()
-
+        
         self._cls = cls
         self._predicates = remove_duplicates(predicates)
+        if name is not None:
+            self.__name__ = name
 
     @property
     def cls(self):
@@ -24,8 +26,9 @@ class MathematicalSet:
         return f'Set({self.cls.__name__}, {[pred.__name__ for pred in self.predicates]})'
     
     def __eq__(self, set2):
-        # Order of the predicates matters
-        return vars(self) == vars(set2)
+        if hasattr(self, '__name__') and hasattr(set2, '__name__'):
+            return self.__name__ == set2.__name__
+        return vars(self) == vars(set2)  # order of the predicates matters
     
     def __contains__(self, obj):
         if not isinstance(obj, self.cls):
