@@ -71,6 +71,11 @@ class StandardFn:
     def dim(self):
         return len(self.basis)
     
+    def __eq__(self, vs2):
+        if self is vs2:
+            return True
+        return self.is_subspace(vs2) and vs2.is_subspace(self)
+    
     def __contains__(self, vec):
         try:
             if self.field is Real:
@@ -78,30 +83,29 @@ class StandardFn:
                     return False
             elif not all(is_complex(coord) for coord in vec):
                 return False
-              
+            
             # Check if vec satisfies vector space constraints
-            shape = (self.n, 1)
-            vec = sp.Matrix(*shape, vec)
+            vec = sp.Matrix(vec)
             return bool((self._ns_matrix @ vec).is_zero_matrix)
         except Exception:
             return False
     
-    def __eq__(self, vs2):
-        return self.is_subspace(vs2) and vs2.is_subspace(self)
-    
     def vector(self, std=1):
         size = self._rs_matrix.rows
-        weights = [round(gauss(0, std))] * size
+        weights = [round(gauss(0, std)) for _ in range(size)]
         vec = sp.Matrix([weights]) @ self._rs_matrix
-        return vec.tolist()  # return list
+        return vec.flat()  # return list
+    
+    def to_coordinate(self, vector, basis=None):
+        if basis is None:
+            basis = self.basis
 
     def is_subspace(self, vs2):
         '''
         Returns True if self is a subspace of vs2, otherwise False.
         '''
         if not self.share_ambient_space(vs2):
-            raise VectorSpaceError('Vector spaces must share the same ambient space.')
-        
+            return False
         for i in range(self._rs_matrix.rows):
             vec = self._rs_matrix.row(i).T
             if not (vs2._ns_matrix @ vec).is_zero_matrix:
@@ -114,7 +118,7 @@ class StandardFn:
 
     def share_ambient_space(self, vs2):
         if type(self) is not type(vs2):
-            raise TypeError()
+            return False
         return self.field is vs2.field and self.n == vs2.n
     
 def is_vectorspace(n, constraints):

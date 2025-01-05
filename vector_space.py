@@ -1,10 +1,10 @@
 from numbers import Real
 import sympy as sp
 
-from linear_map import LinearMap
 from math_set import *
 from vs_base import *
 from vs_utils import *
+from operation import VectorAdd, ScalarMul
 
 class Fn(StandardFn):
     def __init__(self, field, n, constraints=None, add=None, mul=None, 
@@ -14,13 +14,15 @@ class Fn(StandardFn):
             if not (isinstance(isomorphism, tuple) and len(isomorphism) == 2):
                 raise TypeError('Isomorphism must be a 2-tuple of callables.')
         
-        self._add, self._mul, iso = Fn._init_operations(field, n, add, mul, isomorphism)
+        add, mul, iso = Fn._init_operations(field, n, add, mul, isomorphism)
 
         self._to_standard, self._from_standard = iso
         mapped_constraints = map_constraints(self._to_standard, constraints)
         super().__init__(field, n, mapped_constraints, ns_matrix=ns_matrix, 
                          rs_matrix=rs_matrix)
         
+        self._add = VectorAdd(field, n, add)
+        self._mul = ScalarMul(field, n, mul)
         # Reassign constraints
         self._constraints = constraints
 
@@ -49,8 +51,7 @@ class Fn(StandardFn):
     
     @property
     def basis(self):
-        basis = super().basis
-        return [self._from_standard(vec) for vec in basis]
+        return [self._from_standard(vec) for vec in super().basis]
 
     def __contains__(self, vec):
         standard_vec = self._to_standard(vec)
@@ -95,12 +96,13 @@ class Fn(StandardFn):
                   ns_matrix=ns_matrix)
     
     def span(self, *vectors):
-        # Type check in VectorSpace class
+        if not all(vec in self for vec in vectors):
+            raise TypeError('Vectors must be elements of the vector space.')
+        standard_vecs = [self._to_standard(vec) for vec in vectors]
         constraints = [f'span{vectors}']
-        vectors = [self._to_standard(vec) for vec in vectors]
         return Fn(self.field, self.n, constraints, self.add, self.mul, 
                   isomorphism=(self._to_standard, self._from_standard), 
-                  rs_matrix=vectors)
+                  rs_matrix=standard_vecs)
     
     def is_independent(self, *vectors):
         if not all(vec in self for vec in vectors):
@@ -108,34 +110,24 @@ class Fn(StandardFn):
         vectors = [self._to_standard(vec) for vec in vectors]
         return super().is_independent(vectors)
     
-    # def share_ambient_space(self, vs2):
-    #     if not super().share_ambient_space(vs2):
-    #         return False
-    #     return (self.add == vs2.add and self.mul == vs2.mul and 
-    #             self._to_standard == vs2._to_standard and 
-    #             self._from_standard == vs2._from_standard)
+    def share_ambient_space(self, vs2):
+        # if not super().share_ambient_space(vs2):
+        #     return False
+        # return self.add == vs2.add and self.mul == vs2.mul
+        return True
 
 
-class VectorSpace(Fn):
+class VectorSpace:
     def __init__(self, vectors, fn, isomorphism):
         if not isinstance(vectors, MathematicalSet):
             raise TypeError('vectors must be a MathematicalSet.')
         if not isinstance(fn, Fn):
             raise TypeError('fn must be of type Fn.')
         iso = VectorSpace._check_isomorphism(isomorphism)
-
-        # Call super init
-        args = (fn.field, fn.n, fn.constraints, fn.add, fn.mul)
-        kwargs = {'isomorphism': (fn._to_standard, fn._from_standard), 
-                  'ns_matrix': fn._ns_matrix, 'rs_matrix': fn._rs_matrix}
-        super().__init__(*args, **kwargs)
-
-        self._to_fn, self._from_fn = iso
-        fn_to_std, std_to_fn = self._to_standard, self._from_standard
-        self._to_standard = lambda vec: fn_to_std(self._to_fn(vec))
-        self._from_standard = lambda vec: self._from_fn(std_to_fn(vec))
+        
         self._vectors = vectors
         self._fn = fn
+        self._to_fn, self._from_fn = iso
 
     @staticmethod
     def _check_isomorphism(iso):
@@ -148,37 +140,96 @@ class VectorSpace(Fn):
         else:
             raise TypeError('isomorphism must be a callable or a 2-tuple '
                             'of callables.')
-
+        
     @property
     def vectors(self):
         return self._vectors
     
+    @property
+    def field(self):
+        return self._fn.field
+    
+    @property
+    def add_id(self):
+        pass
+    
+    @property
+    def add_inv(self):
+        pass
+    
+    @property
+    def mul_id(self):
+        pass
+    
+    @property
+    def basis(self):
+        return [self._from_fn(vec) for vec in self._fn.basis]
+    
+    @property
+    def dim(self):
+        return self._fn.dim
+    
     def __contains__(self, vec):
         if vec not in self.vectors:
             return False
-        return super().__contains__(vec)
+        return self._to_fn(vec) in self._fn
+    
+    def __add__(self, vs2):
+        return self.sum(vs2)
+    
+    def __and__(self, vs2):
+        return self.intersection(vs2)
+    
+    def vector(self, std=1):
+        fn_vector = self._fn.vector(std)
+        return self._from_fn(fn_vector)
     
     def complement(self):
-        fn = Fn.complement(self._fn)
+        fn = self._fn.complement()
         return VectorSpace(self.vectors, fn, (self._to_fn, self._from_fn))
     
     def sum(self, vs2):
-        fn = Fn.sum(self._fn, vs2._fn)
+        if not self.share_ambient_space(vs2):
+            raise VectorSpaceError('Vector spaces must share the same ambient space.')
+        fn = self._fn.sum(vs2._fn)
         return VectorSpace(self.vectors, fn, (self._to_fn, self._from_fn))
     
     def intersection(self, vs2):
-        fn = Fn.intersection(self._fn, vs2._fn)
+        if not self.share_ambient_space(vs2):
+            raise VectorSpaceError('Vector spaces must share the same ambient space.')
+        fn = self._fn.intersection(vs2._fn)
         return VectorSpace(self.vectors, fn, (self._to_fn, self._from_fn))
     
     def span(self, *vectors):
-        if not all(vec in self for vec in vectors):
+        if not all(vec in self.vectors for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
-        
         fn_vectors = [self._to_fn(vec) for vec in vectors]
-        fn = Fn.span(self._fn, *fn_vectors)
-        # Reassign constraints
-        fn._constraints = [f'span{vectors}']  # rework
+        fn = self._fn.span(*fn_vectors)
         return VectorSpace(self.vectors, fn, (self._to_fn, self._from_fn))
+    
+    def to_coordinate(self, vector, basis=None):
+        if basis is None:
+            basis = self.basis
+    
+    def is_subspace(self, vs2):
+        '''
+        Returns True if self is a subspace of vs2, otherwise False.
+        '''
+        if not self.share_ambient_space(vs2):
+            return False
+        return self._fn.is_subspace(vs2._fn)
+    
+    def is_independent(self, *vectors):
+        if not all(vec in self.vectors for vec in vectors):
+            raise TypeError('Vectors must be elements of the vector space.')
+        fn_vectors = [self._to_fn(vec) for vec in vectors]
+        return self._fn.is_independent(*fn_vectors)
+    
+    def share_ambient_space(self, vs2):
+        # if self.vectors is not vs2.vectors:
+        #     return False
+        # return self._fn.share_ambient_space(vs2._fn)
+        return True
 
     @classmethod
     def fn(cls, field, n, constraints=None, add=None, mul=None, 
@@ -206,7 +257,7 @@ class VectorSpace(Fn):
         return cls(vectors, fn, (to_fn, from_fn))
 
     @classmethod
-    def polynomial(cls, field, max_degree, constraints=None, add=None, mul=None):
+    def poly(cls, field, max_degree, constraints=None, add=None, mul=None):
         def to_fn(poly):
             coeffs = poly.all_coeffs()
             degree_diff = max_degree - len(coeffs) + 1
@@ -225,8 +276,7 @@ class VectorSpace(Fn):
             raise TypeError()
         if vs1.field is not vs2.field:
             raise VectorSpaceError()
-
-        vectors = Set(LinearMap)
+        return cls.matrix(vs1.field, (vs2.dim, vs1.dim))
 
 
 def columnspace(matrix, field=Real):
@@ -251,11 +301,16 @@ def left_nullspace(matrix, field=Real):
     matrix = sp.Matrix(matrix).T
     return nullspace(matrix, field)
 
+# Aliases
+image = columnspace
+kernel = nullspace
+
 
 # to_iso = lambda vec: [sp.log(i) for i in vec]
 # from_iso = lambda vec: [sp.exp(i) for i in vec]
 
 # vectors = Set(sp.Poly, lambda poly: sp.degree(poly) <= 3)
-# vs1 = VectorSpace.fn(field=Real, n=3, constraints=['v0==v1==v2'])
+# vs1 = VectorSpace.poly(field=Real, max_degree=3, constraints=[])
+# vs2 = VectorSpace.poly(field=Real, max_degree=3, constraints=['v0==0'])
 # x = sp.symbols('x', real=True)
-# print(vs1.complement().basis)
+# print(vs1.is_subspace(vs2))
