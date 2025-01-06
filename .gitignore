@@ -5,8 +5,12 @@ __pycache__/
 test.py
 notes.txt
 
-# Vector Space
+# Vector
+vector.py
+vector_np.py
 new_vector.py
+
+# Vector Space
 vs_old.py
 vs.py
 standard_fn.py
