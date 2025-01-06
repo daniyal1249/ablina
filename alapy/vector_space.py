@@ -93,9 +93,12 @@ class _StandardFn:
             return True
         return self.is_subspace(vs2) and vs2.is_subspace(self)
     
-    def vector(self, std=1):
+    def vector(self, std=1, arbitrary=False):
         size = self._rs_matrix.rows
-        weights = [round(gauss(0, std)) for _ in range(size)]
+        if arbitrary:
+            weights = list(sp.symbols(f'c:{size}'))
+        else:
+            weights = [round(gauss(0, std)) for _ in range(size)]
         vec = sp.Matrix([weights]) @ self._rs_matrix
         return vec.flat()  # return list
     
@@ -104,12 +107,12 @@ class _StandardFn:
         coord_vec = matrix.solve_least_squares(vec)
         return coord_vec.flat()
 
-    def from_coordinate(self, vector, basis):
+    def from_coordinate(self, vector, basis):  # check with field
         try:
             matrix, coord_vec = sp.Matrix(basis).T, sp.Matrix(vector)
             vec = matrix @ coord_vec
         except Exception as e:
-            raise TypeError('Invalid coordinate vector') from e
+            raise TypeError('Invalid coordinate vector.') from e
         return vec.flat()
 
     def is_subspace(self, vs2):
@@ -197,8 +200,8 @@ class Fn(_StandardFn):
     def __and__(self, vs2):
         return self.intersection(vs2)
     
-    def vector(self, std=1):
-        standard_vec = super().vector(std)
+    def vector(self, std=1, arbitrary=False):
+        standard_vec = super().vector(std, arbitrary)
         return self._from_standard(standard_vec)
     
     def to_coordinate(self, vector, basis=None):
@@ -353,8 +356,8 @@ class VectorSpace:
     def __and__(self, vs2):
         return self.intersection(vs2)
     
-    def vector(self, std=1):
-        fn_vector = self._fn.vector(std)
+    def vector(self, std=1, arbitrary=False):
+        fn_vector = self._fn.vector(std, arbitrary)
         return self._from_fn(fn_vector)
     
     def to_coordinate(self, vector, basis=None):
@@ -452,12 +455,12 @@ class VectorSpace:
     @classmethod
     def poly(cls, field, max_degree, constraints=None, add=None, mul=None):
         def to_fn(poly):
-            coeffs = poly.all_coeffs()
+            coeffs = poly.all_coeffs()[::-1]  # ascending order
             degree_diff = max_degree - len(coeffs) + 1
-            return ([0] * degree_diff) + coeffs
+            return coeffs + ([0] * degree_diff)
         def from_fn(vec):
             x = sp.symbols('x')
-            return sp.Poly.from_list(vec, x)
+            return sp.Poly.from_list(vec[::-1], x)
 
         name = f'P_{max_degree}(F)'
         vectors = Set(sp.Poly, lambda poly: sp.degree(poly) <= max_degree, name=name)
@@ -521,5 +524,5 @@ kernel = nullspace
 
 
 # x = sp.symbols('x', real=True)
-# vs1 = VectorSpace.poly(Real, 1)
-# print(vs1.from_coordinate([1, 2], basis=[sp.Poly(x*8), sp.Poly(10, x)]))
+# vs1 = VectorSpace.fn(Real, 3, constraints=[])
+# print(vs1.vector(arbitrary=True))
