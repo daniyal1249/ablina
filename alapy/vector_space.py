@@ -99,9 +99,18 @@ class _StandardFn:
         vec = sp.Matrix([weights]) @ self._rs_matrix
         return vec.flat()  # return list
     
-    def to_coordinate(self, vector, basis=None):
-        if basis is None:
-            basis = self.basis
+    def to_coordinate(self, vector, basis):
+        matrix, vec = sp.Matrix(basis).T, sp.Matrix(vector)
+        coord_vec = matrix.solve_least_squares(vec)
+        return coord_vec.flat()
+
+    def from_coordinate(self, vector, basis):
+        try:
+            matrix, coord_vec = sp.Matrix(basis).T, sp.Matrix(vector)
+            vec = matrix @ coord_vec
+        except Exception as e:
+            raise TypeError('Invalid coordinate vector') from e
+        return vec.flat()
 
     def is_subspace(self, vs2):
         '''
@@ -114,15 +123,18 @@ class _StandardFn:
             if not (vs2._ns_matrix @ vec).is_zero_matrix:
                 return False
         return True
-    
-    def is_independent(self, *vectors):
-        matrix = sp.Matrix(vectors)
-        return matrix.rank() == matrix.rows
 
     def share_ambient_space(self, vs2):
         if type(self) is not type(vs2):
             return False
         return self.field is vs2.field and self.n == vs2.n
+    
+    def is_independent(self, *vectors):
+        matrix = sp.Matrix(vectors)
+        return matrix.rank() == matrix.rows
+    
+    def _is_basis(self, *basis):
+        return self.is_independent(*basis) and len(basis) == self.dim
 
 
 class Fn(_StandardFn):
@@ -173,7 +185,10 @@ class Fn(_StandardFn):
         return [self._from_standard(vec) for vec in super().basis]
 
     def __contains__(self, vec):
-        standard_vec = self._to_standard(vec)
+        try:
+            standard_vec = self._to_standard(vec)
+        except Exception:
+            return False
         return super().__contains__(standard_vec)
     
     def __add__(self, vs2):
@@ -185,6 +200,26 @@ class Fn(_StandardFn):
     def vector(self, std=1):
         standard_vec = super().vector(std)
         return self._from_standard(standard_vec)
+    
+    def to_coordinate(self, vector, basis=None):
+        if vector not in self:
+            raise TypeError('Vector must be an element of the vector space.')
+        if basis is not None:
+            basis = [self._to_standard(vec) for vec in basis]
+        else:
+            basis = super().basis
+
+        vec = self._to_standard(vector)
+        return super().to_coordinate(vec, basis)
+    
+    def from_coordinate(self, vector, basis=None):
+        if basis is not None:
+            basis = [self._to_standard(vec) for vec in basis]
+        else:
+            basis = super().basis
+        
+        vec = super().from_coordinate(vector, basis)
+        return self._from_standard(vec)
     
     def complement(self):
         constraints = [f'complement({', '.join(self.constraints)})']
@@ -223,17 +258,17 @@ class Fn(_StandardFn):
                   isomorphism=(self._to_standard, self._from_standard), 
                   rs_matrix=standard_vecs)
     
-    def is_independent(self, *vectors):
-        if not all(vec in self for vec in vectors):
-            raise TypeError('Vectors must be elements of the vector space.')
-        vectors = [self._to_standard(vec) for vec in vectors]
-        return super().is_independent(vectors)
-    
     def share_ambient_space(self, vs2):
         # if not super().share_ambient_space(vs2):
         #     return False
         # return self.add == vs2.add and self.mul == vs2.mul
         return True
+    
+    def is_independent(self, *vectors):
+        if not all(vec in self for vec in vectors):
+            raise TypeError('Vectors must be elements of the vector space.')
+        vectors = [self._to_standard(vec) for vec in vectors]
+        return super().is_independent(*vectors)
 
 
 class VectorSpace:
@@ -257,9 +292,9 @@ class VectorSpace:
         if of_arity(iso, 1):
             return (iso, lambda vec: vec)
         else:
-            raise TypeError('isomorphism must be a callable or a 2-tuple '
-                            'of callables.')
-        
+            raise TypeError('isomorphism must be a callable or a '
+                            '2-tuple of callables.')
+    
     @property
     def vectors(self):
         return self._vectors
@@ -267,6 +302,16 @@ class VectorSpace:
     @property
     def field(self):
         return self._fn.field
+    
+    @property
+    def add(self):
+        fn_add = self._fn.add
+        return lambda vec: self._from_fn(fn_add(self._to_fn(vec)))
+    
+    @property
+    def mul(self):
+        fn_mul = self._fn.mul
+        return lambda vec: self._from_fn(fn_mul(self._to_fn(vec)))
     
     @property
     def add_id(self):
@@ -312,6 +357,26 @@ class VectorSpace:
         fn_vector = self._fn.vector(std)
         return self._from_fn(fn_vector)
     
+    def to_coordinate(self, vector, basis=None):
+        if vector not in self.vectors:
+            raise TypeError('Vector must be an element of the vector space.')
+        if basis is not None:
+            if not self._is_basis(*basis):
+                raise ValueError('The provided vectors do not form a basis.')
+            basis = [self._to_fn(vec) for vec in basis]
+
+        vec = self._to_fn(vector)
+        return self._fn.to_coordinate(vec, basis)
+    
+    def from_coordinate(self, vector, basis=None):
+        if basis is not None:
+            if not self._is_basis(*basis):
+                raise ValueError('The provided vectors do not form a basis.')
+            basis = [self._to_fn(vec) for vec in basis]
+        
+        vec = self._fn.from_coordinate(vector, basis)
+        return self._from_fn(vec)
+    
     def complement(self):
         fn = self._fn.complement()
         return VectorSpace(self.vectors, fn, (self._to_fn, self._from_fn))
@@ -335,10 +400,6 @@ class VectorSpace:
         fn = self._fn.span(*fn_vectors)
         return VectorSpace(self.vectors, fn, (self._to_fn, self._from_fn))
     
-    def to_coordinate(self, vector, basis=None):
-        if basis is None:
-            basis = self.basis
-    
     def is_subspace(self, vs2):
         '''
         Returns True if self is a subspace of vs2, otherwise False.
@@ -347,18 +408,21 @@ class VectorSpace:
             return False
         return self._fn.is_subspace(vs2._fn)
     
+    def share_ambient_space(self, vs2):
+        # if self.vectors is not vs2.vectors:
+        #     return False
+        # return self._fn.share_ambient_space(vs2._fn)
+        return True
+    
     def is_independent(self, *vectors):
         if not all(vec in self.vectors for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
         fn_vectors = [self._to_fn(vec) for vec in vectors]
         return self._fn.is_independent(*fn_vectors)
     
-    def share_ambient_space(self, vs2):
-        # if self.vectors is not vs2.vectors:
-        #     return False
-        # return self._fn.share_ambient_space(vs2._fn)
-        return True
-
+    def _is_basis(self, *basis):
+        return self.is_independent(*basis) and len(basis) == self.dim
+    
     @classmethod
     def fn(cls, field, n, constraints=None, add=None, mul=None, 
            *, ns_matrix=None, rs_matrix=None):
@@ -454,3 +518,8 @@ def left_nullspace(matrix, field=Real):
 # Aliases
 image = columnspace
 kernel = nullspace
+
+
+# x = sp.symbols('x', real=True)
+# vs1 = VectorSpace.poly(Real, 1)
+# print(vs1.from_coordinate([1, 2], basis=[sp.Poly(x*8), sp.Poly(10, x)]))
