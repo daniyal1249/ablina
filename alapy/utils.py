@@ -50,15 +50,22 @@ def rs_to_ns(matrix):
 
 def is_empty(matrix):
     '''
-    Returns True if the matrix contains no elements otherwise False
+    Returns True if the matrix contains no elements otherwise False.
     '''
     matrix = sp.Matrix(matrix)
     return matrix.cols == 0 or matrix.rows == 0
 
+def is_invertible(matrix):
+    '''
+    Returns True if the matrix is invertible, otherwise False.
+    '''
+    matrix = sp.Matrix(matrix)
+    return matrix.is_square and matrix.det() != 0
+
 def of_arity(func, n):
     '''
-    Returns True if the function can accept n positional arguments, otherwise False.
-    Raises a TypeError if func is not callable.
+    Returns True if the function can accept n positional arguments, 
+    otherwise False. Raises a TypeError if func is not callable.
     '''
     sig = inspect.signature(func)
     if len(sig.parameters) < n:
@@ -67,10 +74,12 @@ def of_arity(func, n):
     count_req_pos = 0  # Number of required positional args
     for param in sig.parameters.values():
         # Return False if there are required keyword-only args
-        if param.kind == inspect.Parameter.KEYWORD_ONLY and param.default == inspect.Parameter.empty:
+        if (param.kind == inspect.Parameter.KEYWORD_ONLY and 
+            param.default == inspect.Parameter.empty):
             return False
-        if (param.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD) 
-            and param.default == inspect.Parameter.empty):
+        if (param.kind in (inspect.Parameter.POSITIONAL_ONLY, 
+            inspect.Parameter.POSITIONAL_OR_KEYWORD) and 
+            param.default == inspect.Parameter.empty):
             count_req_pos += 1
 
         if count_req_pos > n:
