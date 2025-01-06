@@ -1,8 +1,8 @@
 import sympy as sp
 
-from math_set import *
-from vector_space import VectorSpace
-from utils import of_arity
+from alapy.math_set import *
+from alapy.vector_space import VectorSpace
+from alapy.utils import of_arity
 
 class LinearMapError(Exception):
     def __init__(self, msg=''):

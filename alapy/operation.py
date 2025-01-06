@@ -1,7 +1,7 @@
 from numbers import Real
 
 import sympy as sp
-from utils import of_arity
+from alapy.utils import of_arity
 
 class OperationError(Exception):
     def __init__(self, msg=''):

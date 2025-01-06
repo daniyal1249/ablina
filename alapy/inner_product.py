@@ -1,6 +1,6 @@
 import sympy as sp
 
-from vector_space import VectorSpace
+from alapy.vector_space import VectorSpace
 
 class InnerProductSpaceError(Exception):
     def __init__(self, msg=''):

@@ -2,11 +2,11 @@ from numbers import Real, Complex
 from random import gauss
 import sympy as sp
 
-from math_set import *
-from parser import *
-from utils import *
-from vs_utils import *
-from operation import VectorAdd, ScalarMul
+from alapy.math_set import *
+from alapy.parser import *
+from alapy.utils import *
+from alapy.vs_utils import *
+from alapy.operation import VectorAdd, ScalarMul
 
 class VectorSpaceError(Exception):
     def __init__(self, msg=''):

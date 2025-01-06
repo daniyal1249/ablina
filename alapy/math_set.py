@@ -1,4 +1,4 @@
-from utils import of_arity
+from alapy.utils import of_arity
 
 class MathematicalSet:
     def __init__(self, cls, *predicates, name=None):
