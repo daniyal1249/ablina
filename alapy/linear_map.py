@@ -2,7 +2,7 @@ import sympy as sp
 
 from alapy.math_set import *
 from alapy.vector_space import VectorSpace
-from alapy.utils import of_arity
+from alapy.utils import of_arity, is_invertible
 
 class LinearMapError(Exception):
     def __init__(self, msg=''):
@@ -12,7 +12,7 @@ class IsomorphismError(Exception):
     def __init__(self, msg=''):
         super().__init__(msg)
 
-class LinearMap:  # implement matrix representation
+class LinearMap:
     def __init__(self, domain, codomain, mapping=None, matrix=None, name=None):
         if not isinstance(domain, VectorSpace):
             raise TypeError('The domain must be a VectorSpace.')
@@ -21,12 +21,15 @@ class LinearMap:  # implement matrix representation
         if mapping is None and matrix is None:
             raise LinearMapError('Either a matrix or mapping must be provided.')
         if domain.field is not codomain.field:
-            raise LinearMapError()
+            raise LinearMapError('The domain and codomain must be vector spaces '
+                                 'over the same field.')
         
         if mapping is None:
-            mapping = LinearMap._from_matrix(matrix)
+            mapping = LinearMap._from_matrix(domain, codomain, matrix)
+        elif not of_arity(mapping, 1):
+            raise TypeError('Mapping must be a function of arity 1.')
         if matrix is None:
-            matrix = LinearMap._to_matrix(mapping)
+            matrix = LinearMap._to_matrix(domain, codomain, mapping)
         else:
             matrix = sp.Matrix(matrix)
         
@@ -38,12 +41,20 @@ class LinearMap:  # implement matrix representation
             self.__name__ = name
 
     @staticmethod
-    def _to_matrix(mapping):
-        pass
+    def _to_matrix(domain, codomain, mapping):
+        matrix = []
+        for vec in domain.basis:
+            mapped_vec = mapping(vec)
+            coord_vec = codomain.to_coordinate(mapped_vec)
+            matrix.append(coord_vec)
+        return sp.Matrix(matrix).T
 
     @staticmethod
-    def _from_matrix(matrix):
-        pass
+    def _from_matrix(domain, codomain, matrix):
+        matrix = sp.Matrix(matrix)
+        to_coord = domain.to_coordinate
+        from_coord = codomain.from_coordinate
+        return lambda vec: from_coord(matrix @ to_coord(vec))
 
     @property
     def domain(self):
@@ -76,16 +87,24 @@ class LinearMap:  # implement matrix representation
             return self.__repr__()
 
     def __eq__(self, map2):
-        return vars(self) == vars(map2)
+        return (self.domain == map2.domain and self.codomain == map2.codomain and 
+                self.matrix == map2.matrix)
     
     def __add__(self, map2):
         mapping = lambda vec: self.mapping(vec) + map2.mapping(vec)
         matrix = self.matrix + map2.matrix
         return LinearMap(self.domain, self.codomain, mapping, matrix)
     
+    def __mul__(self, scalar):
+        if not isinstance(scalar, self.field):
+            raise TypeError('Scalar must be an element of the vector space field.')
+        mapping = lambda vec: self.mapping(vec) * scalar
+        matrix = self.matrix * scalar
+        return LinearMap(self.domain, self.codomain, mapping, matrix)
+    
     def __rmul__(self, scalar):
         if not isinstance(scalar, self.field):
-            raise TypeError()
+            raise TypeError('Scalar must be an element of the vector space field.')
         mapping = lambda vec: scalar * self.mapping(vec)
         matrix = scalar * self.matrix
         return LinearMap(self.domain, self.codomain, mapping, matrix)
@@ -106,13 +125,30 @@ class LinearMap:  # implement matrix representation
         else:
             name = None
         return LinearMap(map2.domain, self.codomain, mapping, matrix, name)
+    
+    def nullspace(self):
+        pass
+    
+    def range(self):
+        pass
 
-
+# is_injective, is_surjective
 class Isomorphism(LinearMap):
+    def __init__(self, domain, codomain, mapping=None, matrix=None, name=None):
+        super().__init__(domain, codomain, mapping, matrix, name)
+
+        if not is_invertible(self.matrix):
+            raise IsomorphismError('Linear map is not invertible.')
+
     def __repr__(self):
         return (f'Isomorphism(domain={self.domain}, codomain={self.codomain}, '
                 f'mapping={self.mapping.__name__})')
+    
+    def inverse(self):
+        matrix = self.matrix.inv()
+        return Isomorphism(self.codomain, self.domain, matrix=matrix)
+
 
 class IdentityMap(Isomorphism):
-    def __init__(self, vectors):
-        super().__init__(vectors, vectors, lambda vec: vec)
+    def __init__(self, vectorspace, name=None):
+        super().__init__(vectorspace, vectorspace, lambda vec: vec, name=name)
