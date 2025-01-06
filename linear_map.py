@@ -1,3 +1,5 @@
+import sympy as sp
+
 from math_set import *
 from vector_space import VectorSpace
 from utils import of_arity
@@ -11,24 +13,36 @@ class IsomorphismError(Exception):
         super().__init__(msg)
 
 class LinearMap:  # implement matrix representation
-    def __init__(self, domain, codomain, mapping, name=None):
+    def __init__(self, domain, codomain, mapping=None, matrix=None, name=None):
         if not isinstance(domain, VectorSpace):
             raise TypeError('The domain must be a VectorSpace.')
         if not isinstance(codomain, VectorSpace):
             raise TypeError('The codomain must be a VectorSpace.')
-        if not of_arity(mapping, 1):
-            raise TypeError('The mapping must be able to accept a single '
-                            'positional argument.')
+        if mapping is None and matrix is None:
+            raise LinearMapError('Either a matrix or mapping must be provided.')
         if domain.field is not codomain.field:
             raise LinearMapError()
-
+        
+        if mapping is None:
+            mapping = LinearMap._from_matrix(matrix)
+        if matrix is None:
+            matrix = LinearMap._to_matrix(mapping)
+        else:
+            matrix = sp.Matrix(matrix)
+        
         self._domain = domain
         self._codomain = codomain
         self._mapping = mapping
-        if name:
+        self._matrix = matrix
+        if name is not None:
             self.__name__ = name
 
-    def _as_matrix():
+    @staticmethod
+    def _to_matrix(mapping):
+        pass
+
+    @staticmethod
+    def _from_matrix(matrix):
         pass
 
     @property
@@ -42,6 +56,14 @@ class LinearMap:  # implement matrix representation
     @property
     def mapping(self):
         return self._mapping
+    
+    @property
+    def matrix(self):
+        return self._matrix
+    
+    @property
+    def field(self):
+        return self.domain.field
     
     def __repr__(self):
         return (f'LinearMap(domain={self.domain}, codomain={self.codomain}, '
@@ -58,10 +80,15 @@ class LinearMap:  # implement matrix representation
     
     def __add__(self, map2):
         mapping = lambda vec: self.mapping(vec) + map2.mapping(vec)
-        return LinearMap(self.domain, self.codomain, mapping)
+        matrix = self.matrix + map2.matrix
+        return LinearMap(self.domain, self.codomain, mapping, matrix)
     
     def __rmul__(self, scalar):
-        pass
+        if not isinstance(scalar, self.field):
+            raise TypeError()
+        mapping = lambda vec: scalar * self.mapping(vec)
+        matrix = scalar * self.matrix
+        return LinearMap(self.domain, self.codomain, mapping, matrix)
     
     def __call__(self, vec):
         if vec not in self.domain:
@@ -73,11 +100,12 @@ class LinearMap:  # implement matrix representation
             raise LinearMapError('The linear maps are not compatible.')
         
         mapping = lambda vec: self.mapping(map2.mapping(vec))
+        matrix = self.matrix @ map2.matrix  # check
         if hasattr(self, '__name__') and hasattr(map2, '__name__'):
             name = f'{self.__name__} o {map2.__name__}'
         else:
             name = None
-        return LinearMap(map2.domain, self.codomain, mapping, name)
+        return LinearMap(map2.domain, self.codomain, mapping, matrix, name)
 
 
 class Isomorphism(LinearMap):
