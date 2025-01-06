@@ -406,9 +406,7 @@ class VectorSpace:
             raise TypeError()
         if vs1.field is not vs2.field:
             raise VectorSpaceError()
-        vs = cls.matrix(vs1.field, (vs2.dim, vs1.dim))
-        vs.vectors.__name__ = f'hom'  # rework
-        return vs
+        return cls.matrix(vs1.field, (vs2.dim, vs1.dim))
 
 
 def is_vectorspace(n, constraints):
@@ -456,12 +454,3 @@ def left_nullspace(matrix, field=Real):
 # Aliases
 image = columnspace
 kernel = nullspace
-
-
-# to_iso = lambda vec: [sp.log(i) for i in vec]
-# from_iso = lambda vec: [sp.exp(i) for i in vec]
-
-# vectors = Set(sp.Poly, lambda poly: sp.degree(poly) <= 3)
-# vs1 = VectorSpace.poly(field=Real, max_degree=3, constraints=[])
-# vs2 = VectorSpace.poly(field=Real, max_degree=3, constraints=['v0==0'])
-# x = sp.symbols('x', real=True)
