@@ -1,23 +1,21 @@
-from numbers import Real
-
 import sympy as sp
 from sympy.solvers.solveset import NonlinearError
 
+from alapy.parser import sympify, split_constraint, ConstraintError
+from alapy.utils import symbols, is_empty
+
 def additive_id(field, n, add):
     # Initialize an arbitrary vector (xs) and the identity (ys)
-    if field is Real:
-        xs, ys = sp.symbols((f'x:{n}', f'y:{n}'), real=True)
-    else:
-        xs, ys = sp.symbols((f'x:{n}', f'y:{n}'))
-
+    xs, ys = symbols((f'x:{n}', f'y:{n}'), field=field)
+    xs, ys = list(xs), list(ys)
+    
     # Equations that must be satisfied
-    exprs = [sp.expand(lhs - rhs) for lhs, rhs in zip(add(list(xs), list(ys)), xs)]
+    exprs = [sp.expand(lhs - rhs) for lhs, rhs in zip(add(xs, ys), xs)]
 
     try:
         ids = sp.linsolve(exprs, *ys)
     except NonlinearError:
         ids = sp.nonlinsolve(exprs, ys)  # check output type
-
     if isinstance(ids, sp.ConditionSet):
         return []
 
@@ -28,21 +26,18 @@ def additive_id(field, n, add):
             valid_ids.append(list(id))
     return valid_ids
 
-def additive_inv(field, n, add, additive_id, lambdify=False):
+def additive_inv(field, n, add, add_id, lambdify=False):
     # Initialize an arbitrary vector (xs) and the inverse (ys)
-    if field is Real:
-        xs, ys = sp.symbols((f'x:{n}', f'y:{n}'), real=True)
-    else:
-        xs, ys = sp.symbols((f'x:{n}', f'y:{n}'))
+    xs, ys = symbols((f'x:{n}', f'y:{n}'), field=field)
+    xs, ys = list(xs), list(ys)
 
     # Equations that must be satisfied
-    exprs = [sp.expand(lhs - rhs) for lhs, rhs in zip(add(list(xs), list(ys)), additive_id)]
+    exprs = [sp.expand(lhs - rhs) for lhs, rhs in zip(add(xs, ys), add_id)]
 
     try:
         inverses = sp.linsolve(exprs, *ys)
     except NonlinearError:
         inverses = sp.nonlinsolve(exprs, ys)
-
     if isinstance(inverses, sp.ConditionSet):
         return []
     if not lambdify:
@@ -56,20 +51,16 @@ def additive_inv(field, n, add, additive_id, lambdify=False):
         for coord in inv:
             valid_inv.append(coord.subs(sub_zero))
         valid_inverses.append(sp.lambdify([list(xs)], valid_inv))
-
     return valid_inverses
 
 def multiplicative_id(field, n, mul):
     # Initialize an arbitrary vector (xs) and scalar (c)
-    if field is Real:
-        xs, c = sp.symbols((f'x:{n}', 'c'), real=True)
-    else:
-        xs, c = sp.symbols((f'x:{n}', 'c'))
+    xs, c = symbols((f'x:{n}', 'c'), field=field)
+    xs = list(xs)
 
     # Equations that must be satisfied
-    exprs = [lhs - rhs for lhs, rhs in zip(mul(c, list(xs)), xs)]
+    exprs = [lhs - rhs for lhs, rhs in zip(mul(c, xs), xs)]
     ids = sp.nonlinsolve(exprs, [c])  # check output type
-
     if isinstance(ids, sp.ConditionSet):
         return []
     
@@ -82,12 +73,9 @@ def multiplicative_id(field, n, mul):
 
 def is_commutative(field, n, operation):
     # Initialize two arbitrary vectors (xs and ys)
-    if field is Real:
-        xs, ys = sp.symbols((f'x:{n}', f'y:{n}'), real=True)
-    else:
-        xs, ys = sp.symbols((f'x:{n}', f'y:{n}'))
-
+    xs, ys = symbols((f'x:{n}', f'y:{n}'), field=field)
     xs, ys = list(xs), list(ys)
+
     for lhs, rhs in zip(operation(xs, ys), operation(ys, xs)):
         if not sp.sympify(lhs).equals(sp.sympify(rhs)):
             return False
@@ -95,15 +83,11 @@ def is_commutative(field, n, operation):
 
 def is_associative(field, n, operation):
     # Initialize three arbitrary vectors (xs, ys, and zs)
-    if field is Real:
-        xs, ys, zs = sp.symbols((f'x:{n}', f'y:{n}', f'z:{n}'), real=True)
-    else:
-        xs, ys, zs = sp.symbols((f'x:{n}', f'y:{n}', f'z:{n}'))
-
+    xs, ys, zs = symbols((f'x:{n}', f'y:{n}', f'z:{n}'), field=field)
     xs, ys, zs = list(xs), list(ys), list(zs)
+
     lhs_vec = operation(xs, operation(ys, zs))
     rhs_vec = operation(operation(xs, ys), zs)
-    
     for lhs, rhs in zip(lhs_vec, rhs_vec):
         if not sp.sympify(lhs).equals(sp.sympify(rhs)):
             return False
@@ -166,10 +150,7 @@ def standard_isomorphism(field, n, add, mul):
     # return separate functions for each coordinate
 
     f = sp.Function('f')
-    if field is Real:
-        xs, ys = sp.symbols((f'x:{n}', f'y:{n}'), real=True)
-    else:
-        xs, ys = sp.symbols((f'x:{n}', f'y:{n}'))
+    xs, ys = symbols((f'x:{n}', f'y:{n}'), field=field)
 
     init_set = False
     for i in range(len(add)):
@@ -195,6 +176,65 @@ def standard_isomorphism(field, n, add, mul):
 
 def map_constraints(mapping, constraints):
     return constraints
+
+def to_ns_matrix(n, lin_constraints):
+    '''
+    Returns a sympy matrix with the linear constraints as rows.
+    '''
+    # Return zero matrix if there are no constraints
+    if not lin_constraints:
+        return sp.zeros(1, n)
+
+    exprs = set()
+    for constraint in lin_constraints:
+        exprs.update(split_constraint(constraint))
+
+    rows, allowed_vars = [], sp.symbols(f'v:{n}')
+    for expr in exprs:
+        row = [0] * n
+        try:
+            expr = sympify(expr, allowed_vars)
+            expr = expr.lhs - expr.rhs  # convert equation to an expression
+        except Exception as e:
+            raise ConstraintError('Invalid constraint format.') from e
+
+        for var in expr.free_symbols:
+            var_idx = int(var.name.lstrip('v'))
+            var_coeff = expr.coeff(var, 1)
+            row[var_idx] = var_coeff
+        rows.append(row)
+    
+    matrix = sp.Matrix(rows)
+    ns_matrix, _ = matrix.rref()
+    return ns_matrix
+
+def ns_to_rs(matrix):
+    matrix = sp.Matrix(matrix)
+    if is_empty(matrix):
+        return matrix
+    
+    ns_basis = matrix.nullspace()
+    if not ns_basis:
+        return sp.zeros(1, matrix.cols)
+    
+    rs_matrix, _ = sp.Matrix([vec.T for vec in ns_basis]).rref()
+    return rs_matrix
+
+def rs_to_ns(matrix):
+    matrix = sp.Matrix(matrix)
+    if is_empty(matrix):
+        return matrix
+    
+    rs_basis = matrix.rowspace()
+    if not rs_basis:
+        return sp.eye(matrix.cols)
+    
+    ns_basis = sp.Matrix(rs_basis).nullspace()
+    if not ns_basis:
+        return sp.zeros(1, matrix.cols)
+
+    ns_matrix, _ = sp.Matrix([vec.T for vec in ns_basis]).rref()
+    return ns_matrix
 
 
 # Need to account for nested functions using while loop

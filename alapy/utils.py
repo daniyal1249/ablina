@@ -2,6 +2,12 @@ from numbers import Real, Complex
 import inspect
 import sympy as sp
 
+def symbols(names, field=Complex, **kwargs):
+    if field is Real:
+        return sp.symbols(names, real=True, **kwargs)
+    else:
+        return sp.symbols(names, **kwargs)
+
 def is_real(expr):
     '''
     Returns True if the expression is Real, None if its indeterminate, 
@@ -20,33 +26,21 @@ def is_complex(expr):
         return expr.is_complex  # sympy's is_complex attribute
     return isinstance(expr, Complex)
 
-def ns_to_rs(matrix):
-    matrix = sp.Matrix(matrix)
-    if is_empty(matrix):
-        return matrix
-    
-    ns_basis = matrix.nullspace()
-    if not ns_basis:
-        return sp.zeros(1, matrix.cols)
-    
-    rs_matrix, _ = sp.Matrix([vec.T for vec in ns_basis]).rref()
-    return rs_matrix
+def is_linear(expr, vars=None):
+    '''
+    Determines if an equation or expression is linear with respect to the 
+    variables in vars. If vars is None, all variables in expr are checked.
+    '''
+    if vars is None:
+        vars = expr.free_symbols
 
-def rs_to_ns(matrix):
-    matrix = sp.Matrix(matrix)
-    if is_empty(matrix):
-        return matrix
-    
-    rs_basis = matrix.rowspace()
-    if not rs_basis:
-        return sp.eye(matrix.cols)
-    
-    ns_basis = sp.Matrix(rs_basis).nullspace()
-    if not ns_basis:
-        return sp.zeros(1, matrix.cols)
-
-    ns_matrix, _ = sp.Matrix([vec.T for vec in ns_basis]).rref()
-    return ns_matrix
+    # Convert an equation into an expression
+    if isinstance(expr, sp.Eq):
+        expr = expr.lhs - expr.rhs
+    try:
+        return all(sp.degree(expr, var) == 1 for var in vars)
+    except sp.PolynomialError:
+        return False  # Return false if not a polynomial
 
 def is_empty(matrix):
     '''
