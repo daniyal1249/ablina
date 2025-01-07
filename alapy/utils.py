@@ -60,12 +60,15 @@ def is_invertible(matrix):
     matrix = sp.Matrix(matrix)
     return matrix.is_square and matrix.det() != 0
 
-def rref(matrix):
+def rref(matrix, remove=False):
     '''
-    Computes the rref of the matrix and removes all zero rows.
+    Returns the rref of the matrix. Removes all zero rows if remove is True.
     '''
     matrix = sp.Matrix(matrix)
     rref, _ = matrix.rref()
+    
+    if not remove:
+        return rref
     for i in range(rref.rows - 1, -1, -1):
         if any(rref.row(i)):
             break

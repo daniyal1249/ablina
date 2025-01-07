@@ -43,14 +43,14 @@ def additive_inv(field, n, add, add_id, lambdify=False):
     if not lambdify:
         return [list(inv) for inv in inverses]
 
-    # Substitute zero for all parameters if a parametric solution is given
+    # Substitute zero for all params if a parametric solution is given
     valid_inverses = []
     sub_zero = {y: 0 for y in ys}
     for inv in inverses:
         valid_inv = []
         for coord in inv:
             valid_inv.append(coord.subs(sub_zero))
-        valid_inverses.append(sp.lambdify([list(xs)], valid_inv))
+        valid_inverses.append(sp.lambdify([xs], valid_inv))
     return valid_inverses
 
 def multiplicative_id(field, n, mul):
@@ -117,7 +117,7 @@ def solve_func_eq(equation, func):
         invalid_vars = subbed_eq.free_symbols - {_a, _b}
         try:
             sols = sp.solve(subbed_eq, [_a, _b], rational=True, dict=True)
-            sols = [dict()] if not sols else sols
+            sols = sols if sols else [dict()]
         except Exception:
             continue
 
@@ -137,7 +137,7 @@ def solve_func_eq(equation, func):
 
 def is_tautology(equation):
     '''
-    Returns True if the equation always holds, otherwise False
+    Returns True if the equation always holds, otherwise False.
     '''
     eq = sp.simplify(equation)
     if isinstance(eq, sp.Eq):
@@ -181,15 +181,12 @@ def to_ns_matrix(n, lin_constraints):
     '''
     Returns a sympy matrix with the linear constraints as rows.
     '''
-    # Return empty matrix if there are no constraints
-    if not lin_constraints:
-        return sp.zeros(0, n)
-
     exprs = set()
     for constraint in lin_constraints:
         exprs.update(split_constraint(constraint))
 
-    matrix, allowed_vars = [], sp.symbols(f'v:{n}')
+    matrix = []
+    allowed_vars = sp.symbols(f'v:{n}')
     for expr in exprs:
         row = [0] * n
         try:
@@ -204,34 +201,17 @@ def to_ns_matrix(n, lin_constraints):
             row[var_idx] = var_coeff
         matrix.append(row)
     
-    ns_matrix = rref(matrix)
+    ns_matrix = rref(matrix, remove=True) if matrix else sp.zeros(0, n)
     return ns_matrix
 
-def ns_to_rs(matrix):
+def to_other_matrix(matrix):
     if matrix.rows == 0:
         return sp.eye(matrix.cols)
     
     ns_basis = matrix.nullspace()
     if not ns_basis:
         return sp.zeros(0, matrix.cols)
-    
-    rs_matrix = rref([vec.T for vec in ns_basis])
-    return rs_matrix
-
-def rs_to_ns(matrix):
-    if matrix.rows == 0:
-        return sp.eye(matrix.cols)
-    
-    rs_basis = matrix.rowspace()
-    if not rs_basis:
-        return sp.eye(matrix.cols)
-    
-    ns_basis = sp.Matrix(rs_basis).nullspace()
-    if not ns_basis:
-        return sp.zeros(0, matrix.cols)
-
-    ns_matrix = rref([vec.T for vec in ns_basis])
-    return ns_matrix
+    return rref([vec.T for vec in ns_basis], remove=True)
 
 
 # Need to account for nested functions using while loop
