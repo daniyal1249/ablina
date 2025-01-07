@@ -1,7 +1,7 @@
 from numbers import Real
 
 import sympy as sp
-from alapy.utils import of_arity
+from alapy.utils import of_arity, symbols
 
 class OperationError(Exception):
     def __init__(self, msg=''):
@@ -45,12 +45,9 @@ class VectorAdd(Operation):
             return True
         try:
             # Initialize two arbitrary vectors (xs and ys)
-            if self.field is Real:
-                xs, ys = sp.symbols((f'x:{self.n}', f'y:{self.n}'), real=True)
-            else:
-                xs, ys = sp.symbols((f'x:{self.n}', f'y:{self.n}'))
-
+            xs, ys = symbols((f'x:{self.n}', f'y:{self.n}'), field=self.field)
             xs, ys = list(xs), list(ys)
+
             for lhs, rhs in zip(self.func(xs, ys), add2.func(xs, ys)):
                 if not sp.sympify(lhs).equals(sp.sympify(rhs)):
                     return False
@@ -78,12 +75,9 @@ class ScalarMul(Operation):
             return True
         try:
             # Initialize an arbitrary vector (xs) and scalar (c)
-            if self.field is Real:
-                xs, c = sp.symbols((f'x:{self.n}', 'c'), real=True)
-            else:
-                xs, c = sp.symbols((f'x:{self.n}', 'c'))
-
+            xs, c = symbols((f'x:{self.n}', 'c'), field=self.field)
             xs = list(xs)
+            
             for lhs, rhs in zip(self.func(c, xs), mul2.func(c, xs)):
                 if not sp.sympify(lhs).equals(sp.sympify(rhs)):
                     return False
