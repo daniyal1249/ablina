@@ -3,6 +3,10 @@ import inspect
 import sympy as sp
 
 def symbols(names, field=Complex, **kwargs):
+    '''
+    Returns sympy symbols with the specified names and field (Real or Complex).
+    Additional constraints can be specified as keyword args.
+    '''
     if field is Real:
         return sp.symbols(names, real=True, **kwargs)
     else:
@@ -33,18 +37,18 @@ def is_linear(expr, vars=None):
     '''
     if vars is None:
         vars = expr.free_symbols
-
     # Convert an equation into an expression
     if isinstance(expr, sp.Eq):
         expr = expr.lhs - expr.rhs
+    
     try:
         return all(sp.degree(expr, var) == 1 for var in vars)
     except sp.PolynomialError:
-        return False  # Return false if not a polynomial
+        return False  # return false if not a polynomial
 
 def is_empty(matrix):
     '''
-    Returns True if the matrix contains no elements otherwise False.
+    Returns True if the matrix contains no elements, otherwise False.
     '''
     matrix = sp.Matrix(matrix)
     return matrix.cols == 0 or matrix.rows == 0
@@ -55,6 +59,18 @@ def is_invertible(matrix):
     '''
     matrix = sp.Matrix(matrix)
     return matrix.is_square and matrix.det() != 0
+
+def rref(matrix):
+    '''
+    Computes the rref of the matrix and removes all zero rows.
+    '''
+    matrix = sp.Matrix(matrix)
+    rref, _ = matrix.rref()
+    for i in range(rref.rows - 1, -1, -1):
+        if any(rref.row(i)):
+            break
+        rref.row_del(i)
+    return rref
 
 def of_arity(func, n):
     '''

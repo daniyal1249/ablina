@@ -2,7 +2,7 @@ import sympy as sp
 from sympy.solvers.solveset import NonlinearError
 
 from alapy.parser import sympify, split_constraint, ConstraintError
-from alapy.utils import symbols, is_empty
+from alapy.utils import symbols, rref
 
 def additive_id(field, n, add):
     # Initialize an arbitrary vector (xs) and the identity (ys)
@@ -181,15 +181,15 @@ def to_ns_matrix(n, lin_constraints):
     '''
     Returns a sympy matrix with the linear constraints as rows.
     '''
-    # Return zero matrix if there are no constraints
+    # Return empty matrix if there are no constraints
     if not lin_constraints:
-        return sp.zeros(1, n)
+        return sp.zeros(0, n)
 
     exprs = set()
     for constraint in lin_constraints:
         exprs.update(split_constraint(constraint))
 
-    rows, allowed_vars = [], sp.symbols(f'v:{n}')
+    matrix, allowed_vars = [], sp.symbols(f'v:{n}')
     for expr in exprs:
         row = [0] * n
         try:
@@ -202,28 +202,25 @@ def to_ns_matrix(n, lin_constraints):
             var_idx = int(var.name.lstrip('v'))
             var_coeff = expr.coeff(var, 1)
             row[var_idx] = var_coeff
-        rows.append(row)
+        matrix.append(row)
     
-    matrix = sp.Matrix(rows)
-    ns_matrix, _ = matrix.rref()
+    ns_matrix = rref(matrix)
     return ns_matrix
 
 def ns_to_rs(matrix):
-    matrix = sp.Matrix(matrix)
-    if is_empty(matrix):
-        return matrix
+    if matrix.rows == 0:
+        return sp.eye(matrix.cols)
     
     ns_basis = matrix.nullspace()
     if not ns_basis:
-        return sp.zeros(1, matrix.cols)
+        return sp.zeros(0, matrix.cols)
     
-    rs_matrix, _ = sp.Matrix([vec.T for vec in ns_basis]).rref()
+    rs_matrix = rref([vec.T for vec in ns_basis])
     return rs_matrix
 
 def rs_to_ns(matrix):
-    matrix = sp.Matrix(matrix)
-    if is_empty(matrix):
-        return matrix
+    if matrix.rows == 0:
+        return sp.eye(matrix.cols)
     
     rs_basis = matrix.rowspace()
     if not rs_basis:
@@ -231,9 +228,9 @@ def rs_to_ns(matrix):
     
     ns_basis = sp.Matrix(rs_basis).nullspace()
     if not ns_basis:
-        return sp.zeros(1, matrix.cols)
+        return sp.zeros(0, matrix.cols)
 
-    ns_matrix, _ = sp.Matrix([vec.T for vec in ns_basis]).rref()
+    ns_matrix = rref([vec.T for vec in ns_basis])
     return ns_matrix
 
 
