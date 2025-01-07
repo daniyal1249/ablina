@@ -46,15 +46,19 @@ class LinearMap:
         for vec in domain.basis:
             mapped_vec = mapping(vec)
             coord_vec = codomain.to_coordinate(mapped_vec)
-            matrix.append(coord_vec)
-        return sp.Matrix(matrix).T
+            matrix.extend(coord_vec)
+        return sp.Matrix(domain.dim, codomain.dim, matrix).T
 
     @staticmethod
     def _from_matrix(domain, codomain, matrix):
         matrix = sp.Matrix(matrix)
-        to_coord = domain.to_coordinate
-        from_coord = codomain.from_coordinate
+        to_coord = lambda vec: sp.Matrix(domain.to_coordinate(vec))
+        from_coord = lambda vec: codomain.from_coordinate(vec.flat())
         return lambda vec: from_coord(matrix @ to_coord(vec))
+
+    @property
+    def field(self):
+        return self.domain.field
 
     @property
     def domain(self):
@@ -73,8 +77,12 @@ class LinearMap:
         return self._matrix
     
     @property
-    def field(self):
-        return self.domain.field
+    def rank(self):
+        return self.matrix.rank()
+    
+    @property
+    def nullity(self):
+        return self.matrix.cols - self.rank
     
     def __repr__(self):
         return (f'LinearMap(domain={self.domain}, codomain={self.codomain}, '
@@ -126,13 +134,23 @@ class LinearMap:
             name = None
         return LinearMap(map2.domain, self.codomain, mapping, matrix, name)
     
-    def nullspace(self):
-        pass
-    
     def range(self):
         pass
 
-# is_injective, is_surjective
+    def nullspace(self):
+        pass
+
+    def is_injective(self):
+        return self.matrix.cols == self.rank
+
+    def is_surjective(self):
+        return self.matrix.rows == self.rank
+
+    # Aliases
+    image = range
+    kernel = nullspace
+
+
 class Isomorphism(LinearMap):
     def __init__(self, domain, codomain, mapping=None, matrix=None, name=None):
         super().__init__(domain, codomain, mapping, matrix, name)
@@ -152,3 +170,9 @@ class Isomorphism(LinearMap):
 class IdentityMap(Isomorphism):
     def __init__(self, vectorspace, name=None):
         super().__init__(vectorspace, vectorspace, lambda vec: vec, name=name)
+
+# from numbers import Real
+# vs1 = VectorSpace.fn(Real, 2, constraints=['v0==v1==0'])
+# vs2 = VectorSpace.fn(Real, 3, constraints=[])
+# x = LinearMap(vs1, vs2, lambda x: x + [0])
+# print((x.matrix @ sp.Matrix([])).rows)
