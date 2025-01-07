@@ -48,11 +48,11 @@ class _StandardFn:
             if rs_mat is None:
                 ns_mat = to_ns_matrix(n, constraints)
             else:
-                ns_mat = rs_to_ns(rs_mat)
+                ns_mat = to_other_matrix(rs_mat)
         
         # Initialize rs_matrix
         if rs_mat is None:
-            rs_mat = ns_to_rs(ns_mat)
+            rs_mat = to_other_matrix(ns_mat)
         return ns_mat, rs_mat
 
     @property
@@ -107,7 +107,7 @@ class _StandardFn:
         if basis is None:
             basis = self._rs_matrix.tolist()
         elif not self._is_basis(*basis):
-            raise ValueError('The provided vectors do not form a basis.')
+            raise VectorSpaceError('The provided vectors do not form a basis.')
         if not basis:
             return []
         
@@ -119,7 +119,7 @@ class _StandardFn:
         if basis is None:
             basis = self._rs_matrix.tolist()
         elif not self._is_basis(*basis):
-            raise ValueError('The provided vectors do not form a basis.')
+            raise VectorSpaceError('The provided vectors do not form a basis.')
         try:
             matrix, coord_vec = sp.Matrix(basis).T, sp.Matrix(vector)
             vec = matrix @ coord_vec
@@ -183,7 +183,7 @@ class Fn(_StandardFn):
             add = lambda vec1, vec2: [i + j for i, j in zip(vec1, vec2)]
         if mul is None:
             mul = lambda scalar, vec: [scalar * i for i in vec]
-        if not iso:
+        if iso is None:
             iso = standard_isomorphism(field, n, add, mul)
 
         return add, mul, iso
@@ -225,8 +225,8 @@ class Fn(_StandardFn):
                 raise TypeError('Basis vectors must be elements of the vector space.')
             basis = [self._to_standard(vec) for vec in basis]
         
-        vec = self._to_standard(vector)
-        return super().to_coordinate(vec, basis)
+        standard_vec = self._to_standard(vector)
+        return super().to_coordinate(standard_vec, basis)
     
     def from_coordinate(self, vector, basis=None):
         if basis is not None:
@@ -234,8 +234,8 @@ class Fn(_StandardFn):
                 raise TypeError('Basis vectors must be elements of the vector space.')
             basis = [self._to_standard(vec) for vec in basis]
         
-        vec = super().from_coordinate(vector, basis)
-        return self._from_standard(vec)
+        standard_vec = super().from_coordinate(vector, basis)
+        return self._from_standard(standard_vec)
     
     def complement(self):
         constraints = [f'complement({', '.join(self.constraints)})']
@@ -248,7 +248,7 @@ class Fn(_StandardFn):
             raise VectorSpaceError('Vector spaces must share the same ambient space.')
         
         rs_matrix = sp.Matrix.vstack(self._rs_matrix, vs2._rs_matrix)
-        rs_matrix = rref(rs_matrix)
+        rs_matrix = rref(rs_matrix, remove=True)
         constraints = self.constraints  # rework
         return Fn(self.field, self.n, constraints, self.add, self.mul, 
                   isomorphism=(self._to_standard, self._from_standard), 
@@ -259,7 +259,7 @@ class Fn(_StandardFn):
             raise VectorSpaceError('Vector spaces must share the same ambient space.')
         
         ns_matrix = sp.Matrix.vstack(self._ns_matrix, vs2._ns_matrix)
-        ns_matrix = rref(ns_matrix)
+        ns_matrix = rref(ns_matrix, remove=True)
         constraints = self.constraints + vs2.constraints
         return Fn(self.field, self.n, constraints, self.add, self.mul, 
                   isomorphism=(self._to_standard, self._from_standard), 
@@ -268,15 +268,16 @@ class Fn(_StandardFn):
     def span(self, *vectors, basis=None):
         if basis is not None:
             if not self.is_independent(*basis):
-                raise ValueError('The basis vectors must be linearly independent.')
+                raise VectorSpaceError('The basis vectors must be linearly '
+                                       'independent.')
             vectors = basis
         elif not all(vec in self for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
         
         standard_vecs = [self._to_standard(vec) for vec in vectors]
         if basis is None:
-            standard_vecs = rref(standard_vecs)
-        constraints = [f'span({vectors})']  # rework
+            standard_vecs = rref(standard_vecs, remove=True)
+        constraints = [f'span({', '.join(str(vec) for vec in vectors)})']
         return Fn(self.field, self.n, constraints, self.add, self.mul, 
                   isomorphism=(self._to_standard, self._from_standard), 
                   rs_matrix=standard_vecs)
@@ -290,8 +291,8 @@ class Fn(_StandardFn):
     def is_independent(self, *vectors):
         if not all(vec in self for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
-        vectors = [self._to_standard(vec) for vec in vectors]
-        return super().is_independent(*vectors)
+        standard_vecs = [self._to_standard(vec) for vec in vectors]
+        return super().is_independent(*standard_vecs)
 
 
 class VectorSpace:
@@ -383,8 +384,8 @@ class VectorSpace:
         return self.intersection(vs2)
     
     def vector(self, std=1, arbitrary=False):
-        fn_vector = self._fn.vector(std, arbitrary)
-        return self._from_fn(fn_vector)
+        fn_vec = self._fn.vector(std, arbitrary)
+        return self._from_fn(fn_vec)
     
     def to_coordinate(self, vector, basis=None):
         if vector not in self.vectors:
@@ -394,8 +395,8 @@ class VectorSpace:
                 raise TypeError('Basis vectors must be elements of the vector space.')
             basis = [self._to_fn(vec) for vec in basis]
 
-        vec = self._to_fn(vector)
-        return self._fn.to_coordinate(vec, basis)
+        fn_vec = self._to_fn(vector)
+        return self._fn.to_coordinate(fn_vec, basis)
     
     def from_coordinate(self, vector, basis=None):
         if basis is not None:
@@ -403,8 +404,8 @@ class VectorSpace:
                 raise TypeError('Basis vectors must be elements of the vector space.')
             basis = [self._to_fn(vec) for vec in basis]
         
-        vec = self._fn.from_coordinate(vector, basis)
-        return self._from_fn(vec)
+        fn_vec = self._fn.from_coordinate(vector, basis)
+        return self._from_fn(fn_vec)
     
     def complement(self):
         fn = self._fn.complement()
@@ -428,11 +429,11 @@ class VectorSpace:
         if not all(vec in self.vectors for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
         
-        fn_vectors = [self._to_fn(vec) for vec in vectors]
+        fn_vecs = [self._to_fn(vec) for vec in vectors]
         if basis is None:
-            fn = self._fn.span(*fn_vectors)
+            fn = self._fn.span(*fn_vecs)
         else:
-            fn = self._fn.span(basis=fn_vectors)
+            fn = self._fn.span(basis=fn_vecs)
         return VectorSpace(self.vectors, fn, (self._to_fn, self._from_fn))
     
     def is_subspace(self, vs2):
@@ -452,8 +453,8 @@ class VectorSpace:
     def is_independent(self, *vectors):
         if not all(vec in self.vectors for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
-        fn_vectors = [self._to_fn(vec) for vec in vectors]
-        return self._fn.is_independent(*fn_vectors)
+        fn_vecs = [self._to_fn(vec) for vec in vectors]
+        return self._fn.is_independent(*fn_vecs)
     
     @classmethod
     def fn(cls, field, n, constraints=None, basis=None, add=None, mul=None, 
@@ -468,10 +469,10 @@ class VectorSpace:
         fn = Fn(field, n, constraints, add, mul, ns_matrix=ns_matrix, 
                 rs_matrix=rs_matrix)
 
-        vs = cls(vectors, fn, lambda vec: vec)
+        vectorspace = cls(vectors, fn, lambda vec: vec)
         if basis is not None:
-            vs = vs.span(basis=basis)
-        return vs
+            vectorspace = vectorspace.span(basis=basis)
+        return vectorspace
 
     @classmethod
     def matrix(cls, field, shape, constraints=None, basis=None, add=None, 
@@ -487,10 +488,10 @@ class VectorSpace:
         vectors = Set(sp.Matrix, in_matrix, name=name)
         fn = Fn(field, sp.prod(shape), constraints, add, mul)
 
-        vs = cls(vectors, fn, (to_fn, from_fn))
+        vectorspace = cls(vectors, fn, (to_fn, from_fn))
         if basis is not None:
-            vs = vs.span(basis=basis)
-        return vs
+            vectorspace = vectorspace.span(basis=basis)
+        return vectorspace
 
     @classmethod
     def poly(cls, field, max_degree, constraints=None, basis=None, add=None, 
@@ -509,10 +510,10 @@ class VectorSpace:
         vectors = Set(sp.Poly, in_poly, name=name)
         fn = Fn(field, max_degree + 1, constraints, add, mul)
 
-        vs = cls(vectors, fn, (to_fn, from_fn))
+        vectorspace = cls(vectors, fn, (to_fn, from_fn))
         if basis is not None:
-            vs = vs.span(basis=basis)
-        return vs
+            vectorspace = vectorspace.span(basis=basis)
+        return vectorspace
 
     @classmethod
     def hom(cls, vs1, vs2):
@@ -545,19 +546,19 @@ def is_vectorspace(n, constraints):
 
 def columnspace(matrix, field=Real):
     constraints = [f'col({matrix})']
-    matrix = rref(matrix)
+    matrix = rref(matrix, remove=True)
     n = matrix.rows
     return VectorSpace.fn(field, n, constraints, rs_matrix=matrix.T)
 
 def rowspace(matrix, field=Real):
     constraints = [f'row({matrix})']
-    matrix = rref(matrix)
+    matrix = rref(matrix, remove=True)
     n = matrix.cols
     return VectorSpace.fn(field, n, constraints, rs_matrix=matrix)
 
 def nullspace(matrix, field=Real):
     constraints = [f'null({matrix})']
-    matrix = rref(matrix)
+    matrix = rref(matrix, remove=True)
     n = matrix.cols
     return VectorSpace.fn(field, n, constraints, ns_matrix=matrix)
 
