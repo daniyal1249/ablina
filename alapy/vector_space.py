@@ -452,13 +452,8 @@ class VectorSpace:
     @classmethod
     def fn(cls, field, n, constraints=None, basis=None, add=None, mul=None, 
            *, ns_matrix=None, rs_matrix=None):
-        def in_fn(vec):
-            try:
-                return sp.Matrix(vec).shape == (n, 1)
-            except Exception:
-                return False
         
-        vectors = Set(object, in_fn, name=f'F^{n}')
+        vectors = Set(object, name=f'F^{n}')
         fn = Fn(field, n, constraints, add, mul, ns_matrix=ns_matrix, 
                 rs_matrix=rs_matrix)
 
