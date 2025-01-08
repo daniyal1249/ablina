@@ -309,15 +309,12 @@ class VectorSpace:
 
     @staticmethod
     def _check_isomorphism(iso):
-        if (isinstance(iso, tuple) and len(iso) == 2 and 
-            all(of_arity(i, 1) for i in iso)):
-            return iso
-        
-        if of_arity(iso, 1):
-            return (iso, lambda vec: vec)
-        else:
-            raise TypeError('isomorphism must be a callable or a '
-                            '2-tuple of callables.')
+        if isinstance(iso, tuple):
+            if len(iso) == 2 and all(of_arity(i, 1) for i in iso):
+                return iso
+        elif of_arity(iso, 1):
+            return iso, lambda vec: vec
+        raise TypeError('isomorphism must be a callable or a 2-tuple of callables.')
 
     @property
     def vectors(self):
@@ -330,16 +327,16 @@ class VectorSpace:
     @property
     def add(self):
         def add(vec1, vec2):
-            vec1, vec2 = self._to_fn(vec1), self._to_fn(vec2)
-            sum = self._fn.add(vec1, vec2)
+            fn_vec1, fn_vec2 = self._to_fn(vec1), self._to_fn(vec2)
+            sum = self._fn.add(fn_vec1, fn_vec2)
             return self._from_fn(sum)
         return add
     
     @property
     def mul(self):
         def mul(scalar, vec):
-            vec = self._to_fn(vec)
-            prod = self._fn.mul(scalar, vec)
+            fn_vec = self._to_fn(vec)
+            prod = self._fn.mul(scalar, fn_vec)
             return self._from_fn(prod)
         return mul
     
