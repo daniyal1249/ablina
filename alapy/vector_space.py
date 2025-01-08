@@ -315,10 +315,6 @@ class VectorSpace:
         elif of_arity(iso, 1):
             return iso, lambda vec: vec
         raise TypeError('isomorphism must be a callable or a 2-tuple of callables.')
-
-    @property
-    def vectors(self):
-        return self._vectors
     
     @property
     def field(self):
@@ -362,10 +358,10 @@ class VectorSpace:
     
     @property
     def set(self):
-        return Set(self.vectors.cls, lambda vec: vec in self)
+        return Set(self._vectors.cls, lambda vec: vec in self)
     
     def __contains__(self, vec):
-        if vec not in self.vectors:
+        if vec not in self._vectors:
             return False
         return self._to_fn(vec) in self._fn
     
@@ -385,10 +381,10 @@ class VectorSpace:
         return self._from_fn(fn_vec)
     
     def to_coordinate(self, vector, basis=None):
-        if vector not in self.vectors:
+        if vector not in self._vectors:
             raise TypeError('Vector must be an element of the vector space.')
         if basis is not None:
-            if not all(vec in self.vectors for vec in basis):
+            if not all(vec in self._vectors for vec in basis):
                 raise TypeError('Basis vectors must be elements of the vector space.')
             basis = [self._to_fn(vec) for vec in basis]
 
@@ -397,7 +393,7 @@ class VectorSpace:
     
     def from_coordinate(self, vector, basis=None):
         if basis is not None:
-            if not all(vec in self.vectors for vec in basis):
+            if not all(vec in self._vectors for vec in basis):
                 raise TypeError('Basis vectors must be elements of the vector space.')
             basis = [self._to_fn(vec) for vec in basis]
         
@@ -406,24 +402,24 @@ class VectorSpace:
     
     def complement(self):
         fn = self._fn.complement()
-        return VectorSpace(self.vectors, fn, (self._to_fn, self._from_fn))
+        return VectorSpace(self._vectors, fn, (self._to_fn, self._from_fn))
     
     def sum(self, vs2):
         if not self.share_ambient_space(vs2):
             raise VectorSpaceError('Vector spaces must share the same ambient space.')
         fn = self._fn.sum(vs2._fn)
-        return VectorSpace(self.vectors, fn, (self._to_fn, self._from_fn))
+        return VectorSpace(self._vectors, fn, (self._to_fn, self._from_fn))
     
     def intersection(self, vs2):
         if not self.share_ambient_space(vs2):
             raise VectorSpaceError('Vector spaces must share the same ambient space.')
         fn = self._fn.intersection(vs2._fn)
-        return VectorSpace(self.vectors, fn, (self._to_fn, self._from_fn))
+        return VectorSpace(self._vectors, fn, (self._to_fn, self._from_fn))
     
     def span(self, *vectors, basis=None):
         if basis is not None:
             vectors = basis
-        if not all(vec in self.vectors for vec in vectors):
+        if not all(vec in self._vectors for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
         
         fn_vecs = [self._to_fn(vec) for vec in vectors]
@@ -431,7 +427,7 @@ class VectorSpace:
             fn = self._fn.span(*fn_vecs)
         else:
             fn = self._fn.span(basis=fn_vecs)
-        return VectorSpace(self.vectors, fn, (self._to_fn, self._from_fn))
+        return VectorSpace(self._vectors, fn, (self._to_fn, self._from_fn))
     
     def is_subspace(self, vs2):
         '''
@@ -442,13 +438,13 @@ class VectorSpace:
         return self._fn.is_subspace(vs2._fn)
     
     def share_ambient_space(self, vs2):
-        # if self.vectors is not vs2.vectors:
+        # if self._vectors is not vs2._vectors:
         #     return False
         # return self._fn.share_ambient_space(vs2._fn)
         return True
     
     def is_independent(self, *vectors):
-        if not all(vec in self.vectors for vec in vectors):
+        if not all(vec in self._vectors for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
         fn_vecs = [self._to_fn(vec) for vec in vectors]
         return self._fn.is_independent(*fn_vecs)
