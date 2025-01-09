@@ -37,14 +37,17 @@ def is_linear(expr, vars=None):
     '''
     if vars is None:
         vars = expr.free_symbols
-    # Convert an equation into an expression
-    if isinstance(expr, sp.Eq):
-        expr = expr.lhs - expr.rhs
-    
     try:
-        return all(sp.degree(expr, var) == 1 for var in vars)
+        terms = sp.Poly(expr, *vars).monoms()
     except sp.PolynomialError:
-        return False  # return false if not a polynomial
+        return False  # return False if not a polynomial
+    
+    for exponents in terms:
+        if sum(exponents) not in (0, 1):
+            return False
+        if not all(i in (0, 1) for i in exponents):
+            return False
+    return True
 
 def is_empty(matrix):
     '''
