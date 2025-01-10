@@ -85,3 +85,6 @@ class ScalarMul(Operation):
         except Exception:
             return None
 
+class InnerProduct(Operation):
+    def __init__(self, func):
+        super().__init__(func, 2)
