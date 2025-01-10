@@ -237,8 +237,8 @@ class Fn(_StandardFn):
         standard_vec = super().from_coordinate(vector, basis)
         return self._from_standard(standard_vec)
     
-    def complement(self):
-        constraints = [f'complement({', '.join(self.constraints)})']
+    def ortho_complement(self):
+        constraints = [f'ortho_complement({', '.join(self.constraints)})']
         return Fn(self.field, self.n, constraints, self.add, self.mul, 
                   isomorphism=(self._to_standard, self._from_standard), 
                   rs_matrix=self._ns_matrix)
@@ -400,8 +400,8 @@ class VectorSpace:
         fn_vec = self._fn.from_coordinate(vector, basis)
         return self._from_fn(fn_vec)
     
-    def complement(self):
-        fn = self._fn.complement()
+    def ortho_complement(self):
+        fn = self._fn.ortho_complement()
         return VectorSpace(self._vectors, fn, (self._to_fn, self._from_fn))
     
     def sum(self, vs2):
