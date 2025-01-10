@@ -85,17 +85,17 @@ class LinearMap:
         return self.matrix.cols - self.rank
     
     def __repr__(self):
-        return (f'LinearMap(domain={self.domain}, codomain={self.codomain}, '
-                f'mapping={self.mapping.__name__})')
+        return (f'LinearMap(domain={self.domain}, '
+                f'codomain={self.codomain}, '
+                f'mapping={self.mapping.__name__}, '
+                f'matrix={self.matrix})')
     
     def __str__(self):
-        if hasattr(self, '__name__'):
-            return f'{self.__name__}: {self.domain} -> {self.codomain}'
-        else:
-            return self.__repr__()
+        return self.__repr__()
 
     def __eq__(self, map2):
-        return (self.domain == map2.domain and self.codomain == map2.codomain and 
+        return (self.domain == map2.domain and 
+                self.codomain == map2.codomain and 
                 self.matrix == map2.matrix)
     
     def __add__(self, map2):
@@ -143,6 +143,12 @@ class LinearMap:
         basis = [vec.tolist() for vec in self.matrix.nullspace()]
         basis = [self.domain.from_coordinate(vec) for vec in basis]
         return self.domain.span(*basis)
+    
+    def pseudoinverse(self):
+        raise NotImplementedError
+    
+    def adjoint(self):
+        raise NotImplementedError
 
     def is_injective(self):
         return self.matrix.cols == self.rank
@@ -166,8 +172,7 @@ class Isomorphism(LinearMap):
             raise IsomorphismError('Linear map is not invertible.')
 
     def __repr__(self):
-        return (f'Isomorphism(domain={self.domain}, codomain={self.codomain}, '
-                f'mapping={self.mapping.__name__})')
+        return super().__repr__().replace('LinearMap', 'Isomorphism')
     
     def inverse(self):
         matrix = self.matrix.inv()
@@ -177,10 +182,3 @@ class Isomorphism(LinearMap):
 class IdentityMap(Isomorphism):
     def __init__(self, vectorspace, name=None):
         super().__init__(vectorspace, vectorspace, lambda vec: vec, name=name)
-
-# from numbers import Real
-# vs1 = VectorSpace.fn(Real, 3, constraints=[])
-# vs2 = VectorSpace.fn(Real, 3, constraints=[])
-# x = LinearMap(vs1, vs2, lambda x: [2*x[0], 2*x[1], 2*x[2]])
-# print(x.image().vector(arbitrary=True))
-# print(x.is_injective())
