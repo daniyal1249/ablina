@@ -76,13 +76,12 @@ class _StandardFn:
         return len(self.basis)
     
     def __contains__(self, vec):
-        try:
-            if self.field is Real:
-                if not all(is_real(coord) for coord in vec):
-                    return False
-            elif not all(is_complex(coord) for coord in vec):
+        if self.field is Real:
+            if not all(is_real(coord) for coord in vec):
                 return False
-            
+        elif not all(is_complex(coord) for coord in vec):
+            return False
+        try:
             # Check if vec satisfies vector space constraints
             vec = sp.Matrix(vec)
             return bool((self._ns_matrix @ vec).is_zero_matrix)
@@ -152,7 +151,7 @@ class _StandardFn:
         return True
 
     def share_ambient_space(self, vs2):
-        if type(self) is not type(vs2):
+        if type(vs2) is not type(self):
             return False
         return self.field is vs2.field and self.n == vs2.n
 
@@ -248,68 +247,49 @@ class Fn(_StandardFn):
         return self._from_standard(standard_vec)
     
     def to_coordinate(self, vector, basis=None):
-        if vector not in self:
-            raise TypeError('Vector must be an element of the vector space.')
         if basis is not None:
-            if not all(vec in self for vec in basis):
-                raise TypeError('Basis vectors must be elements of the vector space.')
             basis = [self._to_standard(vec) for vec in basis]
-        
         standard_vec = self._to_standard(vector)
         return super().to_coordinate(standard_vec, basis)
     
     def from_coordinate(self, vector, basis=None):
         if basis is not None:
-            if not all(vec in self for vec in basis):
-                raise TypeError('Basis vectors must be elements of the vector space.')
             basis = [self._to_standard(vec) for vec in basis]
-        
         standard_vec = super().from_coordinate(vector, basis)
         return self._from_standard(standard_vec)
     
     def is_independent(self, *vectors):
-        if not all(vec in self for vec in vectors):
-            raise TypeError('Vectors must be elements of the vector space.')
         standard_vecs = [self._to_standard(vec) for vec in vectors]
         return super().is_independent(*standard_vecs)
 
     # Methods relating to vector spaces
 
     def sum(self, vs2):
-        if not self.share_ambient_space(vs2):
-            raise VectorSpaceError('Vector spaces must share the same ambient space.')
-        
         rs_matrix = sp.Matrix.vstack(self._rs_matrix, vs2._rs_matrix)
         rs_matrix = rref(rs_matrix, remove=True)
         constraints = self.constraints  # rework
+
         return Fn(self.field, self.n, constraints, self.add, self.mul, 
                   isomorphism=(self._to_standard, self._from_standard), 
                   rs_matrix=rs_matrix)
     
     def intersection(self, vs2):
-        if not self.share_ambient_space(vs2):
-            raise VectorSpaceError('Vector spaces must share the same ambient space.')
-        
         ns_matrix = sp.Matrix.vstack(self._ns_matrix, vs2._ns_matrix)
         ns_matrix = rref(ns_matrix, remove=True)
         constraints = self.constraints + vs2.constraints
+
         return Fn(self.field, self.n, constraints, self.add, self.mul, 
                   isomorphism=(self._to_standard, self._from_standard), 
                   ns_matrix=ns_matrix)
     
     def span(self, *vectors, basis=None):
         if basis is not None:
-            if not self.is_independent(*basis):
-                raise VectorSpaceError('The basis vectors must be linearly '
-                                       'independent.')
             vectors = basis
-        elif not all(vec in self for vec in vectors):
-            raise TypeError('Vectors must be elements of the vector space.')
-        
         standard_vecs = [self._to_standard(vec) for vec in vectors]
         if basis is None:
             standard_vecs = rref(standard_vecs, remove=True)
         constraints = [f'span({', '.join(str(vec) for vec in vectors)})']
+
         return Fn(self.field, self.n, constraints, self.add, self.mul, 
                   isomorphism=(self._to_standard, self._from_standard), 
                   rs_matrix=standard_vecs)
@@ -321,14 +301,10 @@ class Fn(_StandardFn):
         return True
 
     # Methods involving the dot product
-
-    def dot(self, vec1, vec2):
-        if not (vec1 in self and vec2 in self):
-            raise TypeError('Vectors must be elements of the vector space.')
-        return super().dot(vec1, vec2)
     
     def ortho_complement(self):
         constraints = [f'ortho_complement({', '.join(self.constraints)})']
+
         return Fn(self.field, self.n, constraints, self.add, self.mul, 
                   isomorphism=(self._to_standard, self._from_standard), 
                   rs_matrix=self._ns_matrix)
@@ -425,10 +401,10 @@ class VectorSpace:
         return self._from_fn(fn_vec)
     
     def to_coordinate(self, vector, basis=None):
-        if vector not in self._vectors:
+        if vector not in self:
             raise TypeError('Vector must be an element of the vector space.')
         if basis is not None:
-            if not all(vec in self._vectors for vec in basis):
+            if not all(vec in self for vec in basis):
                 raise TypeError('Basis vectors must be elements of the vector space.')
             basis = [self._to_fn(vec) for vec in basis]
 
@@ -437,7 +413,7 @@ class VectorSpace:
     
     def from_coordinate(self, vector, basis=None):
         if basis is not None:
-            if not all(vec in self._vectors for vec in basis):
+            if not all(vec in self for vec in basis):
                 raise TypeError('Basis vectors must be elements of the vector space.')
             basis = [self._to_fn(vec) for vec in basis]
         
@@ -445,7 +421,7 @@ class VectorSpace:
         return self._from_fn(fn_vec)
     
     def is_independent(self, *vectors):
-        if not all(vec in self._vectors for vec in vectors):
+        if not all(vec in self for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
         fn_vecs = [self._to_fn(vec) for vec in vectors]
         return self._fn.is_independent(*fn_vecs)
@@ -466,8 +442,10 @@ class VectorSpace:
     
     def span(self, *vectors, basis=None):
         if basis is not None:
+            if not self.is_independent(*basis):
+                raise VectorSpaceError('Basis vectors must be linearly independent.')
             vectors = basis
-        if not all(vec in self._vectors for vec in vectors):
+        elif not all(vec in self for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
         
         fn_vecs = [self._to_fn(vec) for vec in vectors]
@@ -494,7 +472,7 @@ class VectorSpace:
     # Methods involving the dot product
 
     def dot(self, vec1, vec2):
-        if not (vec1 in self._vectors and vec2 in self._vectors):
+        if not (vec1 in self and vec2 in self):
             raise TypeError('Vectors must be elements of the vector space.')
         vec1, vec2 = self._to_fn(vec1), self._to_fn(vec2)
         return self._fn.dot(vec1, vec2)
@@ -638,7 +616,3 @@ def left_nullspace(matrix, field=Real):
 # Aliases
 image = columnspace
 kernel = nullspace
-
-x, y = sp.symbols('x y', real=True)
-vs = VectorSpace.poly(Real, 2)
-print(vs.dot(sp.Poly(x**2), sp.Poly(2*x**2)))
