@@ -1,12 +1,13 @@
 from alapy.utils import of_arity
 
+
 class MathematicalSet:
     def __init__(self, cls, *predicates, name=None):
         if not isinstance(cls, type):
             raise TypeError()
         if len(predicates) == 1 and isinstance(predicates[0], list):
             predicates = predicates[0]
-        if not all(of_arity(pred, 1) for pred in predicates):  # make sure pred type is valid
+        if not all(of_arity(pred, 1) for pred in predicates):  # Make sure pred type is valid
             raise ValueError()
         
         self._cls = cls
@@ -23,12 +24,16 @@ class MathematicalSet:
         return self._predicates
     
     def __repr__(self):
-        return f'Set({self.cls.__name__}, {[pred.__name__ for pred in self.predicates]})'
+        return (f'Set({self.cls.__name__}, '
+                f'{[pred.__name__ for pred in self.predicates]})')
     
     def __eq__(self, set2):
+        if not isinstance(set2, Set):
+            return False
         if hasattr(self, '__name__') and hasattr(set2, '__name__'):
             return self.__name__ == set2.__name__
-        return vars(self) == vars(set2)  # order of the predicates matters
+        # Order of the predicates matters
+        return self.cls is set2.cls and self.predicates == set2.predicates
     
     def __contains__(self, obj):
         if not isinstance(obj, self.cls):
@@ -51,19 +56,17 @@ class MathematicalSet:
         return self.difference(set2)
 
     def complement(self):
-        complement_pred = lambda obj: not all(pred(obj) for pred in self.predicates)
-        complement_pred.__name__ = 'complement_predicate'
+        def complement_pred(obj): not all(pred(obj) for pred in self.predicates)
         return Set(self.cls, complement_pred)
     
     def intersection(self, set2):
-        self._check_type(set2)
+        self._validate(set2)
         return Set(self.cls, self.predicates + set2.predicates)
 
     def union(self, set2):
-        self._check_type(set2)
-        union_pred = lambda obj: (all(pred(obj) for pred in self.predicates) or 
-                                  all(pred(obj) for pred in set2.predicates))
-        union_pred.__name__ = 'union_predicate'
+        self._validate(set2)
+        def union_pred(obj): (all(pred(obj) for pred in self.predicates) 
+                              or all(pred(obj) for pred in set2.predicates))
         return Set(self.cls, union_pred)
 
     def difference(self, set2):
@@ -73,7 +76,7 @@ class MathematicalSet:
         '''
         Returns True if all the predicates in set2 are in self, otherwise False.
         '''
-        self._check_type(set2)
+        self._validate(set2)
         return all(pred in self.predicates for pred in set2.predicates)
     
     def add_predicates(self, *predicates):
@@ -81,7 +84,7 @@ class MathematicalSet:
             predicates = predicates[0]
         return Set(self.cls, *self.predicates, *predicates)
 
-    def _check_type(self, set2):
+    def _validate(self, set2):
         if not isinstance(set2, Set):
             raise TypeError(f'Expected a MathematicalSet, got {type(set2).__name__} instead.')
         if self.cls is not set2.cls:
@@ -95,13 +98,15 @@ def remove_duplicates(seq):
     elems = set()
     return [x for x in seq if not (x in elems or elems.add(x))]
 
+
 def negate(pred):
     '''
     Returns a function that negates the output of pred.
     '''
-    negation = lambda obj: not pred(obj)
+    def negation(obj): not pred(obj)
     negation.__name__ = f'not_{pred.__name__}'
     return negation
+
 
 # Set alias
 Set = MathematicalSet

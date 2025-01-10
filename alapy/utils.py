@@ -1,6 +1,8 @@
-from numbers import Real, Complex
 import inspect
+from numbers import Complex, Real
+
 import sympy as sp
+
 
 def symbols(names, field=Complex, **kwargs):
     '''
@@ -12,14 +14,16 @@ def symbols(names, field=Complex, **kwargs):
     else:
         return sp.symbols(names, **kwargs)
 
+
 def is_real(expr):
     '''
     Returns True if the expression is Real, None if its indeterminate, 
     and False otherwise.
     '''
     if hasattr(expr, 'is_real'):
-        return expr.is_real  # sympy's is_real attribute
+        return expr.is_real  # Sympy's is_real attribute
     return isinstance(expr, Real)
+
 
 def is_complex(expr):
     '''
@@ -27,8 +31,9 @@ def is_complex(expr):
     and False otherwise.
     '''
     if hasattr(expr, 'is_complex'):
-        return expr.is_complex  # sympy's is_complex attribute
+        return expr.is_complex  # Sympy's is_complex attribute
     return isinstance(expr, Complex)
+
 
 def is_linear(expr, vars=None):
     '''
@@ -40,7 +45,7 @@ def is_linear(expr, vars=None):
     try:
         terms = sp.Poly(expr, *vars).monoms()
     except sp.PolynomialError:
-        return False  # return False if not a polynomial
+        return False  # Return False if not a polynomial
     
     for exponents in terms:
         if sum(exponents) not in (0, 1):
@@ -49,6 +54,7 @@ def is_linear(expr, vars=None):
             return False
     return True
 
+
 def is_empty(matrix):
     '''
     Returns True if the matrix contains no elements, otherwise False.
@@ -56,12 +62,14 @@ def is_empty(matrix):
     matrix = sp.Matrix(matrix)
     return matrix.cols == 0 or matrix.rows == 0
 
+
 def is_invertible(matrix):
     '''
     Returns True if the matrix is invertible, otherwise False.
     '''
     matrix = sp.Matrix(matrix)
     return matrix.is_square and matrix.det() != 0
+
 
 def rref(matrix, remove=False):
     '''
@@ -78,29 +86,31 @@ def rref(matrix, remove=False):
         rref.row_del(i)
     return rref
 
-def of_arity(func, n):
+
+def of_arity(func, arity):
     '''
-    Returns True if the function can accept n positional arguments, 
+    Returns True if the function can accept arity positional arguments, 
     otherwise False. Raises a TypeError if func is not callable.
     '''
     sig = inspect.signature(func)
-    if len(sig.parameters) < n:
+    if len(sig.parameters) < arity:
         return False
     
     count_req_pos = 0  # Number of required positional args
     for param in sig.parameters.values():
         # Return False if there are required keyword-only args
-        if (param.kind == inspect.Parameter.KEYWORD_ONLY and 
-            param.default == inspect.Parameter.empty):
+        if (param.kind == inspect.Parameter.KEYWORD_ONLY 
+            and param.default == inspect.Parameter.empty):
             return False
         if (param.kind in (inspect.Parameter.POSITIONAL_ONLY, 
-            inspect.Parameter.POSITIONAL_OR_KEYWORD) and 
-            param.default == inspect.Parameter.empty):
+            inspect.Parameter.POSITIONAL_OR_KEYWORD) 
+            and param.default == inspect.Parameter.empty):
             count_req_pos += 1
 
-        if count_req_pos > n:
+        if count_req_pos > arity:
             return False
     return True
+
 
 def add_attributes(cls, *attributes):
     attributes = {attr.__name__: attr for attr in attributes}

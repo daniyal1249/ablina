@@ -1,11 +1,13 @@
 import sympy as sp
 
-from alapy.vector_space import VectorSpace
 from alapy.operation import InnerProduct
+from alapy.vector_space import VectorSpace
+
 
 class InnerProductSpaceError(Exception):
     def __init__(self, msg=''):
         super().__init__(msg)
+
 
 class InnerProductSpace(VectorSpace):
     def __init__(self, vectorspace, innerproduct=None):

@@ -1,13 +1,17 @@
 import re
+
 import sympy as sp
+
 
 class ParsingError(Exception):
     def __init__(self, msg=''):
         super().__init__(msg)
 
+
 class ConstraintError(Exception):
     def __init__(self, msg=''):
         super().__init__(msg)
+
 
 def sympify(expr, allowed_vars=None):
     '''
@@ -22,6 +26,7 @@ def sympify(expr, allowed_vars=None):
             raise ParsingError(f'Unrecognized variables found: {invalid_vars}')
     return expr
 
+
 def split_constraint(constraint):
     '''
     Splits a constraint with multiple relational operators into separate 
@@ -31,7 +36,7 @@ def split_constraint(constraint):
     exprs = re.split(operators, constraint)
     expr_count = len(exprs)
     if expr_count == 1:
-        raise ConstraintError('Constraints must include at least one ' \
+        raise ConstraintError('Constraints must include at least one '
                               'relational operator from: ==, !=, >=, <=, >, <')
     
     relations = set()

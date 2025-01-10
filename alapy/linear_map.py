@@ -1,16 +1,18 @@
 import sympy as sp
 
-from alapy.math_set import *
+from alapy.utils import is_invertible, of_arity
 from alapy.vector_space import VectorSpace
-from alapy.utils import of_arity, is_invertible
+
 
 class LinearMapError(Exception):
     def __init__(self, msg=''):
         super().__init__(msg)
 
+
 class IsomorphismError(Exception):
     def __init__(self, msg=''):
         super().__init__(msg)
+
 
 class LinearMap:
     def __init__(self, domain, codomain, mapping=None, matrix=None, name=None):
@@ -52,8 +54,8 @@ class LinearMap:
     @staticmethod
     def _from_matrix(domain, codomain, matrix):
         matrix = sp.Matrix(matrix)
-        to_coord = lambda vec: sp.Matrix(domain.to_coordinate(vec))
-        from_coord = lambda vec: codomain.from_coordinate(vec.flat())
+        def to_coord(vec): sp.Matrix(domain.to_coordinate(vec))
+        def from_coord(vec): codomain.from_coordinate(vec.flat())
         return lambda vec: from_coord(matrix @ to_coord(vec))
 
     @property
@@ -94,26 +96,26 @@ class LinearMap:
         return self.__repr__()
 
     def __eq__(self, map2):
-        return (self.domain == map2.domain and 
-                self.codomain == map2.codomain and 
-                self.matrix == map2.matrix)
+        return (self.domain == map2.domain 
+                and self.codomain == map2.codomain 
+                and self.matrix == map2.matrix)
     
     def __add__(self, map2):
-        mapping = lambda vec: self.mapping(vec) + map2.mapping(vec)
+        def mapping(vec): self.mapping(vec) + map2.mapping(vec)
         matrix = self.matrix + map2.matrix
         return LinearMap(self.domain, self.codomain, mapping, matrix)
     
     def __mul__(self, scalar):
         if not isinstance(scalar, self.field):
             raise TypeError('Scalar must be an element of the vector space field.')
-        mapping = lambda vec: self.mapping(vec) * scalar
+        def mapping(vec): self.mapping(vec) * scalar
         matrix = self.matrix * scalar
         return LinearMap(self.domain, self.codomain, mapping, matrix)
     
     def __rmul__(self, scalar):
         if not isinstance(scalar, self.field):
             raise TypeError('Scalar must be an element of the vector space field.')
-        mapping = lambda vec: scalar * self.mapping(vec)
+        def mapping(vec): scalar * self.mapping(vec)
         matrix = scalar * self.matrix
         return LinearMap(self.domain, self.codomain, mapping, matrix)
     
@@ -126,8 +128,8 @@ class LinearMap:
         if self.domain != map2.codomain:
             raise LinearMapError('The linear maps are not compatible.')
         
-        mapping = lambda vec: self.mapping(map2.mapping(vec))
-        matrix = self.matrix @ map2.matrix  # check
+        def mapping(vec): self.mapping(map2.mapping(vec))
+        matrix = self.matrix @ map2.matrix
         if hasattr(self, '__name__') and hasattr(map2, '__name__'):
             name = f'{self.__name__} o {map2.__name__}'
         else:
@@ -145,10 +147,10 @@ class LinearMap:
         return self.domain.span(*basis)
     
     def pseudoinverse(self):
-        raise NotImplementedError
+        raise NotImplementedError()
     
     def adjoint(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def is_injective(self):
         return self.matrix.cols == self.rank

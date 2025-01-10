@@ -1,8 +1,9 @@
 import sympy as sp
 from sympy.solvers.solveset import NonlinearError
 
-from alapy.parser import sympify, split_constraint, ConstraintError
-from alapy.utils import symbols, rref
+from alapy.parser import ConstraintError, split_constraint, sympify
+from alapy.utils import rref, symbols
+
 
 def additive_id(field, n, add):
     # Initialize an arbitrary vector (xs) and the identity (ys)
@@ -15,7 +16,7 @@ def additive_id(field, n, add):
     try:
         ids = sp.linsolve(exprs, *ys)
     except NonlinearError:
-        ids = sp.nonlinsolve(exprs, ys)  # check output type
+        ids = sp.nonlinsolve(exprs, ys)  # Check output type
     if isinstance(ids, sp.ConditionSet):
         return []
 
@@ -25,6 +26,7 @@ def additive_id(field, n, add):
         if not any(coord.has(*xs) for coord in id):
             valid_ids.append(list(id))
     return valid_ids
+
 
 def additive_inv(field, n, add, add_id, lambdify=False):
     # Initialize an arbitrary vector (xs) and the inverse (ys)
@@ -53,6 +55,7 @@ def additive_inv(field, n, add, add_id, lambdify=False):
         valid_inverses.append(sp.lambdify([xs], valid_inv))
     return valid_inverses
 
+
 def multiplicative_id(field, n, mul):
     # Initialize an arbitrary vector (xs) and scalar (c)
     xs, c = symbols((f'x:{n}', 'c'), field=field)
@@ -60,7 +63,7 @@ def multiplicative_id(field, n, mul):
 
     # Equations that must be satisfied
     exprs = [lhs - rhs for lhs, rhs in zip(mul(c, xs), xs)]
-    ids = sp.nonlinsolve(exprs, [c])  # check output type
+    ids = sp.nonlinsolve(exprs, [c])  # Check output type
     if isinstance(ids, sp.ConditionSet):
         return []
     
@@ -68,8 +71,9 @@ def multiplicative_id(field, n, mul):
     for id in ids:
         # Ensure the ids dont depend on xs
         if not id[0].has(*xs):
-            valid_ids.append(id[0])  # append scalar instead of tuple
+            valid_ids.append(id[0])  # Append scalar instead of tuple
     return valid_ids
+
 
 def is_commutative(field, n, operation):
     # Initialize two arbitrary vectors (xs and ys)
@@ -80,6 +84,7 @@ def is_commutative(field, n, operation):
         if not sp.sympify(lhs).equals(sp.sympify(rhs)):
             return False
     return True
+
 
 def is_associative(field, n, operation):
     # Initialize three arbitrary vectors (xs, ys, and zs)
@@ -93,7 +98,7 @@ def is_associative(field, n, operation):
             return False
     return True
 
-# to test associativity of multiplication (2 scalars one vector), define
+# To test associativity of multiplication (2 scalars one vector), define
 # operation to be normal mul if both are scalars, and scalar mul otherwise
 
 def solve_func_eq(equation, func):
@@ -130,10 +135,11 @@ def solve_func_eq(equation, func):
             if invalid_expr:
                 continue
             
-            if sol or is_tautology(subbed_eq):  # include tautologies
+            if sol or is_tautology(subbed_eq):  # Include tautologies
                 valid_func = sp.simplify(form(x).subs(sol))
                 valid_funcs.add(valid_func)
     return valid_funcs
+
 
 def is_tautology(equation):
     '''
@@ -142,12 +148,13 @@ def is_tautology(equation):
     eq = sp.simplify(equation)
     if isinstance(eq, sp.Eq):
         return False
-    return bool(eq)  # must be a sympy bool if not Eq
+    return bool(eq)  # Must be a sympy bool if not Eq
+
 
 def standard_isomorphism(field, n, add, mul):
-    # need to support custom domains
-    # need to implement an intersection function
-    # return separate functions for each coordinate
+    # Need to support custom domains
+    # Need to implement an intersection function
+    # Return separate functions for each coordinate
 
     f = sp.Function('f')
     xs, ys = symbols((f'x:{n}', f'y:{n}'), field=field)
@@ -170,12 +177,15 @@ def standard_isomorphism(field, n, add, mul):
             return valid_funcs
     return valid_funcs
 
+
 # For testing
 def standard_isomorphism(field, n, add, mul):
     return lambda x: x, lambda x: x
 
+
 def map_constraints(mapping, constraints):
     return constraints
+
 
 def to_ns_matrix(n, lin_constraints):
     '''
@@ -191,7 +201,7 @@ def to_ns_matrix(n, lin_constraints):
         row = [0] * n
         try:
             expr = sympify(expr, allowed_vars)
-            expr = expr.lhs - expr.rhs  # convert equation to an expression
+            expr = expr.lhs - expr.rhs  # Convert equation to an expression
         except Exception as e:
             raise ConstraintError('Invalid constraint format.') from e
 
@@ -204,7 +214,8 @@ def to_ns_matrix(n, lin_constraints):
     ns_matrix = rref(matrix, remove=True) if matrix else sp.zeros(0, n)
     return ns_matrix
 
-def to_other_matrix(matrix):
+
+def to_complement(matrix):
     if matrix.rows == 0:
         return sp.eye(matrix.cols)
     
