@@ -12,44 +12,21 @@ class InnerProductSpace(VectorSpace):
         if not isinstance(vectorspace, VectorSpace):
             raise TypeError('vectorspace must be of type VectorSpace.')
         
-        super().__init__(vectorspace.vectors, vectorspace._fn, 
+        super().__init__(vectorspace._vectors, vectorspace._fn, 
                          (vectorspace._to_fn, vectorspace._from_fn))
         
-        self._innerproduct = innerproduct
+        self._innerproduct = self._init_innerproduct(innerproduct)
 
     def _init_innerproduct(self, ip):
         if ip is None:
-            def euclidean_ip(vec1, vec2):
-                vec1, vec2, = self.to_coordinate(vec1), self.to_coordinate(vec2)
-                return sum(i * j for i, j in zip(vec1, vec2))
-            return euclidean_ip
+            return super().dot
         return ip
-
-    @property
-    def innerproduct(self):
-        return self._innerproduct
     
-    def norm(self, vec):
-        return sp.sqrt(self.innerproduct(vec, vec))
-    
-    def are_orthogonal(self, vec1, vec2):
-        return self.innerproduct(vec1, vec2) == 0
-
-    def is_orthonormal(self, *vectors):
-        # Improve efficiency
-        if not all(self.norm(vec) == 1 for vec in vectors):
-            return False
-        for vec1 in vectors:
-            for vec2 in vectors:
-                if not (vec1 is vec2 or self.are_orthogonal(vec1, vec2)):
-                    return False
-        return True
-
-    def gram_schmidt(self, *vectors):
-        pass
+    def dot(self, vec1, vec2):
+        return self._innerproduct(vec1, vec2)
 
     def ortho_complement(self):
         return super().ortho_complement()
     
-    def ortho_projection(self):
+    def ortho_projection(self, vs2):
         pass
