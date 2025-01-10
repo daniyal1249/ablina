@@ -93,7 +93,9 @@ class _StandardFn:
         if self is vs2:
             return True
         return self.is_subspace(vs2) and vs2.is_subspace(self)
-    
+
+    # Methods relating to vectors
+
     def vector(self, std=1, arbitrary=False):
         size = self._rs_matrix.rows
         if arbitrary:
@@ -126,6 +128,16 @@ class _StandardFn:
         except Exception as e:
             raise TypeError('Invalid coordinate vector.') from e
         return vec.flat() if vec else [0] * self.n
+    
+    def is_independent(self, *vectors):
+        matrix = sp.Matrix(vectors)
+        return matrix.rank() == matrix.rows
+    
+    def _is_basis(self, *basis):
+        matrix = sp.Matrix(basis)
+        return matrix.rank() == matrix.rows and len(basis) == self.dim
+
+    # Methods relating to vector spaces
 
     def is_subspace(self, vs2):
         '''
@@ -143,14 +155,30 @@ class _StandardFn:
         if type(self) is not type(vs2):
             return False
         return self.field is vs2.field and self.n == vs2.n
+
+    # Methods involving the dot product
+
+    def dot(self, vec1, vec2):
+        return sum(i * j for i, j in zip(vec1, vec2))
     
-    def is_independent(self, *vectors):
-        matrix = sp.Matrix(vectors)
-        return matrix.rank() == matrix.rows
+    def norm(self, vector):
+        return sp.sqrt(self.dot(vector, vector))
     
-    def _is_basis(self, *basis):
-        matrix = sp.Matrix(basis)
-        return matrix.rank() == matrix.rows and len(basis) == self.dim
+    def are_orthogonal(self, vec1, vec2):
+        return self.dot(vec1, vec2) == 0
+    
+    def is_orthonormal(self, *vectors):
+        # Improve efficiency
+        if not all(self.norm(vec) == 1 for vec in vectors):
+            return False
+        for vec1 in vectors:
+            for vec2 in vectors:
+                if not (vec1 is vec2 or self.are_orthogonal(vec1, vec2)):
+                    return False
+        return True
+    
+    def gram_schmidt(self, *vectors):
+        pass
 
 
 class Fn(_StandardFn):
@@ -212,7 +240,9 @@ class Fn(_StandardFn):
     
     def __and__(self, vs2):
         return self.intersection(vs2)
-    
+
+    # Methods relating to vectors
+
     def vector(self, std=1, arbitrary=False):
         standard_vec = super().vector(std, arbitrary)
         return self._from_standard(standard_vec)
@@ -237,12 +267,14 @@ class Fn(_StandardFn):
         standard_vec = super().from_coordinate(vector, basis)
         return self._from_standard(standard_vec)
     
-    def ortho_complement(self):
-        constraints = [f'ortho_complement({', '.join(self.constraints)})']
-        return Fn(self.field, self.n, constraints, self.add, self.mul, 
-                  isomorphism=(self._to_standard, self._from_standard), 
-                  rs_matrix=self._ns_matrix)
-    
+    def is_independent(self, *vectors):
+        if not all(vec in self for vec in vectors):
+            raise TypeError('Vectors must be elements of the vector space.')
+        standard_vecs = [self._to_standard(vec) for vec in vectors]
+        return super().is_independent(*standard_vecs)
+
+    # Methods relating to vector spaces
+
     def sum(self, vs2):
         if not self.share_ambient_space(vs2):
             raise VectorSpaceError('Vector spaces must share the same ambient space.')
@@ -287,12 +319,22 @@ class Fn(_StandardFn):
         #     return False
         # return self.add == vs2.add and self.mul == vs2.mul
         return True
-    
-    def is_independent(self, *vectors):
-        if not all(vec in self for vec in vectors):
+
+    # Methods involving the dot product
+
+    def dot(self, vec1, vec2):
+        if not (vec1 in self and vec2 in self):
             raise TypeError('Vectors must be elements of the vector space.')
-        standard_vecs = [self._to_standard(vec) for vec in vectors]
-        return super().is_independent(*standard_vecs)
+        return super().dot(vec1, vec2)
+    
+    def ortho_complement(self):
+        constraints = [f'ortho_complement({', '.join(self.constraints)})']
+        return Fn(self.field, self.n, constraints, self.add, self.mul, 
+                  isomorphism=(self._to_standard, self._from_standard), 
+                  rs_matrix=self._ns_matrix)
+    
+    def ortho_projection(self, vs2):
+        pass
 
 
 class VectorSpace:
@@ -375,7 +417,9 @@ class VectorSpace:
     
     def __and__(self, vs2):
         return self.intersection(vs2)
-    
+
+    # Methods relating to vectors
+
     def vector(self, std=1, arbitrary=False):
         fn_vec = self._fn.vector(std, arbitrary)
         return self._from_fn(fn_vec)
@@ -400,10 +444,14 @@ class VectorSpace:
         fn_vec = self._fn.from_coordinate(vector, basis)
         return self._from_fn(fn_vec)
     
-    def ortho_complement(self):
-        fn = self._fn.ortho_complement()
-        return VectorSpace(self._vectors, fn, (self._to_fn, self._from_fn))
-    
+    def is_independent(self, *vectors):
+        if not all(vec in self._vectors for vec in vectors):
+            raise TypeError('Vectors must be elements of the vector space.')
+        fn_vecs = [self._to_fn(vec) for vec in vectors]
+        return self._fn.is_independent(*fn_vecs)
+
+    # Methods relating to vector spaces
+
     def sum(self, vs2):
         if not self.share_ambient_space(vs2):
             raise VectorSpaceError('Vector spaces must share the same ambient space.')
@@ -442,12 +490,45 @@ class VectorSpace:
         #     return False
         # return self._fn.share_ambient_space(vs2._fn)
         return True
-    
-    def is_independent(self, *vectors):
-        if not all(vec in self._vectors for vec in vectors):
+
+    # Methods involving the dot product
+
+    def dot(self, vec1, vec2):
+        if not (vec1 in self._vectors and vec2 in self._vectors):
             raise TypeError('Vectors must be elements of the vector space.')
-        fn_vecs = [self._to_fn(vec) for vec in vectors]
-        return self._fn.is_independent(*fn_vecs)
+        vec1, vec2 = self._to_fn(vec1), self._to_fn(vec2)
+        return self._fn.dot(vec1, vec2)
+    
+    def norm(self, vector):
+        return sp.sqrt(self.dot(vector, vector))
+    
+    def are_orthogonal(self, vec1, vec2):
+        return self.dot(vec1, vec2) == 0
+    
+    def is_orthonormal(self, *vectors):
+        # Improve efficiency
+        if not all(self.norm(vec) == 1 for vec in vectors):
+            return False
+        for vec1 in vectors:
+            for vec2 in vectors:
+                if not (vec1 is vec2 or self.are_orthogonal(vec1, vec2)):
+                    return False
+        return True
+    
+    def gram_schmidt(self, *vectors):
+        pass
+    
+    def ortho_complement(self):
+        fn = self._fn.ortho_complement()
+        return VectorSpace(self._vectors, fn, (self._to_fn, self._from_fn))
+    
+    def ortho_projection(self, vs2):
+        if not self.share_ambient_space(vs2):
+            raise VectorSpaceError('Vector spaces must share the same ambient space.')
+        fn = self._fn.ortho_projection(vs2._fn)
+        return VectorSpace(self._vectors, fn, (self._to_fn, self._from_fn))
+    
+    # Vector space constructors
     
     @classmethod
     def fn(cls, field, n, constraints=None, basis=None, add=None, mul=None, 
@@ -557,3 +638,7 @@ def left_nullspace(matrix, field=Real):
 # Aliases
 image = columnspace
 kernel = nullspace
+
+x, y = sp.symbols('x y', real=True)
+vs = VectorSpace.poly(Real, 2)
+print(vs.dot(sp.Poly(x**2), sp.Poly(2*x**2)))
