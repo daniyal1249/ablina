@@ -21,7 +21,7 @@ class InnerProductSpace(VectorSpace):
         if ip is None:
             def euclidean_ip(vec1, vec2):
                 vec1, vec2, = self.to_coordinate(vec1), self.to_coordinate(vec2)
-                return sum(i + j for i, j in zip(vec1, vec2))
+                return sum(i * j for i, j in zip(vec1, vec2))
             return euclidean_ip
         return ip
 
@@ -41,7 +41,7 @@ class InnerProductSpace(VectorSpace):
             return False
         for vec1 in vectors:
             for vec2 in vectors:
-                if not (vec1 is vec2 and self.are_orthogonal(vec1, vec2)):
+                if not (vec1 is vec2 or self.are_orthogonal(vec1, vec2)):
                     return False
         return True
 
