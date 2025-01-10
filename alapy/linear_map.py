@@ -135,16 +135,23 @@ class LinearMap:
         return LinearMap(map2.domain, self.codomain, mapping, matrix, name)
     
     def range(self):
-        pass
+        basis = [vec.tolist() for vec in self.matrix.columnspace()]
+        basis = [self.domain.from_coordinate(vec) for vec in basis]
+        return self.domain.span(*basis)
 
     def nullspace(self):
-        pass
+        basis = [vec.tolist() for vec in self.matrix.nullspace()]
+        basis = [self.domain.from_coordinate(vec) for vec in basis]
+        return self.domain.span(*basis)
 
     def is_injective(self):
         return self.matrix.cols == self.rank
 
     def is_surjective(self):
         return self.matrix.rows == self.rank
+    
+    def is_bijective(self):
+        return is_invertible(self.matrix)
 
     # Aliases
     image = range
@@ -155,7 +162,7 @@ class Isomorphism(LinearMap):
     def __init__(self, domain, codomain, mapping=None, matrix=None, name=None):
         super().__init__(domain, codomain, mapping, matrix, name)
 
-        if not is_invertible(self.matrix):
+        if not self.is_bijective():
             raise IsomorphismError('Linear map is not invertible.')
 
     def __repr__(self):
@@ -172,7 +179,8 @@ class IdentityMap(Isomorphism):
         super().__init__(vectorspace, vectorspace, lambda vec: vec, name=name)
 
 # from numbers import Real
-# vs1 = VectorSpace.fn(Real, 2, constraints=['v0==v1==0'])
+# vs1 = VectorSpace.fn(Real, 3, constraints=[])
 # vs2 = VectorSpace.fn(Real, 3, constraints=[])
-# x = LinearMap(vs1, vs2, lambda x: x + [0])
-# print((x.matrix @ sp.Matrix([])).rows)
+# x = LinearMap(vs1, vs2, lambda x: [2*x[0], 2*x[1], 2*x[2]])
+# print(x.image().vector(arbitrary=True))
+# print(x.is_injective())
