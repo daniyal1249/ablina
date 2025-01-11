@@ -201,7 +201,7 @@ class Fn(_StandardFn):
             The list of constraints that each vector in V must satisfy 
             (default: None). Refer to the notes for more information.
         add : callable, optional
-            An addition function that takes two vectors in V and returns 
+            An addition function that takes two vectors in V and returns
             another. The function must obey the vector space axioms: 
 
             - Closure
@@ -507,7 +507,7 @@ class VectorSpace:
         Parameters
         ----------
         std : float
-            The standard deviation to be used to
+            The standard deviation to be used to ..
         arbitrary : bool, default=False
             x
 
@@ -608,7 +608,7 @@ class VectorSpace:
         Parameters
         ----------
         vs2 : VectorSpace
-            The vector space to be added to.
+            The vector space being added.
 
         Returns
         -------
@@ -950,7 +950,7 @@ def is_vectorspace(n, constraints):
 
 def columnspace(matrix, field=Real):
     """
-    Compute the column space of the matrix.
+    Compute the column space, or image, of the matrix.
 
     Parameters
     ----------
@@ -963,6 +963,21 @@ def columnspace(matrix, field=Real):
     -------
     VectorSpace
         The column space of `matrix`.
+
+    See Also
+    --------
+    x
+
+    Examples
+    --------
+
+    >>> matrix = [[1, 2], [3, 4]]
+    >>> vs = columnspace(matrix)
+    >>> print(vs.basis)
+    [[1, 0], [0, 1]]
+    >>> vs = image(matrix)
+    >>> print(vs.basis)
+    [[1, 0], [0, 1]]
     """
     constraints = [f'col({matrix})']
     matrix = u.rref(matrix, remove=True)
@@ -985,6 +1000,18 @@ def rowspace(matrix, field=Real):
     -------
     VectorSpace
         The row space of `matrix`.
+
+    See Also
+    --------
+    x
+
+    Examples
+    --------
+
+    >>> matrix = [[1, 2], [3, 4]]
+    >>> vs = rowspace(matrix)
+    >>> print(vs.basis)
+    [[1, 0], [0, 1]]
     """
     constraints = [f'row({matrix})']
     matrix = u.rref(matrix, remove=True)
@@ -994,7 +1021,7 @@ def rowspace(matrix, field=Real):
 
 def nullspace(matrix, field=Real):
     """
-    Compute the null space of the matrix.
+    Compute the null space, or kernel, of the matrix.
 
     Parameters
     ----------
@@ -1007,6 +1034,21 @@ def nullspace(matrix, field=Real):
     -------
     VectorSpace
         The null space of `matrix`.
+
+    See Also
+    --------
+    x
+
+    Examples
+    --------
+
+    >>> matrix = [[1, 2], [3, 4]]
+    >>> vs = nullspace(matrix)
+    >>> print(vs.basis)
+    []
+    >>> vs = kernel(matrix)
+    >>> print(vs.basis)
+    []
     """
     constraints = [f'null({matrix})']
     matrix = u.rref(matrix, remove=True)
@@ -1029,6 +1071,23 @@ def left_nullspace(matrix, field=Real):
     -------
     VectorSpace
         The left null space of `matrix`.
+
+    See Also
+    --------
+    x
+
+    Examples
+    --------
+
+    >>> matrix = [[1, 2], [3, 4]]
+    >>> vs = left_nullspace(matrix)
+    >>> print(vs.basis)
+    []
+    >>> matrix = sympy.Matrix([[1, 2], [3, 4]])
+    >>> vs1 = left_nullspace(matrix)
+    >>> vs2 = nullspace(matrix.T)
+    >>> print(vs1 == vs2)
+    True
     """
     matrix = sp.Matrix(matrix).T
     return nullspace(matrix, field)
