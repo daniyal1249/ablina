@@ -3,8 +3,8 @@ from random import gauss
 
 import sympy as sp
 
-from alapy.math_set import Set
-from alapy.operation import ScalarMul, VectorAdd
+from alapy.mathset import Set
+from alapy.operations import ScalarMul, VectorAdd
 from alapy.parser import split_constraint, sympify
 import alapy.utils as u
 import alapy.vs_utils as vsu
@@ -14,9 +14,11 @@ class VectorSpaceError(Exception):
     def __init__(self, msg=''):
         super().__init__(msg)
 
+
 class NotAVectorSpaceError(Exception):
     def __init__(self, msg=''):
         super().__init__(msg)
+
 
 class _StandardFn:
     def __init__(self, field, n, constraints=None, *, ns_matrix=None, rs_matrix=None):
@@ -511,8 +513,8 @@ class VectorSpace:
     # Vector space constructors
     
     @classmethod
-    def fn(cls, field, n, constraints=None, basis=None, add=None, mul=None, 
-           *, ns_matrix=None, rs_matrix=None):
+    def fn(cls, field, n, constraints=None, basis=None, 
+           add=None, mul=None, *, ns_matrix=None, rs_matrix=None):
         
         vectors = Set(object, name=f'F^{n}')
         fn = Fn(field, n, constraints, add, mul, 
@@ -524,14 +526,11 @@ class VectorSpace:
         return vectorspace
 
     @classmethod
-    def matrix(cls, field, shape, constraints=None, basis=None, add=None, 
-               mul=None):
-        def in_matrix(mat):
-            return mat.shape == shape
-        def to_fn(mat):
-            return mat.flat()
-        def from_fn(vec):
-            return sp.Matrix(*shape, vec)
+    def matrix(cls, field, shape, constraints=None, basis=None, 
+               add=None, mul=None):
+        def in_matrix(mat): mat.shape == shape
+        def to_fn(mat): mat.flat()
+        def from_fn(vec): sp.Matrix(*shape, vec)
         
         name = f'{shape[0]} by {shape[1]} matrices'
         vectors = Set(sp.Matrix, in_matrix, name=name)
@@ -543,8 +542,8 @@ class VectorSpace:
         return vectorspace
 
     @classmethod
-    def poly(cls, field, max_degree, constraints=None, basis=None, add=None, 
-             mul=None):
+    def poly(cls, field, max_degree, constraints=None, basis=None, 
+             add=None, mul=None):
         def in_poly(poly):
             return sp.degree(poly) <= max_degree
         def to_fn(poly):

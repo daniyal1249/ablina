@@ -1,7 +1,7 @@
 import sympy as sp
 
 from alapy.utils import is_invertible, of_arity
-from alapy.vector_space import VectorSpace
+from alapy.vectorspace import VectorSpace
 
 
 class LinearMapError(Exception):
