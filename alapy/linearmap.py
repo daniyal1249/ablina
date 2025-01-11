@@ -16,10 +16,12 @@ class IsomorphismError(Exception):
 
 class LinearMap:
     """
+    pass
     """
     
     def __init__(self, domain, codomain, mapping=None, matrix=None, name=None):
         """
+        pass
 
         Parameters
         ----------
@@ -34,12 +36,12 @@ class LinearMap:
             The matrix representation of the linear map with respect to 
             the basis vectors of the domain and codomain.
         name : str, optional
-            x
+            pass
 
         Returns
         -------
         LinearMap
-            x
+            pass
 
         Raises
         ------
@@ -55,8 +57,8 @@ class LinearMap:
         if mapping is None and matrix is None:
             raise LinearMapError('Either a matrix or mapping must be provided.')
         if domain.field is not codomain.field:
-            raise LinearMapError('The domain and codomain must be vector spaces '
-                                 'over the same field.')
+            raise LinearMapError('The domain and codomain must be vector '
+                                 'spaces over the same field.')
         
         if mapping is None:
             mapping = LinearMap._from_matrix(domain, codomain, matrix)
@@ -226,11 +228,7 @@ class LinearMap:
         Returns
         -------
         VectorSpace
-            x
-
-        Examples
-        --------
-        x
+            pass
         """
         basis = [vec.tolist() for vec in self.matrix.columnspace()]
         basis = [self.domain.from_coordinate(vec) for vec in basis]
@@ -243,11 +241,7 @@ class LinearMap:
         Returns
         -------
         VectorSpace
-            x
-
-        Examples
-        --------
-        x
+            pass
         """
         basis = [vec.tolist() for vec in self.matrix.nullspace()]
         basis = [self.domain.from_coordinate(vec) for vec in basis]
@@ -305,6 +299,7 @@ class LinearMap:
 
 class Isomorphism(LinearMap):
     """
+    pass
     """
 
     def __init__(self, domain, codomain, mapping=None, matrix=None, name=None):
@@ -324,10 +319,6 @@ class Isomorphism(LinearMap):
         -------
         Isomorphism
             The inverse of `self`.
-
-        Examples
-        --------
-        x
         """
         matrix = self.matrix.inv()
         return Isomorphism(self.codomain, self.domain, matrix=matrix)
@@ -335,10 +326,12 @@ class Isomorphism(LinearMap):
 
 class IdentityMap(Isomorphism):
     """
+    pass
     """
 
     def __init__(self, vectorspace):
         """
+        pass
 
         Parameters
         ----------
@@ -348,6 +341,6 @@ class IdentityMap(Isomorphism):
         Returns
         -------
         IdentityMap
-            x
+            pass
         """
         super().__init__(vectorspace, vectorspace, lambda vec: vec)

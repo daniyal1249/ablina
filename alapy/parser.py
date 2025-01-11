@@ -20,19 +20,19 @@ def sympify(expr, allowed_vars=None):
     Parameters
     ----------
     expr : str
-        x
+        pass
     allowed_vars : iterable, optional
-        x
+        pass
 
     Returns
     -------
     sympy.Basic
-        x
+        pass
 
     Raises
     ------
     sympy.SympifyError
-        x
+        pass
     ParsingError
         If `expr` contains variables not in `allowed_vars`.
     """
@@ -53,12 +53,12 @@ def split_constraint(constraint):
     Parameters
     ----------
     constraint : str
-        x
+        pass
 
     Returns
     -------
     relations : set of str
-        x
+        pass
     """
     operators = r'(==|!=|>=|<=|>|<)'
     exprs = re.split(operators, constraint)

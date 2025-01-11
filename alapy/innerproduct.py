@@ -11,22 +11,24 @@ class InnerProductSpaceError(Exception):
 
 class InnerProductSpace(VectorSpace):
     """
+    pass
     """
 
     def __init__(self, vectorspace, innerproduct=None):
         """
+        pass
 
         Parameters
         ----------
         vectorspace : VectorSpace
-            x
+            pass
         innerproduct : callable
-            x
+            pass
 
         Returns
         -------
         InnerProductSpace
-            x
+            pass
         """
         if not isinstance(vectorspace, VectorSpace):
             raise TypeError('vectorspace must be of type VectorSpace.')
@@ -59,6 +61,7 @@ class InnerProductSpace(VectorSpace):
 
     def ortho_complement(self):
         """
+        pass
 
         Returns
         -------
@@ -69,16 +72,17 @@ class InnerProductSpace(VectorSpace):
     
     def ortho_projection(self, vs2):
         """
+        pass
 
         Parameters
         ----------
         vs2 : InnerProductSpace
-            x
+            pass
 
         Returns
         -------
         InnerProductSpace
-            x
+            pass
 
         Raises
         ------

@@ -20,7 +20,7 @@ def additive_id(field, n, add):
 
     Returns
     -------
-    x
+    pass
     """
     # Initialize an arbitrary vector (xs) and the identity (ys)
     xs, ys = symbols((f'x:{n}', f'y:{n}'), field=field)
@@ -59,7 +59,7 @@ def additive_inv(field, n, add, add_id, lambdify=False):
 
     Returns
     -------
-    x
+    pass
     """
     # Initialize an arbitrary vector (xs) and the inverse (ys)
     xs, ys = symbols((f'x:{n}', f'y:{n}'), field=field)
@@ -103,7 +103,7 @@ def multiplicative_id(field, n, mul):
 
     Returns
     -------
-    x
+    pass
     """
     # Initialize an arbitrary vector (xs) and scalar (c)
     xs, c = symbols((f'x:{n}', 'c'), field=field)
@@ -138,7 +138,7 @@ def is_commutative(field, n, operation):
 
     Examples
     --------
-    x
+    pass
     """
     # Initialize two arbitrary vectors (xs and ys)
     xs, ys = symbols((f'x:{n}', f'y:{n}'), field=field)
@@ -165,7 +165,7 @@ def is_associative(field, n, operation):
 
     Examples
     --------
-    x
+    pass
     """
     # Initialize three arbitrary vectors (xs, ys, and zs)
     xs, ys, zs = symbols((f'x:{n}', f'y:{n}', f'z:{n}'), field=field)
@@ -196,7 +196,7 @@ def solve_func_eq(equation, func):
     Returns
     -------
     valid_funcs : set
-        x
+        pass
     """
     _a, _b, x = sp.symbols('_a _b x')
     w = sp.Wild('w')
@@ -240,7 +240,7 @@ def is_tautology(equation):
     Parameters
     ----------
     equation : sympy.Eq
-        x
+        pass
 
     Returns
     -------
@@ -255,6 +255,7 @@ def is_tautology(equation):
 
 def standard_isomorphism(field, n, add, mul):
     """
+    pass
 
     Parameters
     ----------
@@ -263,13 +264,13 @@ def standard_isomorphism(field, n, add, mul):
     n : int
         The length of the vectors in the vector space.
     add : callable
-        x
+        pass
     mul : callable
-        x
+        pass
 
     Returns
     -------
-    x
+    pass
     """
     # Need to support custom domains
     # Need to implement an intersection function
@@ -304,17 +305,19 @@ def standard_isomorphism(field, n, add, mul):
 
 def map_constraints(mapping, constraints):
     """
+    pass
 
     Parameters
     ----------
     mapping : callable
-        x
+        pass
     constraints : list of str
-        x
+        pass
 
     Returns
     -------
     list of str
+        pass
     """
     return constraints
 
@@ -326,7 +329,7 @@ def to_ns_matrix(n, lin_constraints):
     Parameters
     ----------
     n : int
-        x
+        pass
     lin_constraints : list of str
         The list of constraints.
 
@@ -361,16 +364,17 @@ def to_ns_matrix(n, lin_constraints):
 
 def to_complement(matrix):
     """
+    pass
 
     Parameters
     ----------
     matrix : sympy.Matrix
-        x
+        pass
 
     Returns
     -------
     sympy.Matrix
-        x
+        pass
     """
     if matrix.rows == 0:
         return sp.eye(matrix.cols)

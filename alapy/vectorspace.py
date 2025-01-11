@@ -183,6 +183,7 @@ class _StandardFn:
 
 class Fn(_StandardFn):
     """
+    pass
     """
 
     def __init__(self, field, n, constraints=None, add=None, mul=None, 
@@ -363,28 +364,30 @@ class Fn(_StandardFn):
 
 class VectorSpace:
     """
+    pass
     """
 
     def __init__(self, vectors, fn, isomorphism):
         """
+        pass
 
         Parameters
         ----------
         vectors : MathematicalSet
-            x
+            pass
         fn : Fn
-            x
+            pass
         isomorphism : callable or tuple of callable
-            x
+            pass
 
         Returns
         -------
-        x
+        pass
 
         Raises
         ------
         VectorSpaceError
-            x
+            pass
         NotAVectorSpaceError
             If the constraints, addition, and multiplication do not form 
             a vector space.
@@ -506,7 +509,7 @@ class VectorSpace:
         std : float
             The standard deviation to be used to ..
         arbitrary : bool, default=False
-            x
+            pass
 
         Returns
         -------
@@ -525,7 +528,7 @@ class VectorSpace:
         vector : list
             A vector in the vector space.
         basis : list of object, optional
-            x
+            pass
 
         Returns
         -------
@@ -555,9 +558,9 @@ class VectorSpace:
         Parameters
         ----------
         vector
-            x
+            pass
         basis : list of object, optional
-            x
+            pass
 
         Returns
         -------
@@ -610,7 +613,7 @@ class VectorSpace:
         Returns
         -------
         VectorSpace
-            x
+            pass
 
         Raises
         ------
@@ -634,7 +637,7 @@ class VectorSpace:
         Returns
         -------
         VectorSpace
-            x
+            pass
 
         Raises
         ------
@@ -653,14 +656,14 @@ class VectorSpace:
         Parameters
         ----------
         *vectors
-            x
+            pass
         basis : bool, optional
-            x
+            pass
 
         Returns
         -------
         VectorSpace
-            x
+            pass
 
         Raises
         ------
@@ -694,7 +697,6 @@ class VectorSpace:
         -------
         bool
             True if `self` is a subspace of `vs2`, otherwise False.
-        
         """
         if not self.share_ambient_space(vs2):
             return False
@@ -702,6 +704,7 @@ class VectorSpace:
     
     def share_ambient_space(self, vs2):
         """
+        pass
 
         Parameters
         ----------
@@ -796,21 +799,23 @@ class VectorSpace:
     
     def gram_schmidt(self, *vectors):
         """
+        pass
 
         Parameters
         ----------
         *vectors
-            x
+            pass
 
         Returns
         -------
         list
-            x
+            pass
         """
-        pass
+        raise NotImplementedError()
     
     def ortho_complement(self):
         """
+        pass
 
         Returns
         -------
@@ -822,16 +827,17 @@ class VectorSpace:
     
     def ortho_projection(self, vs2):
         """
+        pass
 
         Parameters
         ----------
         vs2 : VectorSpace
-            x
+            pass
 
         Returns
         -------
         VectorSpace
-            x
+            pass
 
         Raises
         ------
@@ -849,6 +855,7 @@ class VectorSpace:
     def fn(cls, field, n, constraints=None, basis=None, 
            add=None, mul=None, *, ns_matrix=None, rs_matrix=None):
         """
+        pass
         """
         vectors = Set(object, name=f'F^{n}')
         fn = Fn(field, n, constraints, add, mul, 
@@ -863,6 +870,7 @@ class VectorSpace:
     def matrix(cls, field, shape, constraints=None, basis=None, 
                add=None, mul=None):
         """
+        pass
         """
         def in_matrix(mat): mat.shape == shape
         def to_fn(mat): mat.flat()
@@ -881,6 +889,7 @@ class VectorSpace:
     def poly(cls, field, max_degree, constraints=None, basis=None, 
              add=None, mul=None):
         """
+        pass
         """
         def in_poly(poly):
             return sp.degree(poly) <= max_degree
@@ -904,6 +913,7 @@ class VectorSpace:
     @classmethod
     def hom(cls, vs1, vs2):
         """
+        pass
         """
         if not (isinstance(vs1, VectorSpace) and isinstance(vs2, VectorSpace)):
             raise TypeError()
@@ -963,7 +973,7 @@ def columnspace(matrix, field=Real):
 
     See Also
     --------
-    x
+    pass
 
     Examples
     --------
@@ -1000,7 +1010,7 @@ def rowspace(matrix, field=Real):
 
     See Also
     --------
-    x
+    pass
 
     Examples
     --------
@@ -1034,7 +1044,7 @@ def nullspace(matrix, field=Real):
 
     See Also
     --------
-    x
+    pass
 
     Examples
     --------
@@ -1071,7 +1081,7 @@ def left_nullspace(matrix, field=Real):
 
     See Also
     --------
-    x
+    pass
 
     Examples
     --------

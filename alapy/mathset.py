@@ -3,24 +3,26 @@ from alapy.utils import of_arity
 
 class MathematicalSet:
     """
+    pass
     """
 
     def __init__(self, cls, *predicates, name=None):
         """
+        pass
 
         Parameters
         ----------
         cls : type
             The class that all set elements will be an instance of.
         *predicates
-            x
+            pass
         name : str, optional
-            x
+            pass
 
         Returns
         -------
         MathematicalSet
-            x
+            pass
         """
         if not isinstance(cls, type):
             raise TypeError()
@@ -82,18 +84,21 @@ class MathematicalSet:
 
     def complement(self):
         """
+        pass
 
         Returns
         -------
         MathematicalSet
             The complement of the set.
         """
-        def complement_pred(obj): not all(pred(obj) for pred in self.predicates)
+        def complement_pred(obj):
+            return all(pred(obj) for pred in self.predicates)
         return Set(self.cls, complement_pred)
     
     def intersection(self, set2):
         """
-        
+        pass
+
         Parameters
         ----------
         set2 : MathematicalSet
@@ -109,6 +114,7 @@ class MathematicalSet:
 
     def union(self, set2):
         """
+        pass
 
         Parameters
         ----------
@@ -121,12 +127,14 @@ class MathematicalSet:
             The union of `self` and `set2`.
         """
         self._validate(set2)
-        def union_pred(obj): (all(pred(obj) for pred in self.predicates) 
-                              or all(pred(obj) for pred in set2.predicates))
+        def union_pred(obj):
+            return (all(pred(obj) for pred in self.predicates) 
+                    or all(pred(obj) for pred in set2.predicates))
         return Set(self.cls, union_pred)
 
     def difference(self, set2):
         """
+        pass
 
         Parameters
         ----------
@@ -142,11 +150,12 @@ class MathematicalSet:
     
     def is_subset(self, set2):
         """
+        pass
 
         Parameters
         ----------
         set2 : MathematicalSet
-            x
+            pass
 
         Returns
         -------
@@ -169,7 +178,7 @@ class MathematicalSet:
         Returns
         -------
         MathematicalSet
-            x
+            pass
         """
         if len(predicates) == 1 and isinstance(predicates[0], list):
             predicates = predicates[0]
@@ -177,18 +186,20 @@ class MathematicalSet:
 
     def _validate(self, set2):
         if not isinstance(set2, Set):
-            raise TypeError(f'Expected a MathematicalSet, got {type(set2).__name__} instead.')
+            raise TypeError(f'Expected a MathematicalSet, got '
+                            f'{type(set2).__name__} instead.')
         if self.cls is not set2.cls:
             raise ValueError('The cls attribute of both sets must be the same.')
 
 
 def remove_duplicates(seq):
     """
+    pass
 
     Parameters
     ----------
     seq : iterable
-        x
+        pass
 
     Returns
     -------
@@ -202,6 +213,7 @@ def remove_duplicates(seq):
 
 def negate(pred):
     """
+    pass
 
     Parameters
     ----------
