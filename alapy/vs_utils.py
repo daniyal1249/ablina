@@ -6,6 +6,22 @@ from alapy.utils import rref, symbols
 
 
 def additive_id(field, n, add):
+    """
+    The additive identity of an addition function on F^n.
+
+    Parameters
+    ----------
+    field : {Real, Complex}
+        The field of scalars.
+    n : int
+        The length of the vectors the addition function takes.
+    add : callable
+        The addition function ..
+
+    Returns
+    -------
+    x
+    """
     # Initialize an arbitrary vector (xs) and the identity (ys)
     xs, ys = symbols((f'x:{n}', f'y:{n}'), field=field)
     xs, ys = list(xs), list(ys)
@@ -29,6 +45,22 @@ def additive_id(field, n, add):
 
 
 def additive_inv(field, n, add, add_id, lambdify=False):
+    """
+    The additive inverse of an addition function on F^n.
+
+    Parameters
+    ----------
+    field : {Real, Complex}
+        The field of scalars.
+    n : int
+        The length of the vectors the addition function takes.
+    add : callable
+        The addition function ..
+
+    Returns
+    -------
+    x
+    """
     # Initialize an arbitrary vector (xs) and the inverse (ys)
     xs, ys = symbols((f'x:{n}', f'y:{n}'), field=field)
     xs, ys = list(xs), list(ys)
@@ -57,6 +89,22 @@ def additive_inv(field, n, add, add_id, lambdify=False):
 
 
 def multiplicative_id(field, n, mul):
+    """
+    The multiplicative identity of a multiplication function on F^n.
+
+    Parameters
+    ----------
+    field : {Real, Complex}
+        The field of scalars.
+    n : int
+        The length of the vectors the multiplication function takes.
+    mul : callable
+        The multiplication function ..
+
+    Returns
+    -------
+    x
+    """
     # Initialize an arbitrary vector (xs) and scalar (c)
     xs, c = symbols((f'x:{n}', 'c'), field=field)
     xs = list(xs)
@@ -76,6 +124,22 @@ def multiplicative_id(field, n, mul):
 
 
 def is_commutative(field, n, operation):
+    """
+    Check whether a binary operation on F^n is commutative.
+
+    Parameters
+    ----------
+    field : {Real, Complex}
+        The field of scalars.
+    n : int
+        The length of the vectors the operation takes.
+    operation : callable
+        The function ..
+
+    Examples
+    --------
+    x
+    """
     # Initialize two arbitrary vectors (xs and ys)
     xs, ys = symbols((f'x:{n}', f'y:{n}'), field=field)
     xs, ys = list(xs), list(ys)
@@ -87,6 +151,22 @@ def is_commutative(field, n, operation):
 
 
 def is_associative(field, n, operation):
+    """
+    Check whether a binary operation on F^n is associative.
+
+    Parameters
+    ----------
+    field : {Real, Complex}
+        The field of scalars.
+    n : int
+        The length of the vectors the operation takes.
+    operation : callable
+        The function ..
+
+    Examples
+    --------
+    x
+    """
     # Initialize three arbitrary vectors (xs, ys, and zs)
     xs, ys, zs = symbols((f'x:{n}', f'y:{n}', f'z:{n}'), field=field)
     xs, ys, zs = list(xs), list(ys), list(zs)
@@ -103,8 +183,20 @@ def is_associative(field, n, operation):
 
 def solve_func_eq(equation, func):
     """
-    Attempts to solve a univariate functional equation by guessing common 
+    Attempt to solve a univariate functional equation by guessing common 
     forms of solutions.
+
+    Parameters
+    ----------
+    equation : sympy.Expr or sympy.Eq
+        The functional equation to be solved.
+    func : sympy.Function
+        The unknown function to solve for.
+
+    Returns
+    -------
+    valid_funcs : set
+        x
     """
     _a, _b, x = sp.symbols('_a _b x')
     w = sp.Wild('w')
@@ -142,9 +234,19 @@ def solve_func_eq(equation, func):
 
 
 def is_tautology(equation):
-    '''
-    Returns True if the equation always holds, otherwise False.
-    '''
+    """
+    Check whether an equation is a tautology.
+
+    Parameters
+    ----------
+    equation : sympy.Eq
+        x
+
+    Returns
+    -------
+    bool
+        True if `equation` always holds, otherwise False.
+    """
     eq = sp.simplify(equation)
     if isinstance(eq, sp.Eq):
         return False
@@ -152,6 +254,23 @@ def is_tautology(equation):
 
 
 def standard_isomorphism(field, n, add, mul):
+    """
+
+    Parameters
+    ----------
+    field : {Real, Complex}
+        The field of scalars.
+    n : int
+        The length of the vectors in the vector space.
+    add : callable
+        x
+    mul : callable
+        x
+
+    Returns
+    -------
+    x
+    """
     # Need to support custom domains
     # Need to implement an intersection function
     # Return separate functions for each coordinate
@@ -184,13 +303,38 @@ def standard_isomorphism(field, n, add, mul):
 
 
 def map_constraints(mapping, constraints):
+    """
+
+    Parameters
+    ----------
+    mapping : callable
+        x
+    constraints : list of str
+        x
+
+    Returns
+    -------
+    list of str
+    """
     return constraints
 
 
 def to_ns_matrix(n, lin_constraints):
-    '''
-    Returns a sympy matrix with the linear constraints as rows.
-    '''
+    """
+    Return the matrix representation of the given linear constraints.
+
+    Parameters
+    ----------
+    n : int
+        x
+    lin_constraints : list of str
+        The list of constraints.
+
+    Returns
+    -------
+    ns_matrix : sympy.Matrix
+        A sympy matrix with the linear constraints as rows.
+    """
     exprs = set()
     for constraint in lin_constraints:
         exprs.update(split_constraint(constraint))
@@ -216,6 +360,18 @@ def to_ns_matrix(n, lin_constraints):
 
 
 def to_complement(matrix):
+    """
+
+    Parameters
+    ----------
+    matrix : sympy.Matrix
+        x
+
+    Returns
+    -------
+    sympy.Matrix
+        x
+    """
     if matrix.rows == 0:
         return sp.eye(matrix.cols)
     

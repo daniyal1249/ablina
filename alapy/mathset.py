@@ -2,7 +2,26 @@ from alapy.utils import of_arity
 
 
 class MathematicalSet:
+    """
+    """
+
     def __init__(self, cls, *predicates, name=None):
+        """
+
+        Parameters
+        ----------
+        cls : type
+            The class that all set elements will be an instance of.
+        *predicates
+            x
+        name : str, optional
+            x
+
+        Returns
+        -------
+        MathematicalSet
+            x
+        """
         if not isinstance(cls, type):
             raise TypeError()
         if len(predicates) == 1 and isinstance(predicates[0], list):
@@ -17,10 +36,16 @@ class MathematicalSet:
 
     @property
     def cls(self):
+        """
+        type: The class that all set elements are instances of.
+        """
         return self._cls
     
     @property
     def predicates(self):
+        """
+        list of callable: The list of predicates all set elements must satisfy.
+        """
         return self._predicates
     
     def __repr__(self):
@@ -56,30 +81,96 @@ class MathematicalSet:
         return self.difference(set2)
 
     def complement(self):
+        """
+
+        Returns
+        -------
+        MathematicalSet
+            The complement of the set.
+        """
         def complement_pred(obj): not all(pred(obj) for pred in self.predicates)
         return Set(self.cls, complement_pred)
     
     def intersection(self, set2):
+        """
+        
+        Parameters
+        ----------
+        set2 : MathematicalSet
+            The set to take the intersection with.
+
+        Returns
+        -------
+        MathematicalSet
+            The intersection of `self` and `set2`.
+        """
         self._validate(set2)
         return Set(self.cls, self.predicates + set2.predicates)
 
     def union(self, set2):
+        """
+
+        Parameters
+        ----------
+        set2 : MathematicalSet
+            The set to take the union with.
+
+        Returns
+        -------
+        MathematicalSet
+            The union of `self` and `set2`.
+        """
         self._validate(set2)
         def union_pred(obj): (all(pred(obj) for pred in self.predicates) 
                               or all(pred(obj) for pred in set2.predicates))
         return Set(self.cls, union_pred)
 
     def difference(self, set2):
+        """
+
+        Parameters
+        ----------
+        set2 : MathematicalSet
+            The set that will be subtracted from `self`
+
+        Returns
+        -------
+        MathematicalSet
+            The set difference `self` - `set2`
+        """
         return self.intersection(set2.complement())
     
     def is_subset(self, set2):
-        '''
-        Returns True if all the predicates in set2 are in self, otherwise False.
-        '''
+        """
+
+        Parameters
+        ----------
+        set2 : MathematicalSet
+            x
+
+        Returns
+        -------
+        bool
+            True if all the predicates in `set2` are in `self`, otherwise 
+            False.
+        """
         self._validate(set2)
         return all(pred in self.predicates for pred in set2.predicates)
     
     def add_predicates(self, *predicates):
+        """
+        Add predicates to the set.
+
+        Parameters
+        ----------
+        *predicates
+            The predicates to be added.
+
+        Returns
+        -------
+        MathematicalSet
+            x
+        """
         if len(predicates) == 1 and isinstance(predicates[0], list):
             predicates = predicates[0]
         return Set(self.cls, *self.predicates, *predicates)
@@ -92,17 +183,36 @@ class MathematicalSet:
 
 
 def remove_duplicates(seq):
-    '''
-    Returns a list containing the items in seq in order with duplicates removed.
-    '''
+    """
+
+    Parameters
+    ----------
+    seq : iterable
+        x
+
+    Returns
+    -------
+    list
+        The list containin the items in `seq` in order with duplicates
+        removes.
+    """
     elems = set()
     return [x for x in seq if not (x in elems or elems.add(x))]
 
 
 def negate(pred):
-    '''
-    Returns a function that negates the output of pred.
-    '''
+    """
+
+    Parameters
+    ----------
+    pred : callable
+        The predicate to negate.
+
+    Returns
+    -------
+    callable:
+        The negation of `pred`
+    """
     def negation(obj): not pred(obj)
     negation.__name__ = f'not_{pred.__name__}'
     return negation

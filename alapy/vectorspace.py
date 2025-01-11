@@ -143,9 +143,6 @@ class _StandardFn:
     # Methods relating to vector spaces
 
     def is_subspace(self, vs2):
-        '''
-        Returns True if self is a subspace of vs2, otherwise False.
-        '''
         if not self.share_ambient_space(vs2):
             return False
         for i in range(self._rs_matrix.rows):
@@ -201,7 +198,7 @@ class Fn(_StandardFn):
             The list of constraints that each vector in V must satisfy 
             (default: None). Refer to the notes for more information.
         add : callable, optional
-            An addition function that takes two vectors in V and returns
+            An addition function that takes two vectors in V and returns 
             another. The function must obey the vector space axioms: 
 
             - Closure

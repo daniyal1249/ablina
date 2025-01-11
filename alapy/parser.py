@@ -14,10 +14,28 @@ class ConstraintError(Exception):
 
 
 def sympify(expr, allowed_vars=None):
-    '''
-    Returns the sympy representation of expr. Raises a ParsingError if 
-    allowed_vars is given and expr contains variables not in it.
-    '''
+    """
+    Return the sympy representation of the given expression.
+
+    Parameters
+    ----------
+    expr : str
+        x
+    allowed_vars : iterable, optional
+        x
+
+    Returns
+    -------
+    sympy.Basic
+        x
+
+    Raises
+    ------
+    sympy.SympifyError
+        x
+    ParsingError
+        If `expr` contains variables not in `allowed_vars`.
+    """
     # Filter unrecognized characters for safety (consider regex)
     expr = sp.sympify(expr, rational=True, evaluate=False)
     if allowed_vars is not None:
@@ -28,10 +46,20 @@ def sympify(expr, allowed_vars=None):
 
 
 def split_constraint(constraint):
-    '''
-    Splits a constraint with multiple relational operators into separate 
-    relations. Returns a set of relations as strings.
-    '''
+    """
+    Split a constraint with multiple relational operators into separate 
+    relations.
+
+    Parameters
+    ----------
+    constraint : str
+        x
+
+    Returns
+    -------
+    relations : set
+        x
+    """
     operators = r'(==|!=|>=|<=|>|<)'
     exprs = re.split(operators, constraint)
     expr_count = len(exprs)

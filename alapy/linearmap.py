@@ -15,7 +15,39 @@ class IsomorphismError(Exception):
 
 
 class LinearMap:
+    """
+    """
+    
     def __init__(self, domain, codomain, mapping=None, matrix=None, name=None):
+        """
+
+        Parameters
+        ----------
+        domain : VectorSpace
+            The domain of the linear map.
+        codomain : VectorSpace
+            The codomain of the linear map.
+        mapping : callable, optional
+            A function that takes a vector in `domain` and returns a 
+            vector in `codomain`.
+        matrix : list of list or sympy.Matrix, optional
+            The matrix representation of the linear map with respect to 
+            the basis vectors of the domain and codomain.
+        name : str, optional
+            x
+
+        Returns
+        -------
+        LinearMap
+            x
+
+        Raises
+        ------
+        LinearMapError
+            If both the mapping and matrix are not provided.
+        LinearMapError
+            If the field of the domain and codomain are not the same.
+        """
         if not isinstance(domain, VectorSpace):
             raise TypeError('The domain must be a VectorSpace.')
         if not isinstance(codomain, VectorSpace):
@@ -60,30 +92,51 @@ class LinearMap:
 
     @property
     def field(self):
+        """
+        {Real, Complex}: The field of the domain and codomain.
+        """
         return self.domain.field
 
     @property
     def domain(self):
+        """
+        VectorSpace: The domain of the linear map.
+        """
         return self._domain
     
     @property
     def codomain(self):
+        """
+        VectorSpace: The codomain of the linear map.
+        """
         return self._codomain
     
     @property
     def mapping(self):
+        """
+        callable: The function that maps vectors from the domain to the codomain.
+        """
         return self._mapping
     
     @property
     def matrix(self):
+        """
+        sympy.Matrix: The matrix representation of the linear map.
+        """
         return self._matrix
     
     @property
     def rank(self):
+        """
+        int: The rank of the linear map.
+        """
         return self.matrix.rank()
     
     @property
     def nullity(self):
+        """
+        int: The nullity of the linear map.
+        """
         return self.matrix.cols - self.rank
     
     def __repr__(self):
@@ -125,6 +178,36 @@ class LinearMap:
         return self.mapping(vec)
     
     def composition(self, map2):
+        """
+        The composition of two linear maps.
+
+        Parameters
+        ----------
+        map2 : LinearMap
+            The linear map to compose with.
+
+        Returns
+        -------
+        LinearMap
+            The composition of `self` and `map2`.
+
+        Raises
+        ------
+        LinearMapError
+            If the domain of `self` is not equal to the codomain of `map2`.
+
+        Examples
+        --------
+        
+        >>> R3 = VectorSpace(Real, 3)
+        >>> def mapping1(vec): [2*i for i in vec]
+        >>> def mapping2(vec): [i/2 for i in vec]
+        >>> map1 = LinearMap(R3, R3, mapping1)
+        >>> map2 = LinearMap(R3, R3, mapping2)
+        >>> comp = map1.composition(map2)
+        >>> print(comp([1, 2, 3]))
+        [1, 2, 3]
+        """
         if self.domain != map2.codomain:
             raise LinearMapError('The linear maps are not compatible.')
         
@@ -137,28 +220,82 @@ class LinearMap:
         return LinearMap(map2.domain, self.codomain, mapping, matrix, name)
     
     def range(self):
+        """
+        The range, or image, of the linear map.
+
+        Returns
+        -------
+        VectorSpace
+            x
+
+        Examples
+        --------
+        x
+        """
         basis = [vec.tolist() for vec in self.matrix.columnspace()]
         basis = [self.domain.from_coordinate(vec) for vec in basis]
         return self.domain.span(*basis)
 
     def nullspace(self):
+        """
+        The null space, or kernel, of the linear map.
+
+        Returns
+        -------
+        VectorSpace
+            x
+
+        Examples
+        --------
+        x
+        """
         basis = [vec.tolist() for vec in self.matrix.nullspace()]
         basis = [self.domain.from_coordinate(vec) for vec in basis]
         return self.domain.span(*basis)
     
     def pseudoinverse(self):
+        """
+        The pseudoinverse of the linear map.
+        """
         raise NotImplementedError()
     
     def adjoint(self):
+        """
+        The adjoint of the linear map.
+        """
         raise NotImplementedError()
 
     def is_injective(self):
+        """
+        Check whether the linear map is injective.
+
+        Returns
+        -------
+        bool
+            True if the linear map is injective, otherwise False.
+        """
         return self.matrix.cols == self.rank
 
     def is_surjective(self):
+        """
+        Check whether the linear map is surjective.
+
+        Returns
+        -------
+        bool
+            True if the linear map is surjective, otherwise False.
+        """
         return self.matrix.rows == self.rank
     
     def is_bijective(self):
+        """
+        Check whether the linear map is bijective.
+
+        Returns
+        -------
+        bool
+            True if the linear map is bijective, otherwise False.
+        """
         return is_invertible(self.matrix)
 
     # Aliases
@@ -167,6 +304,9 @@ class LinearMap:
 
 
 class Isomorphism(LinearMap):
+    """
+    """
+
     def __init__(self, domain, codomain, mapping=None, matrix=None, name=None):
         super().__init__(domain, codomain, mapping, matrix, name)
 
@@ -177,10 +317,37 @@ class Isomorphism(LinearMap):
         return super().__repr__().replace('LinearMap', 'Isomorphism')
     
     def inverse(self):
+        """
+        The inverse of the linear map.
+
+        Returns
+        -------
+        Isomorphism
+            The inverse of `self`.
+
+        Examples
+        --------
+        x
+        """
         matrix = self.matrix.inv()
         return Isomorphism(self.codomain, self.domain, matrix=matrix)
 
 
 class IdentityMap(Isomorphism):
-    def __init__(self, vectorspace, name=None):
-        super().__init__(vectorspace, vectorspace, lambda vec: vec, name=name)
+    """
+    """
+
+    def __init__(self, vectorspace):
+        """
+
+        Parameters
+        ----------
+        vectorspace : VectorSpace
+            The domain and codomain of the identity map.
+
+        Returns
+        -------
+        IdentityMap
+            x
+        """
+        super().__init__(vectorspace, vectorspace, lambda vec: vec)
