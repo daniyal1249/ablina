@@ -899,7 +899,7 @@ def columnspace(matrix, field=Real):
 
     Parameters
     ----------
-    matrix : list or sympy.Matrix
+    matrix : list of list or sympy.Matrix
         The matrix to take the column space of.
     field : {Real, Complex}
         The field of scalars ..
@@ -907,7 +907,7 @@ def columnspace(matrix, field=Real):
     Returns
     -------
     VectorSpace
-        x
+        The column space of `matrix`.
     """
     constraints = [f'col({matrix})']
     matrix = u.rref(matrix, remove=True)
@@ -921,7 +921,7 @@ def rowspace(matrix, field=Real):
 
     Parameters
     ----------
-    matrix : list or sympy.Matrix
+    matrix : list of list or sympy.Matrix
         The matrix to take the row space of.
     field : {Real, Complex}
         The field of scalars ..
@@ -929,7 +929,7 @@ def rowspace(matrix, field=Real):
     Returns
     -------
     VectorSpace
-        x
+        The row space of `matrix`.
     """
     constraints = [f'row({matrix})']
     matrix = u.rref(matrix, remove=True)
@@ -943,7 +943,7 @@ def nullspace(matrix, field=Real):
 
     Parameters
     ----------
-    matrix : list or sympy.Matrix
+    matrix : list of list or sympy.Matrix
         The matrix to take the null space of.
     field : {Real, Complex}
         The field of scalars ..
@@ -951,7 +951,7 @@ def nullspace(matrix, field=Real):
     Returns
     -------
     VectorSpace
-        x
+        The null space of `matrix`.
     """
     constraints = [f'null({matrix})']
     matrix = u.rref(matrix, remove=True)
@@ -965,7 +965,7 @@ def left_nullspace(matrix, field=Real):
 
     Parameters
     ----------
-    matrix : list or sympy.Matrix
+    matrix : list of list or sympy.Matrix
         The matrix to take the left null space of.
     field : {Real, Complex}
         The field of scalars ..
@@ -973,7 +973,7 @@ def left_nullspace(matrix, field=Real):
     Returns
     -------
     VectorSpace
-        x
+        The left null space of `matrix`.
     """
     matrix = sp.Matrix(matrix).T
     return nullspace(matrix, field)
