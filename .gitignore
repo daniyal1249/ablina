@@ -1,16 +1,8 @@
 __pycache__/
 *.pyc
 
+archive/
+
 # Miscellaneous
 test.py
 notes.txt
-
-# Vector
-vector.py
-vector_np.py
-new_vector.py
-
-# Vector Space
-vs_old.py
-vs.py
-standard_fn.py
