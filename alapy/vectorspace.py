@@ -224,6 +224,11 @@ class Fn(_StandardFn):
 
             The default is the standard multiplication on F^n.
 
+        Returns
+        -------
+        Fn
+            The specified subspace of F^n.
+
         Raises
         ------
         NotAVectorSpaceError
@@ -263,23 +268,14 @@ class Fn(_StandardFn):
 
     @property
     def add(self):
-        """
-        callable: The addition operator on the vector space.
-        """
         return self._add
     
     @property
     def mul(self):
-        """
-        callable: The multiplication operator on the vector space.
-        """
         return self._mul
     
     @property
     def basis(self):
-        """
-        list of list: The basis vectors of the vector space.
-        """
         return [self._from_standard(vec) for vec in super().basis]
 
     def __contains__(self, vec):
@@ -298,80 +294,22 @@ class Fn(_StandardFn):
     # Methods relating to vectors
 
     def vector(self, std=1, arbitrary=False):
-        """
-        Return a vector from the vector space.
-
-        Parameters
-        ----------
-        std : float
-            The standard deviation to be used to
-        arbitrary : bool, default=False
-            x
-
-        Returns
-        -------
-        list
-            The generated vector in the vector space.
-        """
         standard_vec = super().vector(std, arbitrary)
         return self._from_standard(standard_vec)
     
     def to_coordinate(self, vector, basis=None):
-        """
-        Convert the vector to a coordinate vector with respect to a basis.
-
-        Parameters
-        ----------
-        vector : list
-            A vector in the vector space.
-        basis : bool, optional
-            x
-
-        Returns
-        -------
-        list
-            The coordinate vector representation of `vector`.
-        """
         if basis is not None:
             basis = [self._to_standard(vec) for vec in basis]
         standard_vec = self._to_standard(vector)
         return super().to_coordinate(standard_vec, basis)
     
     def from_coordinate(self, vector, basis=None):
-        """
-        Convert a coordinate vector to the vector it represents in V.
-
-        Parameters
-        ----------
-        vector : list
-            x
-        basis : bool, optional
-            x
-
-        Returns
-        -------
-        list
-            The vector in the vector space represented by `vector`.
-        """
         if basis is not None:
             basis = [self._to_standard(vec) for vec in basis]
         standard_vec = super().from_coordinate(vector, basis)
         return self._from_standard(standard_vec)
     
     def is_independent(self, *vectors):
-        """
-        Check whether the given vectors are linearly independent.
-
-        Parameters
-        ----------
-        *vectors
-            The vectors in the vector space.
-
-        Returns
-        -------
-        bool
-            True if the vectors are linearly independent, otherwise False.
-        """
         standard_vecs = [self._to_standard(vec) for vec in vectors]
         return super().is_independent(*standard_vecs)
 
@@ -427,8 +365,32 @@ class Fn(_StandardFn):
 
 
 class VectorSpace:
+    """
+    """
+
     def __init__(self, vectors, fn, isomorphism):
         """
+
+        Parameters
+        ----------
+        vectors : MathematicalSet
+            x
+        fn : Fn
+            x
+        isomorphism : callable or tuple of callable
+            x
+
+        Returns
+        -------
+        x
+
+        Raises
+        ------
+        VectorSpaceError
+            x
+        NotAVectorSpaceError
+            If the constraints, addition, and multiplication do not form 
+            a vector space.
         """
         if not isinstance(vectors, Set):
             raise TypeError('vectors must be a MathematicalSet.')
@@ -481,21 +443,21 @@ class VectorSpace:
     @property
     def add_id(self):
         """
-        object: x
+        object: The additive identity element of the vector space.
         """
         pass
     
     @property
     def add_inv(self):
         """
-        callable: x
+        callable: A function that takes a vector and returns its additive inverse.
         """
         pass
     
     @property
     def mul_id(self):
         """
-        callable: x
+        object: The multiplicative identity element of the vector space.
         """
         pass
     
@@ -516,7 +478,7 @@ class VectorSpace:
     @property
     def set(self):
         """
-        MathematicalSet: x
+        MathematicalSet: The set containing the vectors in the vector space.
         """
         return Set(self._vectors.cls, lambda vec: vec in self)
     
@@ -540,12 +502,44 @@ class VectorSpace:
 
     def vector(self, std=1, arbitrary=False):
         """
+        Return a vector from the vector space.
+
+        Parameters
+        ----------
+        std : float
+            The standard deviation to be used to
+        arbitrary : bool, default=False
+            x
+
+        Returns
+        -------
+        list
+            The generated vector in the vector space.
         """
         fn_vec = self._fn.vector(std, arbitrary)
         return self._from_fn(fn_vec)
     
     def to_coordinate(self, vector, basis=None):
         """
+        Convert the vector to a coordinate vector with respect to a basis.
+
+        Parameters
+        ----------
+        vector : list
+            A vector in the vector space.
+        basis : list of object, optional
+            x
+
+        Returns
+        -------
+        list
+            The coordinate vector representation of `vector`.
+
+        Raises
+        ------
+        VectorSpaceError
+            If the provided basis vectors do not form a basis for the
+            vector space.
         """
         if vector not in self:
             raise TypeError('Vector must be an element of the vector space.')
@@ -559,6 +553,24 @@ class VectorSpace:
     
     def from_coordinate(self, vector, basis=None):
         """
+        Convert a coordinate vector to the vector it represents in V.
+
+        Parameters
+        ----------
+        vector
+            x
+        basis : list of object, optional
+            x
+
+        Returns
+        -------
+        list
+            The vector in the vector space represented by `vector`.
+
+        Raises
+        ------
+        TypeError
+            If `vector` ..
         """
         if basis is not None:
             if not all(vec in self for vec in basis):
@@ -570,6 +582,17 @@ class VectorSpace:
     
     def is_independent(self, *vectors):
         """
+        Check whether the given vectors are linearly independent.
+
+        Parameters
+        ----------
+        *vectors
+            The vectors in the vector space.
+
+        Returns
+        -------
+        bool
+            True if the vectors are linearly independent, otherwise False.
         """
         if not all(vec in self for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
@@ -591,6 +614,11 @@ class VectorSpace:
         -------
         VectorSpace
             x
+
+        Raises
+        ------
+        VectorSpaceError
+            If `self` and `vs2` do not share the same ambient space.
         """
         if not self.share_ambient_space(vs2):
             raise VectorSpaceError('Vector spaces must share the same ambient space.')
@@ -610,6 +638,11 @@ class VectorSpace:
         -------
         VectorSpace
             x
+
+        Raises
+        ------
+        VectorSpaceError
+            If `self` and `vs2` do not share the same ambient space.
         """
         if not self.share_ambient_space(vs2):
             raise VectorSpaceError('Vector spaces must share the same ambient space.')
@@ -631,6 +664,11 @@ class VectorSpace:
         -------
         VectorSpace
             x
+
+        Raises
+        ------
+        VectorSpaceError
+            If the provided basis vectors are not linearly independent.
         """
         if basis is not None:
             if not self.is_independent(*basis):
@@ -666,6 +704,18 @@ class VectorSpace:
         return self._fn.is_subspace(vs2._fn)
     
     def share_ambient_space(self, vs2):
+        """
+
+        Parameters
+        ----------
+        vs2 : VectorSpace
+            The vector space ..
+
+        Returns
+        -------
+        bool
+            True if `self` and `vs2` share an ambient space, otherwise False.
+        """
         # if self._vectors is not vs2._vectors:
         #     return False
         # return self._fn.share_ambient_space(vs2._fn)
@@ -785,6 +835,11 @@ class VectorSpace:
         -------
         VectorSpace
             x
+
+        Raises
+        ------
+        VectorSpaceError
+            If `self` and `vs2` do not share the same ambient space.
         """
         if not self.share_ambient_space(vs2):
             raise VectorSpaceError('Vector spaces must share the same ambient space.')
@@ -899,7 +954,7 @@ def columnspace(matrix, field=Real):
 
     Parameters
     ----------
-    matrix : list or sympy.Matrix
+    matrix : list of list or sympy.Matrix
         The matrix to take the column space of.
     field : {Real, Complex}
         The field of scalars ..
@@ -921,7 +976,7 @@ def rowspace(matrix, field=Real):
 
     Parameters
     ----------
-    matrix : list or sympy.Matrix
+    matrix : list of list or sympy.Matrix
         The matrix to take the row space of.
     field : {Real, Complex}
         The field of scalars ..
@@ -943,7 +998,7 @@ def nullspace(matrix, field=Real):
 
     Parameters
     ----------
-    matrix : list or sympy.Matrix
+    matrix : list of list or sympy.Matrix
         The matrix to take the null space of.
     field : {Real, Complex}
         The field of scalars ..
@@ -965,7 +1020,7 @@ def left_nullspace(matrix, field=Real):
 
     Parameters
     ----------
-    matrix : list or sympy.Matrix
+    matrix : list of list or sympy.Matrix
         The matrix to take the left null space of.
     field : {Real, Complex}
         The field of scalars ..
