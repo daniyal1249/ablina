@@ -199,7 +199,7 @@ class LinearMap:
         Examples
         --------
         
-        >>> R3 = VectorSpace(Real, 3)
+        >>> R3 = VectorSpace.fn(Real, 3)
         >>> def mapping1(vec): [2*i for i in vec]
         >>> def mapping2(vec): [i/2 for i in vec]
         >>> map1 = LinearMap(R3, R3, mapping1)

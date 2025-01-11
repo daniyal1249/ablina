@@ -57,7 +57,7 @@ def split_constraint(constraint):
 
     Returns
     -------
-    relations : set
+    relations : set of str
         x
     """
     operators = r'(==|!=|>=|<=|>|<)'

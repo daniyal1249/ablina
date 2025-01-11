@@ -131,12 +131,12 @@ class MathematicalSet:
         Parameters
         ----------
         set2 : MathematicalSet
-            The set that will be subtracted from `self`
+            The set that will be subtracted from `self`.
 
         Returns
         -------
         MathematicalSet
-            The set difference `self` - `set2`
+            The set difference `self` - `set2`.
         """
         return self.intersection(set2.complement())
     
@@ -193,8 +193,8 @@ def remove_duplicates(seq):
     Returns
     -------
     list
-        The list containin the items in `seq` in order with duplicates
-        removes.
+        The list containing the items in `seq` in order with duplicates 
+        removed.
     """
     elems = set()
     return [x for x in seq if not (x in elems or elems.add(x))]
@@ -211,7 +211,7 @@ def negate(pred):
     Returns
     -------
     callable:
-        The negation of `pred`
+        The negation of `pred`.
     """
     def negation(obj): not pred(obj)
     negation.__name__ = f'not_{pred.__name__}'
