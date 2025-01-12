@@ -20,7 +20,7 @@ nav:
     - Getting started: guides/getting-started.md
     - Installation: guides/installation.md
   - API reference:
-    - Set: reference/set.md
+    - Set: reference/mathset.md
     - Vector space: reference/vectorspace.md
     - Linear map: reference/linearmap.md
     - Inner product space: reference/innerproduct.md
@@ -34,8 +34,6 @@ plugins:
         python:
           options:
             docstring_style: numpy
-          selection:
-            search_path: alapy
 
 
 markdown_extensions:
