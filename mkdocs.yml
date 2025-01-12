@@ -1,0 +1,46 @@
+site_name: alapy documentation
+# site_url:
+
+repo_url: https://github.com/daniyal1249/alapy
+
+# site_description:
+site_author: Daniyal Akif
+
+
+theme:
+  name: material
+  features:
+    - navigation.tabs  # Enables tab-based navigation
+    - navigation.top   # Moves the navigation bar to the top
+
+
+nav:
+  - Overview: index.md
+  - Guides:
+    - Getting started: guides/getting-started.md
+    - Installation: guides/installation.md
+  - API reference:
+    - Set: reference/set.md
+    - Vector space: reference/vectorspace.md
+    - Linear map: reference/linearmap.md
+    - Inner product space: reference/innerproduct.md
+  - Resources: resources.md
+
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: numpy
+          selection:
+            search_path: alapy
+
+
+markdown_extensions:
+  - toc:  # Automatically generate a table of contents
+      permalink: true
+  - admonition  # Adds support for notes, warnings, and other callouts
+  - pymdownx.superfences  # Enables code block highlighting
+  - pymdownx.highlight
