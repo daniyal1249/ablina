@@ -686,7 +686,7 @@ class VectorSpace:
     
     def is_subspace(self, vs2):
         """
-        The whether `self` is a linear subspace of `vs2`.
+        Check whether `self` is a linear subspace of `vs2`.
 
         Parameters
         ----------

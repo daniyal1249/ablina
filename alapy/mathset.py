@@ -13,7 +13,7 @@ class MathematicalSet:
         Parameters
         ----------
         cls : type
-            The class that all set elements will be an instance of.
+            The class that all set elements must be instances of.
         *predicates
             pass
         name : str, optional

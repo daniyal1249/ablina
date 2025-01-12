@@ -195,7 +195,7 @@ def solve_func_eq(equation, func):
 
     Returns
     -------
-    valid_funcs : set
+    valid_funcs : set of sympy.Expr
         pass
     """
     _a, _b, x = sp.symbols('_a _b x')
@@ -235,7 +235,7 @@ def solve_func_eq(equation, func):
 
 def is_tautology(equation):
     """
-    Check whether an equation is a tautology.
+    Check whether the given equation is a tautology.
 
     Parameters
     ----------
