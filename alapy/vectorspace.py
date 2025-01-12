@@ -199,10 +199,10 @@ class Fn(_StandardFn):
             The list of constraints that each vector in V must satisfy 
             (default: None). Refer to the notes for more information.
         add : callable, optional
-            An addition function that takes two vectors in V and returns 
-            another. The function must obey the vector space axioms: 
+            An addition function that takes two vectors in V and assigns 
+            them to another vector in V. The function must obey the 
+            vector space axioms: 
 
-            - Closure
             - Commutativity
             - Associativity
             - Existence of an additive identity (zero)
@@ -210,11 +210,10 @@ class Fn(_StandardFn):
             
             The default is the standard addition on F^n.
         mul : callable, optional
-            A multiplication function that takes a scalar as the first 
-            argument, a vector as the second, and returns another vector 
-            in V. The function must obey the vector space axioms: 
+            A multiplication function that takes a scalar and a vector 
+            and assigns them to a vector in V. The function must obey the 
+            vector space axioms: 
 
-            - Closure
             - Associativity
             - Existence of a multiplicative identity
             - Distributivity with respect to vector addition
@@ -443,28 +442,28 @@ class VectorSpace:
     @property
     def add_id(self):
         """
-        object: The additive identity element of the vector space.
+        object: The additive identity of the vector space.
         """
         pass
     
     @property
     def add_inv(self):
         """
-        callable: A function that takes a vector and returns its additive inverse.
+        callable: A function that returns the additive inverse of a given vector.
         """
         pass
     
     @property
     def mul_id(self):
         """
-        object: The multiplicative identity element of the vector space.
+        object: The multiplicative identity of the vector space.
         """
         pass
     
     @property
     def basis(self):
         """
-        list: The basis vectors of the vector space.
+        list: The basis of the vector space.
         """
         return [self._from_fn(vec) for vec in self._fn.basis]
     
@@ -514,7 +513,7 @@ class VectorSpace:
         Returns
         -------
         list
-            The generated vector in the vector space.
+            A vector in the vector space.
         """
         fn_vec = self._fn.vector(std, arbitrary)
         return self._from_fn(fn_vec)
@@ -538,7 +537,7 @@ class VectorSpace:
         Raises
         ------
         VectorSpaceError
-            If the provided basis vectors do not form a basis for the
+            If the provided basis vectors do not form a basis for the 
             vector space.
         """
         if vector not in self:
@@ -565,7 +564,7 @@ class VectorSpace:
         Returns
         -------
         list
-            The vector in the vector space represented by `vector`.
+            The vector represented by `vector`.
 
         Raises
         ------

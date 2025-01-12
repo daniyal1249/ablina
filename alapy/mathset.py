@@ -160,8 +160,8 @@ class MathematicalSet:
         Returns
         -------
         bool
-            True if all the predicates in `set2` are in `self`, otherwise 
-            False.
+            True if all predicates in `set2` are also in `self`, 
+            otherwise False.
         """
         self._validate(set2)
         return all(pred in self.predicates for pred in set2.predicates)
@@ -204,8 +204,7 @@ def remove_duplicates(seq):
     Returns
     -------
     list
-        The list containing the items in `seq` in order with duplicates 
-        removed.
+        A list containing the items in `seq` in order without duplicates.
     """
     elems = set()
     return [x for x in seq if not (x in elems or elems.add(x))]
