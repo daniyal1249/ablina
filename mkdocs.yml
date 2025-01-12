@@ -10,8 +10,20 @@ site_author: Daniyal Akif
 theme:
   name: material
   features:
-    - navigation.tabs  # Enables tab-based navigation
-    - navigation.top   # Moves the navigation bar to the top
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    # - toc.integrate
+    - search.suggest
+    # - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+  language: en
+  palette:
+    # - scheme: slate
+      # primary: white
+      # accent: blue
 
 
 nav:
@@ -37,8 +49,17 @@ plugins:
 
 
 markdown_extensions:
-  - toc:  # Automatically generate a table of contents
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.arithmatex:
+      generic: true
+  - footnotes
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.mark
+  - attr_list
+  - toc:
       permalink: true
-  - admonition  # Adds support for notes, warnings, and other callouts
-  - pymdownx.superfences  # Enables code block highlighting
-  - pymdownx.highlight
