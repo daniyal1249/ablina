@@ -7,7 +7,7 @@ from alapy.utils import rref, symbols
 
 def additive_id(field, n, add):
     """
-    The additive identity of an addition function on F^n.
+    The identity element of an addition function on F^n.
 
     Parameters
     ----------
@@ -90,7 +90,7 @@ def additive_inv(field, n, add, add_id, lambdify=False):
 
 def multiplicative_id(field, n, mul):
     """
-    The multiplicative identity of a multiplication function on F^n.
+    The identity element of a multiplication function on F^n.
 
     Parameters
     ----------

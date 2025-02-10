@@ -178,7 +178,7 @@ class _StandardFn:
         return True
     
     def gram_schmidt(self, *vectors):
-        pass
+        raise NotImplementedError()
 
 
 class Fn(_StandardFn):
@@ -192,7 +192,7 @@ class Fn(_StandardFn):
         Parameters
         ----------
         field : {Real, Complex}
-            Field of scalars.
+            The field of scalars.
         n : int
             The length of the vectors in V.
         constraints : list of str, optional
@@ -358,7 +358,7 @@ class Fn(_StandardFn):
                   rs_matrix=self._ns_matrix)
     
     def ortho_projection(self, vs2):
-        pass
+        raise NotImplementedError()
 
 
 class VectorSpace:
@@ -444,21 +444,21 @@ class VectorSpace:
         """
         object: The additive identity of the vector space.
         """
-        pass
+        raise NotImplementedError()
     
     @property
     def add_inv(self):
         """
         callable: A function that returns the additive inverse of a given vector.
         """
-        pass
+        raise NotImplementedError()
     
     @property
     def mul_id(self):
         """
         object: The multiplicative identity of the vector space.
         """
-        pass
+        raise NotImplementedError()
     
     @property
     def basis(self):
@@ -748,12 +748,12 @@ class VectorSpace:
         Parameters
         ----------
         vector
-            The vector in the vector space.
+            A vector in the vector space.
 
         Returns
         -------
         float
-            The norm of vector.
+            The norm of `vector`.
         """
         return sp.sqrt(self.dot(vector, vector))
     
