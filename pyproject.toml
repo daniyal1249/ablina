@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alapy"
+version = "0.1.0"
+description = "A Python package for abstract linear algebra"
+authors = [{ name = "Daniyal Akif", email = "daniyalakif@gmail.com" }]
+license = { text = "MIT" }
+dependencies = ["sympy"]
+readme = "README.md"
+keywords = [
+    "python",
+    "math",
+    "linear algebra",
+    "vector spaces",
+    "computer algebra",
+    "sympy"
+]
+requires-python = ">=3.8"
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Mathematics"
+]
+
+[project.optional-dependencies]
+docs = ["mkdocs", "mkdocs-material"]
+
+[project.urls]
+Homepage = "https://github.com/daniyal1249/alapy"
+# Documentation = ""
+Repository = "https://github.com/daniyal1249/alapy"
+Issues = "https://github.com/daniyal1249/alapy/issues"
+
+[tool.setuptools]
+packages = ["alapy"]
