@@ -1,3 +1,3 @@
 # Linear map
 
-::: alapy.linearmap
+::: ablina.linearmap

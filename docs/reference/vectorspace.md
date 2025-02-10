@@ -1,3 +1,3 @@
 # Vector space
 
-::: alapy.vectorspace
+::: ablina.vectorspace

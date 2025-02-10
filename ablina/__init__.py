@@ -3,7 +3,7 @@ __author__ = 'Daniyal Akif'
 __email__ = 'daniyalakif@gmail.com'
 __license__ = 'MIT'
 __description__ = 'A Python package for abstract linear algebra.'
-__url__ = 'https://github.com/daniyal1249/alapy'
+__url__ = 'https://github.com/daniyal1249/ablina'
 
 
 from numbers import Complex, Real

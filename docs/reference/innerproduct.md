@@ -1,3 +1,3 @@
 # Inner product space
 
-::: alapy.innerproduct
+::: ablina.innerproduct
