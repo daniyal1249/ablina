@@ -1,7 +1,7 @@
 import sympy as sp
 
-from alapy.operations import InnerProduct
-from alapy.vectorspace import VectorSpace
+from .operations import InnerProduct
+from .vectorspace import VectorSpace
 
 
 class InnerProductSpaceError(Exception):

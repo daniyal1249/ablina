@@ -3,11 +3,11 @@ from random import gauss
 
 import sympy as sp
 
-from alapy.mathset import Set
-from alapy.operations import ScalarMul, VectorAdd
-from alapy.parser import split_constraint, sympify
-import alapy.utils as u
-import alapy.vs_utils as vsu
+from .mathset import Set
+from .operations import ScalarMul, VectorAdd
+from .parser import split_constraint, sympify
+from . import utils as u
+from . import vs_utils as vsu
 
 
 class VectorSpaceError(Exception):

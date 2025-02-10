@@ -1,6 +1,6 @@
 import sympy as sp
 
-from alapy.utils import of_arity, symbols
+from .utils import of_arity, symbols
 
 
 class OperationError(Exception):

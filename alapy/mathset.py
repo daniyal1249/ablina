@@ -1,4 +1,4 @@
-from alapy.utils import of_arity
+from .utils import of_arity
 
 
 class MathematicalSet:

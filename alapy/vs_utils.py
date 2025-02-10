@@ -1,8 +1,8 @@
 import sympy as sp
 from sympy.solvers.solveset import NonlinearError
 
-from alapy.parser import ConstraintError, split_constraint, sympify
-from alapy.utils import rref, symbols
+from .parser import ConstraintError, split_constraint, sympify
+from .utils import rref, symbols
 
 
 def additive_id(field, n, add):
