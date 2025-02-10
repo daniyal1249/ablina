@@ -35,6 +35,18 @@ def is_complex(expr):
     return isinstance(expr, Complex)
 
 
+def in_field(field, *exprs):
+    """
+    Returns True if everything in `exprs` is in the field, otherwise False.
+    """
+    if field is Real:
+        if not all(is_real(expr) for expr in exprs):
+            return False
+    elif not all(is_complex(expr) for expr in exprs):
+        return False
+    return True
+
+
 def is_linear(expr, vars=None):
     """
     Determines if an equation or expression is linear with respect to the 
