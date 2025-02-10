@@ -39,6 +39,7 @@ Homepage = "https://github.com/daniyal1249/ablina"
 # Documentation = ""
 Repository = "https://github.com/daniyal1249/ablina"
 Issues = "https://github.com/daniyal1249/ablina/issues"
+Changelog = "https://github.com/daniyal1249/ablina/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 packages = ["ablina"]
