@@ -51,8 +51,10 @@ class MathematicalSet:
         return self._predicates
     
     def __repr__(self):
-        return (f'Set({self.cls.__name__}, '
-                f'{[pred.__name__ for pred in self.predicates]})')
+        return (
+            f'Set({self.cls.__name__}, '
+            f'{[pred.__name__ for pred in self.predicates]})'
+            )
     
     def __eq__(self, set2):
         if not isinstance(set2, Set):
@@ -128,8 +130,10 @@ class MathematicalSet:
         """
         self._validate(set2)
         def union_pred(obj):
-            return (all(pred(obj) for pred in self.predicates) 
-                    or all(pred(obj) for pred in set2.predicates))
+            return (
+                all(pred(obj) for pred in self.predicates) 
+                or all(pred(obj) for pred in set2.predicates)
+                )
         return Set(self.cls, union_pred)
 
     def difference(self, set2):
@@ -186,8 +190,9 @@ class MathematicalSet:
 
     def _validate(self, set2):
         if not isinstance(set2, Set):
-            raise TypeError(f'Expected a MathematicalSet, got '
-                            f'{type(set2).__name__} instead.')
+            raise TypeError(
+                f'Expected a MathematicalSet, got {type(set2).__name__} instead.'
+                )
         if self.cls is not set2.cls:
             raise ValueError('The cls attribute of both sets must be the same.')
 
@@ -224,7 +229,7 @@ def negate(pred):
     callable:
         The negation of `pred`.
     """
-    def negation(obj): not pred(obj)
+    def negation(obj): return not pred(obj)
     negation.__name__ = f'not_{pred.__name__}'
     return negation
 

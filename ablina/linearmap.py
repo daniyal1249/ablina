@@ -57,8 +57,9 @@ class LinearMap:
         if mapping is None and matrix is None:
             raise LinearMapError('Either a matrix or mapping must be provided.')
         if domain.field is not codomain.field:
-            raise LinearMapError('The domain and codomain must be vector '
-                                 'spaces over the same field.')
+            raise LinearMapError(
+                'The domain and codomain must be vector spaces over the same field.'
+                )
         
         if mapping is None:
             mapping = LinearMap._from_matrix(domain, codomain, matrix)
@@ -88,8 +89,8 @@ class LinearMap:
     @staticmethod
     def _from_matrix(domain, codomain, matrix):
         matrix = sp.Matrix(matrix)
-        def to_coord(vec): sp.Matrix(domain.to_coordinate(vec))
-        def from_coord(vec): codomain.from_coordinate(vec.flat())
+        def to_coord(vec): return sp.Matrix(domain.to_coordinate(vec))
+        def from_coord(vec): return codomain.from_coordinate(vec.flat())
         return lambda vec: from_coord(matrix @ to_coord(vec))
 
     @property
@@ -142,35 +143,39 @@ class LinearMap:
         return self.matrix.cols - self.rank
     
     def __repr__(self):
-        return (f'LinearMap(domain={self.domain}, '
-                f'codomain={self.codomain}, '
-                f'mapping={self.mapping.__name__}, '
-                f'matrix={self.matrix})')
+        return (
+            f'LinearMap(domain={self.domain}, '
+            f'codomain={self.codomain}, '
+            f'mapping={self.mapping.__name__}, '
+            f'matrix={self.matrix})'
+            )
     
     def __str__(self):
         return self.__repr__()
 
     def __eq__(self, map2):
-        return (self.domain == map2.domain 
-                and self.codomain == map2.codomain 
-                and self.matrix == map2.matrix)
+        return (
+            self.domain == map2.domain 
+            and self.codomain == map2.codomain 
+            and self.matrix == map2.matrix
+            )
     
     def __add__(self, map2):
-        def mapping(vec): self.mapping(vec) + map2.mapping(vec)
+        def mapping(vec): return self.mapping(vec) + map2.mapping(vec)
         matrix = self.matrix + map2.matrix
         return LinearMap(self.domain, self.codomain, mapping, matrix)
     
     def __mul__(self, scalar):
         if not isinstance(scalar, self.field):
             raise TypeError('Scalar must be an element of the vector space field.')
-        def mapping(vec): self.mapping(vec) * scalar
+        def mapping(vec): return self.mapping(vec) * scalar
         matrix = self.matrix * scalar
         return LinearMap(self.domain, self.codomain, mapping, matrix)
     
     def __rmul__(self, scalar):
         if not isinstance(scalar, self.field):
             raise TypeError('Scalar must be an element of the vector space field.')
-        def mapping(vec): scalar * self.mapping(vec)
+        def mapping(vec): return scalar * self.mapping(vec)
         matrix = scalar * self.matrix
         return LinearMap(self.domain, self.codomain, mapping, matrix)
     
@@ -202,8 +207,8 @@ class LinearMap:
         --------
         
         >>> R3 = VectorSpace.fn(Real, 3)
-        >>> def mapping1(vec): [2*i for i in vec]
-        >>> def mapping2(vec): [i/2 for i in vec]
+        >>> def mapping1(vec): return [2*i for i in vec]
+        >>> def mapping2(vec): return [i/2 for i in vec]
         >>> map1 = LinearMap(R3, R3, mapping1)
         >>> map2 = LinearMap(R3, R3, mapping2)
         >>> comp = map1.composition(map2)
@@ -213,7 +218,7 @@ class LinearMap:
         if self.domain != map2.codomain:
             raise LinearMapError('The linear maps are not compatible.')
         
-        def mapping(vec): self.mapping(map2.mapping(vec))
+        def mapping(vec): return self.mapping(map2.mapping(vec))
         matrix = self.matrix @ map2.matrix
         if hasattr(self, '__name__') and hasattr(map2, '__name__'):
             name = f'{self.__name__} o {map2.__name__}'

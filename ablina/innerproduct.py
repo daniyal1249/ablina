@@ -33,9 +33,10 @@ class InnerProductSpace(VectorSpace):
         if not isinstance(vectorspace, VectorSpace):
             raise TypeError('vectorspace must be of type VectorSpace.')
         
-        super().__init__(vectorspace._vectors, vectorspace._fn, 
-                         (vectorspace._to_fn, vectorspace._from_fn))
-        
+        super().__init__(
+            vectorspace._vectors, vectorspace._fn, 
+            (vectorspace._to_fn, vectorspace._from_fn)
+            )
         self._innerproduct = self._init_innerproduct(innerproduct)
 
     def _init_innerproduct(self, ip):
