@@ -986,9 +986,10 @@ def columnspace(matrix, field=Real):
     [[1, 0], [0, 1]]
     """
     constraints = [f'col({matrix})']
+    matrix = sp.Matrix(matrix).T
     matrix = u.rref(matrix, remove=True)
     n = matrix.rows
-    return VectorSpace.fn(field, n, constraints, rs_matrix=matrix.T)
+    return VectorSpace.fn(field, n, constraints, rs_matrix=matrix)
 
 
 def rowspace(matrix, field=Real):
