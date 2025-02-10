@@ -213,7 +213,7 @@ def solve_func_eq(equation, func):
         subbed_eq = equation.replace(func(w), form(w))
         invalid_vars = subbed_eq.free_symbols - {_a, _b}
         try:
-            sols = sp.solve(subbed_eq, [_a, _b], rational=True, dict=True)
+            sols = sp.solve(subbed_eq, [_a, _b], dict=True)
             sols = sols if sols else [dict()]
         except Exception:
             continue
@@ -348,7 +348,6 @@ def to_ns_matrix(n, lin_constraints):
         row = [0] * n
         try:
             expr = sympify(expr, allowed_vars)
-            expr = expr.lhs - expr.rhs  # Convert equation to an expression
         except Exception as e:
             raise ConstraintError('Invalid constraint format.') from e
 

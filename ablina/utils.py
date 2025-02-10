@@ -42,6 +42,8 @@ def is_linear(expr, vars=None):
     """
     if vars is None:
         vars = expr.free_symbols
+    if not vars:
+        return True
     try:
         terms = sp.Poly(expr, *vars).monoms()
     except sp.PolynomialError:

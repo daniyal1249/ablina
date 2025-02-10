@@ -1,5 +1,3 @@
-import re
-
 import sympy as sp
 
 
@@ -37,7 +35,7 @@ def sympify(expr, allowed_vars=None):
         If `expr` contains variables not in `allowed_vars`.
     """
     # Filter unrecognized characters for safety (consider regex)
-    expr = sp.sympify(expr, rational=True, evaluate=False)
+    expr = sp.sympify(expr, rational=True)  # evaluate flag
     if allowed_vars is not None:
         if not all(var in allowed_vars for var in expr.free_symbols):
             invalid_vars = expr.free_symbols - set(allowed_vars)
@@ -45,7 +43,7 @@ def sympify(expr, allowed_vars=None):
     return expr
 
 
-def split_constraint(constraint):
+def split_constraint(constraint: str):
     """
     Split a constraint with multiple relational operators into separate 
     relations.
@@ -60,20 +58,13 @@ def split_constraint(constraint):
     relations : set of str
         pass
     """
-    operators = r'(==|!=|>=|<=|>|<)'
-    exprs = re.split(operators, constraint)
+    exprs = constraint.split('==')
     expr_count = len(exprs)
     if expr_count == 1:
-        raise ConstraintError('Constraints must include at least one '
-                              'relational operator from: ==, !=, >=, <=, >, <')
+        raise ConstraintError('Constraints must include at least one "==".')
     
-    relations = set()
-    for i in range(1, expr_count - 1, 2):
-        left_operand = exprs[i - 1].strip()
-        operator = exprs[i].strip()
-        right_operand = exprs[i + 1].strip()
-
-        if not (left_operand and right_operand):
-            raise ConstraintError(f'Missing operand for {operator}.')
-        relations.add(f'{left_operand} {operator} {right_operand}')
-    return relations
+    eqs = set()
+    for i in range(expr_count - 1):
+        eq = f'{exprs[i]} - ({exprs[i + 1]})'
+        eqs.add(eq)
+    return eqs
