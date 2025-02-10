@@ -30,8 +30,9 @@ class _StandardFn:
             constraints = []
         if ns_matrix is None and rs_matrix is None:
             if not is_vectorspace(n, constraints):
-                raise NotAVectorSpaceError()  # Add error msg
-
+                raise NotAVectorSpaceError(
+                    'Constraints do not satisfy vector space axioms.'
+                    )
         ns, rs = _StandardFn._init_matrices(n, constraints, ns_matrix, rs_matrix)
 
         self._field = field
@@ -80,10 +81,7 @@ class _StandardFn:
         return len(self.basis)
     
     def __contains__(self, vec):
-        if self.field is Real:
-            if not all(u.is_real(coord) for coord in vec):
-                return False
-        elif not all(u.is_complex(coord) for coord in vec):
+        if not u.in_field(self.field, *vec):
             return False
         try:
             # Check if vec satisfies vector space constraints
@@ -186,8 +184,10 @@ class Fn(_StandardFn):
     pass
     """
 
-    def __init__(self, field, n, constraints=None, add=None, mul=None, 
-                 *, isomorphism=None, ns_matrix=None, rs_matrix=None):
+    def __init__(
+            self, field, n, constraints=None, add=None, mul=None, 
+            *, isomorphism=None, ns_matrix=None, rs_matrix=None
+            ):
         """
         Parameters
         ----------
@@ -240,8 +240,9 @@ class Fn(_StandardFn):
 
         self._to_standard, self._from_standard = iso
         mapped_constraints = vsu.map_constraints(self._to_standard, constraints)
-        super().__init__(field, n, mapped_constraints, 
-                         ns_matrix=ns_matrix, rs_matrix=rs_matrix)
+        super().__init__(
+            field, n, mapped_constraints, ns_matrix=ns_matrix, rs_matrix=rs_matrix
+            )
         
         self._add = add  # VectorAdd(field, n, add)
         self._mul = mul  # ScalarMul(field, n, mul)
@@ -255,9 +256,9 @@ class Fn(_StandardFn):
             iso = (lambda vec: vec, lambda vec: vec)
 
         if add is None:
-            def add(vec1, vec2): [i + j for i, j in zip(vec1, vec2)]
+            def add(vec1, vec2): return [i + j for i, j in zip(vec1, vec2)]
         if mul is None:
-            def mul(scalar, vec): [scalar * i for i in vec]
+            def mul(scalar, vec): return [scalar * i for i in vec]
         if iso is None:
             iso = vsu.standard_isomorphism(field, n, add, mul)
 
@@ -316,19 +317,21 @@ class Fn(_StandardFn):
         rs_matrix = sp.Matrix.vstack(self._rs_matrix, vs2._rs_matrix)
         rs_matrix = u.rref(rs_matrix, remove=True)
         constraints = self.constraints  # Rework
-
-        return Fn(self.field, self.n, constraints, self.add, self.mul, 
-                  isomorphism=(self._to_standard, self._from_standard), 
-                  rs_matrix=rs_matrix)
+        return Fn(
+            self.field, self.n, constraints, self.add, self.mul, 
+            isomorphism=(self._to_standard, self._from_standard), 
+            rs_matrix=rs_matrix
+            )
     
     def intersection(self, vs2):
         ns_matrix = sp.Matrix.vstack(self._ns_matrix, vs2._ns_matrix)
         ns_matrix = u.rref(ns_matrix, remove=True)
         constraints = self.constraints + vs2.constraints
-
-        return Fn(self.field, self.n, constraints, self.add, self.mul, 
-                  isomorphism=(self._to_standard, self._from_standard), 
-                  ns_matrix=ns_matrix)
+        return Fn(
+            self.field, self.n, constraints, self.add, self.mul, 
+            isomorphism=(self._to_standard, self._from_standard), 
+            ns_matrix=ns_matrix
+            )
     
     def span(self, *vectors, basis=None):
         if basis is not None:
@@ -337,10 +340,11 @@ class Fn(_StandardFn):
         if basis is None:
             standard_vecs = u.rref(standard_vecs, remove=True)
         constraints = [f'span({', '.join(map(str, vectors))})']
-
-        return Fn(self.field, self.n, constraints, self.add, self.mul, 
-                  isomorphism=(self._to_standard, self._from_standard), 
-                  rs_matrix=standard_vecs)
+        return Fn(
+            self.field, self.n, constraints, self.add, self.mul, 
+            isomorphism=(self._to_standard, self._from_standard), 
+            rs_matrix=standard_vecs
+            )
     
     def share_ambient_space(self, vs2):
         # if not super().share_ambient_space(vs2):
@@ -352,10 +356,11 @@ class Fn(_StandardFn):
     
     def ortho_complement(self):
         constraints = [f'ortho_complement({', '.join(self.constraints)})']
-
-        return Fn(self.field, self.n, constraints, self.add, self.mul, 
-                  isomorphism=(self._to_standard, self._from_standard), 
-                  rs_matrix=self._ns_matrix)
+        return Fn(
+            self.field, self.n, constraints, self.add, self.mul, 
+            isomorphism=(self._to_standard, self._from_standard), 
+            rs_matrix=self._ns_matrix
+            )
     
     def ortho_projection(self, vs2):
         raise NotImplementedError()
@@ -408,7 +413,9 @@ class VectorSpace:
                 return iso
         elif u.of_arity(iso, 1):
             return iso, lambda vec: vec
-        raise TypeError('isomorphism must be a callable or a 2-tuple of callables.')
+        raise TypeError(
+            'Isomorphism must be a callable or a 2-tuple of callables.'
+            )
     
     @property
     def field(self):
@@ -423,6 +430,8 @@ class VectorSpace:
         callable: The addition operator on the vector space.
         """
         def add(vec1, vec2):
+            if not (vec1 in self and vec2 in self):
+                raise TypeError('Vectors must be elements of the vector space.')
             fn_vec1, fn_vec2 = self._to_fn(vec1), self._to_fn(vec2)
             sum = self._fn.add(fn_vec1, fn_vec2)
             return self._from_fn(sum)
@@ -434,6 +443,10 @@ class VectorSpace:
         callable: The multiplication operator on the vector space.
         """
         def mul(scalar, vec):
+            if not u.in_field(self.field, scalar):
+                raise TypeError('Scalar must be an element of the field.')
+            if vec not in self:
+                raise TypeError('Vector must be an element of the vector space.')
             fn_vec = self._to_fn(vec)
             prod = self._fn.mul(scalar, fn_vec)
             return self._from_fn(prod)
@@ -857,8 +870,10 @@ class VectorSpace:
         pass
         """
         vectors = Set(object, name=f'F^{n}')
-        fn = Fn(field, n, constraints, add, mul, 
-                ns_matrix=ns_matrix, rs_matrix=rs_matrix)
+        fn = Fn(
+            field, n, constraints, add, mul, 
+            ns_matrix=ns_matrix, rs_matrix=rs_matrix
+            )
 
         vectorspace = cls(vectors, fn, lambda vec: vec)
         if basis is not None:
@@ -871,9 +886,9 @@ class VectorSpace:
         """
         pass
         """
-        def in_matrix(mat): mat.shape == shape
-        def to_fn(mat): mat.flat()
-        def from_fn(vec): sp.Matrix(*shape, vec)
+        def in_matrix(mat): return mat.shape == shape
+        def to_fn(mat): return mat.flat()
+        def from_fn(vec): return sp.Matrix(*shape, vec)
         
         name = f'{shape[0]} by {shape[1]} matrices'
         vectors = Set(sp.Matrix, in_matrix, name=name)
