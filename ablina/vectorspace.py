@@ -130,13 +130,13 @@ class _StandardFn:
             raise TypeError('Invalid coordinate vector.') from e
         return vec.flat() if vec else [0] * self.n
     
-    def is_independent(self, *vectors):
+    def are_independent(self, *vectors):
         matrix = sp.Matrix(vectors)
         return matrix.rank() == matrix.rows
     
-    def _is_basis(self, *basis):
-        matrix = sp.Matrix(basis)
-        return matrix.rank() == matrix.rows and len(basis) == self.dim
+    def _is_basis(self, *vectors):
+        matrix = sp.Matrix(vectors)
+        return matrix.rank() == matrix.rows and len(vectors) == self.dim
 
     # Methods relating to vector spaces
 
@@ -165,7 +165,7 @@ class _StandardFn:
     def are_orthogonal(self, vec1, vec2):
         return self.dot(vec1, vec2) == 0
     
-    def is_orthonormal(self, *vectors):
+    def are_orthonormal(self, *vectors):
         # Improve efficiency
         if not all(self.norm(vec) == 1 for vec in vectors):
             return False
@@ -307,9 +307,9 @@ class Fn(_StandardFn):
         standard_vec = super().from_coordinate(vector, basis)
         return self._from_standard(standard_vec)
     
-    def is_independent(self, *vectors):
+    def are_independent(self, *vectors):
         standard_vecs = [self._to_standard(vec) for vec in vectors]
-        return super().is_independent(*standard_vecs)
+        return super().are_independent(*standard_vecs)
 
     # Methods relating to vector spaces
 
@@ -592,7 +592,7 @@ class VectorSpace:
         fn_vec = self._fn.from_coordinate(vector, basis)
         return self._from_fn(fn_vec)
     
-    def is_independent(self, *vectors):
+    def are_independent(self, *vectors):
         """
         Check whether the given vectors are linearly independent.
 
@@ -609,7 +609,7 @@ class VectorSpace:
         if not all(vec in self for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
         fn_vecs = [self._to_fn(vec) for vec in vectors]
-        return self._fn.is_independent(*fn_vecs)
+        return self._fn.are_independent(*fn_vecs)
 
     # Methods relating to vector spaces
 
@@ -683,7 +683,7 @@ class VectorSpace:
             If the provided basis vectors are not linearly independent.
         """
         if basis is not None:
-            if not self.is_independent(*basis):
+            if not self.are_independent(*basis):
                 raise VectorSpaceError('Basis vectors must be linearly independent.')
             vectors = basis
         elif not all(vec in self for vec in vectors):
@@ -786,7 +786,7 @@ class VectorSpace:
         """
         return self.dot(vec1, vec2) == 0
     
-    def is_orthonormal(self, *vectors):
+    def are_orthonormal(self, *vectors):
         """
         Check whether the vectors are orthonormal.
 
