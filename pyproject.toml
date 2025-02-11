@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ablina"
-version = "0.1.1"
+version = "0.2.0"
 description = "A Python package for abstract linear algebra"
 authors = [{ name = "Daniyal Akif", email = "daniyalakif@gmail.com" }]
 license = { text = "MIT" }
@@ -36,9 +36,8 @@ docs = ["mkdocs", "mkdocs-material"]
 
 [project.urls]
 Homepage = "https://github.com/daniyal1249/ablina"
-# Documentation = ""
+Documentation = "https://ablina.readthedocs.io/en/latest"
 Repository = "https://github.com/daniyal1249/ablina"
-Issues = "https://github.com/daniyal1249/ablina/issues"
 Changelog = "https://github.com/daniyal1249/ablina/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
