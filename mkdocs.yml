@@ -3,12 +3,13 @@ site_name: ablina documentation
 
 repo_url: https://github.com/daniyal1249/ablina
 
-# site_description:
+site_description: A Python package for abstract linear algebra.
 site_author: Daniyal Akif
 
 
 theme:
   name: material
+  # custom_dir: overrides
   features:
     - navigation.tabs
     - navigation.sections
