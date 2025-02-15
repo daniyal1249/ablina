@@ -30,8 +30,8 @@ class LinearMap:
         codomain : VectorSpace
             The codomain of the linear map.
         mapping : callable, optional
-            A function that takes a vector in `domain` and returns a 
-            vector in `codomain`.
+            A function that takes a vector in the domain and returns a 
+            vector in the codomain.
         matrix : list of list or sympy.Matrix, optional
             The matrix representation of the linear map with respect to 
             the basis vectors of the domain and codomain.
@@ -46,7 +46,7 @@ class LinearMap:
         Raises
         ------
         LinearMapError
-            If both the mapping and matrix are not provided.
+            If neither the mapping nor the matrix is provided.
         LinearMapError
             If the field of the domain and codomain are not the same.
         """
@@ -212,7 +212,7 @@ class LinearMap:
         >>> map1 = LinearMap(R3, R3, mapping1)
         >>> map2 = LinearMap(R3, R3, mapping2)
         >>> comp = map1.composition(map2)
-        >>> print(comp([1, 2, 3]))
+        >>> comp([1, 2, 3])
         [1, 2, 3]
         """
         if self.domain != map2.codomain:
@@ -233,7 +233,11 @@ class LinearMap:
         Returns
         -------
         VectorSpace
-            pass
+            The range of `self`.
+
+        See Also
+        --------
+        LinearMap.image
         """
         basis = [vec.tolist() for vec in self.matrix.columnspace()]
         basis = [self.domain.from_coordinate(vec) for vec in basis]
@@ -246,7 +250,11 @@ class LinearMap:
         Returns
         -------
         VectorSpace
-            pass
+            The nullspace of `self`.
+
+        See Also
+        --------
+        LinearMap.kernel
         """
         basis = [vec.tolist() for vec in self.matrix.nullspace()]
         basis = [self.domain.from_coordinate(vec) for vec in basis]
@@ -272,6 +280,10 @@ class LinearMap:
         -------
         bool
             True if the linear map is injective, otherwise False.
+
+        See Also
+        --------
+        LinearMap.is_surjective, LinearMap.is_bijective
         """
         return self.matrix.cols == self.rank
 
@@ -283,6 +295,10 @@ class LinearMap:
         -------
         bool
             True if the linear map is surjective, otherwise False.
+
+        See Also
+        --------
+        LinearMap.is_injective, LinearMap.is_bijective
         """
         return self.matrix.rows == self.rank
     
@@ -294,6 +310,10 @@ class LinearMap:
         -------
         bool
             True if the linear map is bijective, otherwise False.
+
+        See Also
+        --------
+        LinearMap.is_injective, LinearMap.is_surjective
         """
         return is_invertible(self.matrix)
 
