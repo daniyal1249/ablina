@@ -528,7 +528,7 @@ class VectorSpace:
         
         Returns
         -------
-        list
+        object
             A vector in the vector space.
 
         Examples
@@ -555,7 +555,7 @@ class VectorSpace:
         ----------
         vector : list
             A vector in the vector space.
-        basis : list of object, optional
+        basis : list, optional
             pass
 
         Returns
@@ -598,15 +598,15 @@ class VectorSpace:
 
         Returns a linear combination of the basis vectors whose weights 
         are given by the coordinates of `vector`. If `basis` is None, then 
-        `self.basis` is used. The length of `vector` must be equal to the 
-        number of vectors in the basis, or equivalently the dimension of 
-        the vector space.
+        ``self.basis`` is used. The length of `vector` must be equal to 
+        the number of vectors in the basis, or equivalently the dimension 
+        of the vector space.
 
         Parameters
         ----------
         vector
             The coordinate vector to convert.
-        basis : list of object, optional
+        basis : list, optional
             A basis of the vector space.
 
         Returns
@@ -763,7 +763,7 @@ class VectorSpace:
         The span of the given vectors.
 
         Returns the smallest subspace of `self` that contains the vectors 
-        in `vectors`. As with all instances of the `VectorSpace` class, 
+        in `vectors`. As with all instances of the ``VectorSpace`` class, 
         the basis of the resulting vector space is automatically 
         determined. To override this, pass the vectors into `basis` instead. 
         Note that the vectors must be linearly independent if passed into `basis`.
