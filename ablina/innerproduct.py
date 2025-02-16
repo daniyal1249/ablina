@@ -46,7 +46,7 @@ class InnerProductSpace(VectorSpace):
     
     def dot(self, vec1, vec2):
         """
-        The dot (inner) product between two vectors.
+        The dot product between two vectors.
 
         Parameters
         ----------
@@ -56,28 +56,54 @@ class InnerProductSpace(VectorSpace):
         Returns
         -------
         float
-            The result of the dot product between `vec1` and `vec2`.
+            The dot product between `vec1` and `vec2`.
+
+        See Also
+        --------
+        VectorSpace.norm, VectorSpace.are_orthogonal
+
+        Examples
+        --------
+
+        >>> vs = VectorSpace.fn(Real, 3)
+        >>> vs.dot([1, 2, 3], [4, 5, 6])
+        32
+        >>> vs.dot([1, 0, 1], [0, 1, 0])
+        0
         """
         return self._innerproduct(vec1, vec2)
 
     def ortho_complement(self):
         """
-        pass
+        The orthogonal complement of an inner product space.
 
         Returns
         -------
         InnerProductSpace
             The orthogonal complement of `self`.
+
+        See Also
+        --------
+        VectorSpace.ortho_projection, VectorSpace.dot
+
+        Examples
+        --------
+
+        >>> vs = VectorSpace.fn(Real, 3, constraints=['v0 == v1'])
+        >>> vs.ortho_complement().basis
+        [[1, -1, 0]]
+        >>> vs.ortho_complement().ortho_complement() == vs
+        True
         """
         raise NotImplementedError()
     
     def ortho_projection(self, vs2):
         """
-        pass
+        The orthogonal projection of `self` onto `vs2`.
 
         Parameters
         ----------
-        vs2 : InnerProductSpace
+        vs2 : VectorSpace
             pass
 
         Returns
@@ -89,5 +115,9 @@ class InnerProductSpace(VectorSpace):
         ------
         InnerProductSpaceError
             If `self` and `vs2` do not share the same ambient space.
+
+        See Also
+        --------
+        VectorSpace.ortho_complement, VectorSpace.dot
         """
         raise NotImplementedError()
