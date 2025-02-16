@@ -189,6 +189,10 @@ class MathematicalSet:
         """
         The union of two sets.
 
+        Returns the set of all objects contained in either `self` or 
+        `set2`. Note that the ``cls`` attribute of both sets must be the 
+        same.
+
         Parameters
         ----------
         set2 : MathematicalSet
@@ -234,7 +238,7 @@ class MathematicalSet:
         Parameters
         ----------
         set2 : MathematicalSet
-            The set that will be subtracted from `self`.
+            The set to be subtracted from `self`.
 
         Returns
         -------
@@ -265,12 +269,18 @@ class MathematicalSet:
         """
         Check whether `self` is a subset of `set2`.
 
-        Note that this function
+        Note that this method is NOT equivalent to the mathematical notion 
+        of subset. Due to programmatic limitations, this method instead 
+        checks whether every predicate object in `set2` is also in `self`. 
+        If so, it returns True, and `self` is a subset of `set2` in the 
+        mathematical sense. Otherwise, it returns False, and nothing can 
+        be said about the relationship between `self` and `set2`. The 
+        examples below illustrate this.
 
         Parameters
         ----------
         set2 : MathematicalSet
-            pass
+            The set to compare `self` with.
 
         Returns
         -------
@@ -285,6 +295,7 @@ class MathematicalSet:
 
         Examples
         --------
+
         >>> def pred1(x): return len(x) == 3
         >>> def pred2(x): return 1 in x
         >>> set1 = Set(list, pred1)
