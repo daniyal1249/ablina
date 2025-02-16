@@ -492,6 +492,19 @@ class VectorSpace:
         return Set(self._vectors.cls, lambda vec: vec in self)
     
     def __contains__(self, vec):
+        """
+        Check whether a vector is an element of the vector space.
+
+        Parameters
+        ----------
+        vec : object
+            The vector to check.
+
+        Returns
+        -------
+        bool
+            True if `vec` is an element of `self`, otherwise False.
+        """
         if vec not in self._vectors:
             return False
         return self._to_fn(vec) in self._fn
@@ -502,9 +515,15 @@ class VectorSpace:
         return self.is_subspace(vs2) and vs2.is_subspace(self)
     
     def __add__(self, vs2):
+        """
+        Same as ``VectorSpace.sum``.
+        """
         return self.sum(vs2)
     
     def __and__(self, vs2):
+        """
+        Same as ``VectorSpace.intersection``.
+        """
         return self.intersection(vs2)
 
     # Methods relating to vectors
