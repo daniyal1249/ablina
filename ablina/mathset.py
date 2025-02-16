@@ -166,7 +166,7 @@ class MathematicalSet:
 
         Raises
         ------
-        TypeError
+        ValueError
             If ``self.cls`` and ``set2.cls`` are not the same.
 
         Examples
