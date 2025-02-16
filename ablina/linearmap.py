@@ -161,25 +161,96 @@ class LinearMap:
             )
     
     def __add__(self, map2):
-        def mapping(vec): return self.mapping(vec) + map2.mapping(vec)
+        """
+        The sum of two linear maps.
+
+        Parameters
+        ----------
+        map2 : LinearMap
+            The linear map being added.
+
+        Returns
+        -------
+        LinearMap
+            The sum of `self` and `map2`.
+
+        Examples
+        --------
+        
+        >>> R3 = VectorSpace.fn(Real, 3)
+        >>> def mapping1(vec): return [2*i for i in vec]
+        >>> def mapping2(vec): return [3*i for i in vec]
+        >>> map1 = LinearMap(R3, R3, mapping1)
+        >>> map2 = LinearMap(R3, R3, mapping2)
+        >>> map3 = map1 + map2
+        >>> map3([1, 2, 3])
+        [5, 10, 15]
+        """
+        # FIX: Add check to make sure the domains and codomains are equal
+        def mapping(vec):
+            vec1 = self.mapping(vec)
+            vec2 = map2.mapping(vec)
+            return self.codomain.add(vec1, vec2)
         matrix = self.matrix + map2.matrix
         return LinearMap(self.domain, self.codomain, mapping, matrix)
     
     def __mul__(self, scalar):
+        """
+        The product of a linear map and scalar.
+
+        Parameters
+        ----------
+        scalar : Real or Complex
+            The scalar to multiply with.
+
+        Returns
+        -------
+        LinearMap
+            The product of `self` and `scalar`.
+
+        Examples
+        --------
+        
+        >>> R3 = VectorSpace.fn(Real, 3)
+        >>> def mapping(vec): return [2*i for i in vec]
+        >>> map1 = LinearMap(R3, R3, mapping)
+        >>> map2 = 3 * map1
+        >>> map2([1, 2, 3])
+        [6, 12, 18]
+        """
         if not isinstance(scalar, self.field):
             raise TypeError('Scalar must be an element of the vector space field.')
-        def mapping(vec): return self.mapping(vec) * scalar
+        def mapping(vec):
+            return self.codomain.mul(scalar, self.mapping(vec))
         matrix = self.matrix * scalar
         return LinearMap(self.domain, self.codomain, mapping, matrix)
     
     def __rmul__(self, scalar):
-        if not isinstance(scalar, self.field):
-            raise TypeError('Scalar must be an element of the vector space field.')
-        def mapping(vec): return scalar * self.mapping(vec)
-        matrix = scalar * self.matrix
-        return LinearMap(self.domain, self.codomain, mapping, matrix)
+        return self.__mul__(scalar)
     
     def __call__(self, vec):
+        """
+        Apply the linear map to a vector.
+
+        Parameters
+        ----------
+        vec : object
+            The vector to map.
+
+        Returns
+        -------
+        object
+            The vector that `vec` maps to.
+
+        Examples
+        --------
+        
+        >>> R3 = VectorSpace.fn(Real, 3)
+        >>> def mapping(vec): return [2*i for i in vec]
+        >>> map1 = LinearMap(R3, R3, mapping)
+        >>> map1([1, 2, 3])
+        [2, 4, 6]
+        """
         if vec not in self.domain:
             raise TypeError(f'{vec} is not an element of the domain.')
         return self.mapping(vec)
@@ -208,12 +279,12 @@ class LinearMap:
         
         >>> R3 = VectorSpace.fn(Real, 3)
         >>> def mapping1(vec): return [2*i for i in vec]
-        >>> def mapping2(vec): return [i/2 for i in vec]
+        >>> def mapping2(vec): return [3*i for i in vec]
         >>> map1 = LinearMap(R3, R3, mapping1)
         >>> map2 = LinearMap(R3, R3, mapping2)
-        >>> comp = map1.composition(map2)
-        >>> comp([1, 2, 3])
-        [1, 2, 3]
+        >>> map3 = map1.composition(map2)
+        >>> map3([1, 2, 3])
+        [6, 12, 18]
         """
         if self.domain != map2.codomain:
             raise LinearMapError('The linear maps are not compatible.')
