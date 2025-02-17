@@ -35,6 +35,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+visualize = ["manim"]
 docs = ["mkdocs", "mkdocs-material"]
 
 [project.urls]

@@ -14,7 +14,7 @@ from .mathset import MathematicalSet, Set
 from .vectorspace import (
     VectorSpace, Fn, is_vectorspace, columnspace, rowspace, 
     nullspace, left_nullspace, image, kernel
-)
+    )
 
 
 __all__ = [
