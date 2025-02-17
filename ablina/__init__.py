@@ -24,4 +24,4 @@ __all__ = [
     'MathematicalSet', 'Set',
     'VectorSpace', 'Fn', 'is_vectorspace', 'columnspace', 'rowspace',
     'nullspace', 'left_nullspace', 'image', 'kernel'
-]
+    ]

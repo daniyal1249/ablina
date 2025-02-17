@@ -16,7 +16,7 @@ def additive_id(field, n, add):
     n : int
         The length of the vectors the addition function takes.
     add : callable
-        The addition function ..
+        The addition function on F^n.
 
     Returns
     -------
@@ -55,7 +55,7 @@ def additive_inv(field, n, add, add_id, lambdify=False):
     n : int
         The length of the vectors the addition function takes.
     add : callable
-        The addition function ..
+        The addition function on F^n.
 
     Returns
     -------
@@ -74,6 +74,7 @@ def additive_inv(field, n, add, add_id, lambdify=False):
         inverses = sp.nonlinsolve(exprs, ys)
     if isinstance(inverses, sp.ConditionSet):
         return []
+    
     if not lambdify:
         return [list(inv) for inv in inverses]
 
@@ -99,7 +100,7 @@ def multiplicative_id(field, n, mul):
     n : int
         The length of the vectors the multiplication function takes.
     mul : callable
-        The multiplication function ..
+        The multiplication function on F^n.
 
     Returns
     -------
@@ -134,7 +135,7 @@ def is_commutative(field, n, operation):
     n : int
         The length of the vectors the operation takes.
     operation : callable
-        The function ..
+        The operation to check.
 
     Examples
     --------
@@ -161,7 +162,7 @@ def is_associative(field, n, operation):
     n : int
         The length of the vectors the operation takes.
     operation : callable
-        The function ..
+        The operation to check.
 
     Examples
     --------
@@ -235,7 +236,7 @@ def solve_func_eq(equation, func):
 
 def is_tautology(equation):
     """
-    Check whether the given equation is a tautology.
+    Check whether an equation is a tautology.
 
     Parameters
     ----------

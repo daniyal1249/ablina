@@ -127,7 +127,7 @@ class _StandardFn:
             matrix, coord_vec = sp.Matrix(basis).T, sp.Matrix(vector)
             vec = matrix @ coord_vec
         except Exception as e:
-            raise TypeError('Invalid coordinate vector.') from e
+            raise VectorSpaceError('Invalid coordinate vector.') from e
         return vec.flat() if vec else [0] * self.n
     
     def are_independent(self, *vectors):
@@ -635,7 +635,7 @@ class VectorSpace:
 
         Raises
         ------
-        TypeError
+        VectorSpaceError
             If `vector` is of incorrect length.
 
         See Also
@@ -1201,7 +1201,7 @@ def is_vectorspace(n, constraints):
 
 def columnspace(matrix, field=Real):
     """
-    Compute the column space, or image, of the matrix.
+    Return the column space, or image, of a matrix.
 
     Parameters
     ----------
@@ -1239,7 +1239,7 @@ def columnspace(matrix, field=Real):
 
 def rowspace(matrix, field=Real):
     """
-    Compute the row space of the matrix.
+    Return the row space of a matrix.
 
     Parameters
     ----------
@@ -1273,7 +1273,7 @@ def rowspace(matrix, field=Real):
 
 def nullspace(matrix, field=Real):
     """
-    Compute the null space, or kernel, of the matrix.
+    Return the null space, or kernel, of a matrix.
 
     Parameters
     ----------
@@ -1310,7 +1310,7 @@ def nullspace(matrix, field=Real):
 
 def left_nullspace(matrix, field=Real):
     """
-    Compute the left null space of the matrix.
+    Return the left null space of a matrix.
 
     Parameters
     ----------
