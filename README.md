@@ -1,4 +1,6 @@
-# ablina
+<div style="text-align: center;">
+  <img src="ablina.svg" alt="ablina" style="width: 100%; height: auto;" />
+</div>
 
 ## Documentation
 
