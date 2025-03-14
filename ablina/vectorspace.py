@@ -223,14 +223,14 @@ class Fn(_StandardFn):
         return self._mul
     
     @property
-    def add_id(self):
+    def additive_id(self):
         return [0] * self.n
     
     @property
-    def add_inv(self):
-        def add_inv(vec):
+    def additive_inv(self):
+        def additive_inv(vec):
             return [-i for i in vec]
-        return add_inv
+        return additive_inv
     
     @property
     def basis(self):
@@ -388,22 +388,22 @@ class VectorSpace:
         return mul
     
     @property
-    def add_id(self):
+    def additive_id(self):
         """
         object: The additive identity of the vector space.
         """
-        return self.__from_fn__(self.fn.add_id)
+        return self.__from_fn__(self.fn.additive_id)
     
     @property
-    def add_inv(self):
+    def additive_inv(self):
         """
         callable: A function that returns the additive inverse of a given vector.
         """
-        def add_inv(vec):
+        def additive_inv(vec):
             fn_vec = self.__to_fn__(vec)
-            inv = self.fn.add_inv(fn_vec)
+            inv = self.fn.additive_inv(fn_vec)
             return self.__from_fn__(inv)
-        return add_inv
+        return additive_inv
     
     @property
     def basis(self):
@@ -1061,7 +1061,7 @@ class AffineSpace:
         if vec not in type(self.vectorspace)():
             return False
         vec1 = self.representative
-        vec2 = self.vectorspace.add_inv(vec)
+        vec2 = self.vectorspace.additive_inv(vec)
         return self.vectorspace.add(vec1, vec2) in self.vectorspace
 
     def __eq__(self, as2):
