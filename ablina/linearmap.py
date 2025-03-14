@@ -177,7 +177,7 @@ class LinearMap:
         Examples
         --------
         
-        >>> R3 = VectorSpace.fn(Real, 3)
+        >>> R3 = fn(Real, 3)
         >>> def mapping1(vec): return [2*i for i in vec]
         >>> def mapping2(vec): return [3*i for i in vec]
         >>> map1 = LinearMap(R3, R3, mapping1)
@@ -211,7 +211,7 @@ class LinearMap:
         Examples
         --------
         
-        >>> R3 = VectorSpace.fn(Real, 3)
+        >>> R3 = fn(Real, 3)
         >>> def mapping(vec): return [2*i for i in vec]
         >>> map1 = LinearMap(R3, R3, mapping)
         >>> map2 = 3 * map1
@@ -245,7 +245,7 @@ class LinearMap:
         Examples
         --------
         
-        >>> R3 = VectorSpace.fn(Real, 3)
+        >>> R3 = fn(Real, 3)
         >>> def mapping(vec): return [2*i for i in vec]
         >>> map1 = LinearMap(R3, R3, mapping)
         >>> map1([1, 2, 3])
@@ -277,7 +277,7 @@ class LinearMap:
         Examples
         --------
         
-        >>> R3 = VectorSpace.fn(Real, 3)
+        >>> R3 = fn(Real, 3)
         >>> def mapping1(vec): return [2*i for i in vec]
         >>> def mapping2(vec): return [3*i for i in vec]
         >>> map1 = LinearMap(R3, R3, mapping1)
@@ -289,7 +289,8 @@ class LinearMap:
         if self.domain != map2.codomain:
             raise LinearMapError('The linear maps are not compatible.')
         
-        def mapping(vec): return self.mapping(map2.mapping(vec))
+        def mapping(vec):
+            return self.mapping(map2.mapping(vec))
         matrix = self.matrix @ map2.matrix
         if hasattr(self, '__name__') and hasattr(map2, '__name__'):
             name = f'{self.__name__} o {map2.__name__}'

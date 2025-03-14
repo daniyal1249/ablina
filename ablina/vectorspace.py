@@ -4,7 +4,6 @@ from random import gauss
 import sympy as sp
 
 from .mathset import Set
-from .operations import ScalarMul, VectorAdd
 from .parser import split_constraint, sympify
 from . import utils as u
 from . import vs_utils as vsu
@@ -141,18 +140,11 @@ class _StandardFn:
     # Methods relating to vector spaces
 
     def is_subspace(self, vs2):
-        if not self.share_ambient_space(vs2):
-            return False
         for i in range(self._rs_matrix.rows):
             vec = self._rs_matrix.row(i).T
             if not (vs2._ns_matrix @ vec).is_zero_matrix:
                 return False
         return True
-
-    def share_ambient_space(self, vs2):
-        if type(self) is not type(vs2):
-            return False
-        return self.field is vs2.field and self.n == vs2.n
 
     # Methods involving the dot product
 
@@ -188,50 +180,8 @@ class Fn(_StandardFn):
             self, field, n, constraints=None, add=None, mul=None, 
             *, isomorphism=None, ns_matrix=None, rs_matrix=None
             ):
-        """
-        Parameters
-        ----------
-        field : {Real, Complex}
-            The field of scalars.
-        n : int
-            The length of the vectors in V.
-        constraints : list of str, optional
-            The list of constraints that each vector in V must satisfy 
-            (default: None). Refer to the notes for more information.
-        add : callable, optional
-            An addition function that takes two vectors in V and assigns 
-            them to another vector in V. The function must obey the 
-            vector space axioms: 
-
-            - Commutativity
-            - Associativity
-            - Existence of an additive identity (zero)
-            - Existence of an additive inverse
-            
-            The default is the standard addition on F^n.
-        mul : callable, optional
-            A multiplication function that takes a scalar and a vector 
-            and assigns them to a vector in V. The function must obey the 
-            vector space axioms: 
-
-            - Associativity
-            - Existence of a multiplicative identity
-            - Distributivity with respect to vector addition
-            - Distributivity with respect to scalar addition
-
-            The default is the standard multiplication on F^n.
-
-        Returns
-        -------
-        Fn
-            The specified subspace of F^n.
-
-        Raises
-        ------
-        NotAVectorSpaceError
-            If the constraints, addition, and multiplication do not form 
-            a vector space.
-        """
+        if constraints is None:
+            constraints = []
         if isomorphism is not None:
             if not (isinstance(isomorphism, tuple) and len(isomorphism) == 2):
                 raise TypeError('Isomorphism must be a 2-tuple of callables.')
@@ -271,6 +221,16 @@ class Fn(_StandardFn):
     @property
     def mul(self):
         return self._mul
+    
+    @property
+    def add_id(self):
+        return [0] * self.n
+    
+    @property
+    def add_inv(self):
+        def add_inv(vec):
+            return [-i for i in vec]
+        return add_inv
     
     @property
     def basis(self):
@@ -345,12 +305,6 @@ class Fn(_StandardFn):
             isomorphism=(self._to_standard, self._from_standard), 
             rs_matrix=standard_vecs
             )
-    
-    def share_ambient_space(self, vs2):
-        # if not super().share_ambient_space(vs2):
-        #     return False
-        # return self.add == vs2.add and self.mul == vs2.mul
-        return True
 
     # Methods involving the dot product
     
@@ -371,55 +325,45 @@ class VectorSpace:
     pass
     """
 
-    def __init__(self, vectors, fn, isomorphism):
-        """
-        pass
+    def __init_subclass__(cls, name=None, **kwargs):
+        super().__init_subclass__(**kwargs)
+        attributes = ['set', 'fn']
+        methods = ['__to_fn__', '__from_fn__']
 
-        Parameters
-        ----------
-        vectors : MathematicalSet
-            pass
-        fn : Fn
-            pass
-        isomorphism : callable or tuple of callable
-            pass
-
-        Returns
-        -------
-        pass
-
-        Raises
-        ------
-        VectorSpaceError
-            pass
-        """
-        if not isinstance(vectors, Set):
-            raise TypeError('vectors must be a MathematicalSet.')
-        if not isinstance(fn, Fn):
-            raise TypeError('fn must be of type Fn.')
-        iso = VectorSpace._check_isomorphism(isomorphism)
+        for attr in attributes:
+            if not hasattr(cls, attr):
+                raise TypeError(f'{cls.__name__} must define "{attr}".')
+        for method in methods:
+            if not callable(getattr(cls, method, None)):
+                raise TypeError(f'{cls.__name__} must define the method "{method}".')
         
-        self._vectors = vectors
-        self._fn = fn
-        self._to_fn, self._from_fn = iso
+        if not isinstance(cls.set, Set):
+            raise TypeError(f'{cls.__name__}.set must be a MathematicalSet.')
+        if not isinstance(cls.fn, Fn):
+            raise TypeError(f'{cls.__name__}.fn must be of type Fn.')
+        if name is not None:
+            cls.__name__ = name
 
-    @staticmethod
-    def _check_isomorphism(iso):
-        if isinstance(iso, tuple):
-            if len(iso) == 2 and all(u.of_arity(i, 1) for i in iso):
-                return iso
-        elif u.of_arity(iso, 1):
-            return iso, lambda vec: vec
-        raise TypeError(
-            'Isomorphism must be a callable or a 2-tuple of callables.'
+    def __init__(self, constraints=None, basis=None, *, fn=None):
+        self.set = Set(self.set.cls, lambda vec: vec in self)
+        if fn is not None:
+            self.fn = fn
+            return
+        self.fn = Fn(
+            self.fn.field, self.fn.n, constraints, self.fn.add, self.fn.mul, 
+            isomorphism=(self.fn._to_standard, self.fn._from_standard)
             )
+        if basis is not None:
+            if not self.are_independent(*basis):
+                raise VectorSpaceError('Basis vectors must be linearly independent.')
+            self.fn = self.fn.span(basis=[self.__to_fn__(vec) for vec in basis])
     
     @property
     def field(self):
         """
         {Real, Complex}: The field of scalars.
         """
-        return self._fn.field
+        return self.fn.field
     
     @property
     def add(self):
@@ -427,11 +371,9 @@ class VectorSpace:
         callable: The addition operator on the vector space.
         """
         def add(vec1, vec2):
-            if not (vec1 in self and vec2 in self):
-                raise TypeError('Vectors must be elements of the vector space.')
-            fn_vec1, fn_vec2 = self._to_fn(vec1), self._to_fn(vec2)
-            sum = self._fn.add(fn_vec1, fn_vec2)
-            return self._from_fn(sum)
+            fn_vec1, fn_vec2 = self.__to_fn__(vec1), self.__to_fn__(vec2)
+            sum = self.fn.add(fn_vec1, fn_vec2)
+            return self.__from_fn__(sum)
         return add
     
     @property
@@ -440,13 +382,9 @@ class VectorSpace:
         callable: The multiplication operator on the vector space.
         """
         def mul(scalar, vec):
-            if not u.in_field(self.field, scalar):
-                raise TypeError('Scalar must be an element of the field.')
-            if vec not in self:
-                raise TypeError('Vector must be an element of the vector space.')
-            fn_vec = self._to_fn(vec)
-            prod = self._fn.mul(scalar, fn_vec)
-            return self._from_fn(prod)
+            fn_vec = self.__to_fn__(vec)
+            prod = self.fn.mul(scalar, fn_vec)
+            return self.__from_fn__(prod)
         return mul
     
     @property
@@ -454,43 +392,33 @@ class VectorSpace:
         """
         object: The additive identity of the vector space.
         """
-        raise NotImplementedError()
+        return self.__from_fn__(self.fn.add_id)
     
     @property
     def add_inv(self):
         """
         callable: A function that returns the additive inverse of a given vector.
         """
-        raise NotImplementedError()
-    
-    @property
-    def mul_id(self):
-        """
-        object: The multiplicative identity of the vector space.
-        """
-        raise NotImplementedError()
+        def add_inv(vec):
+            fn_vec = self.__to_fn__(vec)
+            inv = self.fn.add_inv(fn_vec)
+            return self.__from_fn__(inv)
+        return add_inv
     
     @property
     def basis(self):
         """
         list: The basis of the vector space.
         """
-        return [self._from_fn(vec) for vec in self._fn.basis]
+        return [self.__from_fn__(vec) for vec in self.fn.basis]
     
     @property
     def dim(self):
         """
         int: The dimension of the vector space.
         """
-        return self._fn.dim
-    
-    @property
-    def set(self):
-        """
-        MathematicalSet: The set containing the vectors in the vector space.
-        """
-        return Set(self._vectors.cls, lambda vec: vec in self)
-    
+        return self.fn.dim
+
     def __contains__(self, vec):
         """
         Check whether a vector is an element of the vector space.
@@ -505,20 +433,29 @@ class VectorSpace:
         bool
             True if `vec` is an element of `self`, otherwise False.
         """
-        if vec not in self._vectors:
+        if vec not in type(self).set:
             return False
-        return self._to_fn(vec) in self._fn
+        return self.__to_fn__(vec) in self.fn
     
     def __eq__(self, vs2):
         if self is vs2:
             return True
         return self.is_subspace(vs2) and vs2.is_subspace(self)
     
-    def __add__(self, vs2):
+    def __add__(self, other):
         """
-        Same as ``VectorSpace.sum``.
+        pass
         """
-        return self.sum(vs2)
+        return self.sum(other)
+    
+    def __radd__(self, other):
+        return self.coset(other)
+    
+    def __truediv__(self, vs2):
+        """
+        Same as ``VectorSpace.quotient``.
+        """
+        return self.quotient(vs2)
     
     def __and__(self, vs2):
         """
@@ -553,7 +490,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = VectorSpace.fn(Real, 3, constraints=['2*v0 == v1'])
+        >>> vs = fn(Real, 3, constraints=['2*v0 == v1'])
         >>> vs.vector()
         [1, 2, 0]
         >>> vs.vector()
@@ -563,8 +500,8 @@ class VectorSpace:
         >>> vs.vector(arbitrary=True)
         [c0, 2*c0, c1]
         """
-        fn_vec = self._fn.vector(std, arbitrary)
-        return self._from_fn(fn_vec)
+        fn_vec = self.fn.vector(std, arbitrary)
+        return self.__from_fn__(fn_vec)
     
     def to_coordinate(self, vector, basis=None):
         """
@@ -595,7 +532,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = VectorSpace.fn(Real, 3, constraints=['v0 == 2*v1'])
+        >>> vs = fn(Real, 3, constraints=['v0 == 2*v1'])
         >>> vs.basis
         [[1, 1/2, 0], [0, 0, 1]]
         >>> vs.to_coordinate([2, 1, 2])
@@ -606,10 +543,10 @@ class VectorSpace:
         if basis is not None:
             if not all(vec in self for vec in basis):
                 raise TypeError('Basis vectors must be elements of the vector space.')
-            basis = [self._to_fn(vec) for vec in basis]
+            basis = [self.__to_fn__(vec) for vec in basis]
 
-        fn_vec = self._to_fn(vector)
-        return self._fn.to_coordinate(fn_vec, basis)
+        fn_vec = self.__to_fn__(vector)
+        return self.fn.to_coordinate(fn_vec, basis)
     
     def from_coordinate(self, vector, basis=None):
         """
@@ -645,7 +582,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = VectorSpace.fn(Real, 3, constraints=['v0 == 2*v1'])
+        >>> vs = fn(Real, 3, constraints=['v0 == 2*v1'])
         >>> vs.basis
         [[1, 1/2, 0], [0, 0, 1]]
         >>> vs.from_coordinate([1, 1])
@@ -657,10 +594,10 @@ class VectorSpace:
         if basis is not None:
             if not all(vec in self for vec in basis):
                 raise TypeError('Basis vectors must be elements of the vector space.')
-            basis = [self._to_fn(vec) for vec in basis]
+            basis = [self.__to_fn__(vec) for vec in basis]
         
-        fn_vec = self._fn.from_coordinate(vector, basis)
-        return self._from_fn(fn_vec)
+        fn_vec = self.fn.from_coordinate(vector, basis)
+        return self.__from_fn__(fn_vec)
     
     def are_independent(self, *vectors):
         """
@@ -682,7 +619,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = VectorSpace.fn(Real, 3)
+        >>> vs = fn(Real, 3)
         >>> vs.are_independent([1, 0, 0], [0, 1, 0])
         True
         >>> vs.are_independent([1, 2, 3], [2, 4, 6])
@@ -694,8 +631,8 @@ class VectorSpace:
         """
         if not all(vec in self for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
-        fn_vecs = [self._to_fn(vec) for vec in vectors]
-        return self._fn.are_independent(*fn_vecs)
+        fn_vecs = [self.__to_fn__(vec) for vec in vectors]
+        return self.fn.are_independent(*fn_vecs)
 
     # Methods relating to vector spaces
 
@@ -725,18 +662,17 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs1 = VectorSpace.fn(Real, 3, constraints=['v0 == v1'])
-        >>> vs2 = VectorSpace.fn(Real, 3, constraints=['v1 == v2'])
+        >>> vs1 = fn(Real, 3, constraints=['v0 == v1'])
+        >>> vs2 = fn(Real, 3, constraints=['v1 == v2'])
         >>> vs = vs1.sum(vs2)
         >>> vs.basis
         [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
         >>> vs1 + vs2 == vs
         True
         """
-        if not self.share_ambient_space(vs2):
-            raise VectorSpaceError('Vector spaces must share the same ambient space.')
-        fn = self._fn.sum(vs2._fn)
-        return VectorSpace(self._vectors, fn, (self._to_fn, self._from_fn))
+        self._validate_type(vs2)
+        fn = self.fn.sum(vs2.fn)
+        return type(self)(fn=fn)
     
     def intersection(self, vs2):
         """
@@ -764,18 +700,17 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs1 = VectorSpace.fn(Real, 3, constraints=['v0 == v1'])
-        >>> vs2 = VectorSpace.fn(Real, 3, constraints=['v1 == v2'])
+        >>> vs1 = fn(Real, 3, constraints=['v0 == v1'])
+        >>> vs2 = fn(Real, 3, constraints=['v1 == v2'])
         >>> vs = vs1.intersection(vs2)
         >>> vs.basis
         [[1, 1, 1]]
         >>> vs1 & vs2 == vs
         True
         """
-        if not self.share_ambient_space(vs2):
-            raise VectorSpaceError('Vector spaces must share the same ambient space.')
-        fn = self._fn.intersection(vs2._fn)
-        return VectorSpace(self._vectors, fn, (self._to_fn, self._from_fn))
+        self._validate_type(vs2)
+        fn = self.fn.intersection(vs2.fn)
+        return type(self)(fn=fn)
     
     def span(self, *vectors, basis=None):
         """
@@ -807,7 +742,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = VectorSpace.fn(Real, 3)
+        >>> vs = fn(Real, 3)
         >>> vs.span([1, 2, 3], [4, 5, 6]).basis
         [[1, 0, -1], [0, 1, 2]]
         >>> vs.span(basis=[[1, 2, 3], [4, 5, 6]]).basis
@@ -816,18 +751,13 @@ class VectorSpace:
         []
         """
         if basis is not None:
-            if not self.are_independent(*basis):
-                raise VectorSpaceError('Basis vectors must be linearly independent.')
-            vectors = basis
-        elif not all(vec in self for vec in vectors):
+            return type(self)(basis=basis)
+        if not all(vec in self for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
         
-        fn_vecs = [self._to_fn(vec) for vec in vectors]
-        if basis is None:
-            fn = self._fn.span(*fn_vecs)
-        else:
-            fn = self._fn.span(basis=fn_vecs)
-        return VectorSpace(self._vectors, fn, (self._to_fn, self._from_fn))
+        fn_vecs = [self.__to_fn__(vec) for vec in vectors]
+        fn = self.fn.span(*fn_vecs)
+        return type(self)(fn=fn)
     
     def is_subspace(self, vs2):
         """
@@ -846,9 +776,9 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = VectorSpace.fn(Real, 3)
-        >>> vs1 = VectorSpace.fn(Real, 3, constraints=['v0 == v1'])
-        >>> vs2 = VectorSpace.fn(Real, 3, constraints=['v1 == v2'])
+        >>> vs = fn(Real, 3)
+        >>> vs1 = fn(Real, 3, constraints=['v0 == v1'])
+        >>> vs2 = fn(Real, 3, constraints=['v1 == v2'])
         >>> vs1.is_subspace(vs)
         True
         >>> vs2.is_subspace(vs)
@@ -858,28 +788,28 @@ class VectorSpace:
         >>> vs.is_subspace(vs)
         True
         """
-        if not self.share_ambient_space(vs2):
+        try:
+            self._validate_type(vs2)
+        except TypeError:
             return False
-        return self._fn.is_subspace(vs2._fn)
+        return self.fn.is_subspace(vs2.fn)
     
-    def share_ambient_space(self, vs2):
+    # Methods relating to affine spaces
+    
+    def coset(self, vector):
         """
-        Check whether `self` and `vs2` are subspaces of the same vector space.
-
-        Parameters
-        ----------
-        vs2 : VectorSpace
-            The vector space to check.
-
-        Returns
-        -------
-        bool
-            True if `self` and `vs2` share an ambient space, otherwise False.
+        pass
         """
-        # if self._vectors is not vs2._vectors:
-        #     return False
-        # return self._fn.share_ambient_space(vs2._fn)
-        return True
+        return AffineSpace(self, vector)
+    
+    def quotient(self, vs2):
+        """
+        pass
+        """
+        if not isinstance(vs2, VectorSpace):
+            raise TypeError()
+        if not vs2.is_subspace(self):
+            raise VectorSpaceError()
 
     # Methods involving the dot product
 
@@ -904,7 +834,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = VectorSpace.fn(Real, 3)
+        >>> vs = fn(Real, 3)
         >>> vs.dot([1, 2, 3], [4, 5, 6])
         32
         >>> vs.dot([1, 0, 1], [0, 1, 0])
@@ -912,8 +842,8 @@ class VectorSpace:
         """
         if not (vec1 in self and vec2 in self):
             raise TypeError('Vectors must be elements of the vector space.')
-        vec1, vec2 = self._to_fn(vec1), self._to_fn(vec2)
-        return self._fn.dot(vec1, vec2)
+        fn_vec1, fn_vec2 = self.__to_fn__(vec1), self.__to_fn__(vec2)
+        return self.fn.dot(fn_vec1, fn_vec2)
     
     def norm(self, vector):
         """
@@ -936,7 +866,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = VectorSpace.fn(Real, 3)
+        >>> vs = fn(Real, 3)
         >>> vs.norm([1, 2, 3])
         sqrt(14)
         >>> vs.norm([0, 0, 0])
@@ -965,7 +895,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = VectorSpace.fn(Real, 3)
+        >>> vs = fn(Real, 3)
         >>> vs.are_orthogonal([1, 2, 3], [4, 5, 6])
         False
         >>> vs.are_orthogonal([1, 0, 1], [0, 1, 0])
@@ -994,7 +924,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = VectorSpace.fn(Real, 3)
+        >>> vs = fn(Real, 3)
         >>> vs.are_orthonormal([1, 2, 3], [4, 5, 6])
         False
         >>> vs.are_orthonormal([1, 0, 0], [0, 1, 0])
@@ -1049,14 +979,14 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = VectorSpace.fn(Real, 3, constraints=['v0 == v1'])
+        >>> vs = fn(Real, 3, constraints=['v0 == v1'])
         >>> vs.ortho_complement().basis
         [[1, -1, 0]]
         >>> vs.ortho_complement().ortho_complement() == vs
         True
         """
-        fn = self._fn.ortho_complement()
-        return VectorSpace(self._vectors, fn, (self._to_fn, self._from_fn))
+        fn = self.fn.ortho_complement()
+        return type(self)(fn=fn)
     
     def ortho_projection(self, vs2):
         """
@@ -1081,88 +1011,156 @@ class VectorSpace:
         --------
         VectorSpace.ortho_complement, VectorSpace.dot
         """
-        if not self.share_ambient_space(vs2):
-            raise VectorSpaceError('Vector spaces must share the same ambient space.')
-        fn = self._fn.ortho_projection(vs2._fn)
-        return VectorSpace(self._vectors, fn, (self._to_fn, self._from_fn))
-    
-    # Vector space constructors
-    
-    @classmethod
-    def fn(cls, field, n, constraints=None, basis=None, 
-           add=None, mul=None, *, ns_matrix=None, rs_matrix=None):
+        self._validate_type(vs2)
+        fn = self.fn.ortho_projection(vs2.fn)
+        return type(self)(fn=fn)
+
+    def _validate_type(self, vs2):
+        if not isinstance(vs2, VectorSpace):
+            raise TypeError()
+        if type(self).__name__ != type(vs2).__name__:
+            raise TypeError()
+
+
+class AffineSpace:
+    """
+    pass
+    """
+
+    def __init__(self, vectorspace, vector):
+        if not isinstance(vectorspace, VectorSpace):
+            raise TypeError()
+        if vector not in type(vectorspace)():
+            raise TypeError()
+        
+        self._vectorspace = vectorspace
+        self._representative = vector
+
+    @property
+    def vectorspace(self):
         """
         pass
         """
-        def in_fn(vec):
-            try: return sp.Matrix(vec).shape == (n, 1)
-            except Exception: return False
-        
-        vectors = Set(object, in_fn, name=f'F^{n}')
-        fn = Fn(
+        return self._vectorspace
+    
+    @property
+    def representative(self):
+        """
+        pass
+        """
+        return self._representative
+    
+    @property
+    def set(self):
+        """
+        MathematicalSet: The set containing the points in the affine space.
+        """
+        return Set(self.vectorspace.set.cls, lambda vec: vec in self)
+
+    def __contains__(self, vec):
+        if vec not in type(self.vectorspace)():
+            return False
+        vec1 = self.representative
+        vec2 = self.vectorspace.add_inv(vec)
+        return self.vectorspace.add(vec1, vec2) in self.vectorspace
+
+    def __eq__(self, as2):
+        if not isinstance(as2, AffineSpace):
+            return False
+        return self.representative in as2
+
+    def __add__(self, other):
+        pass
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __mul__(self, scalar):
+        if not isinstance(scalar, self.vectorspace.field):
+            raise TypeError('Scalar must be an element of the field.')
+        repr = self.vectorspace.mul(scalar, self.representative)
+        return AffineSpace(self.vectorspace, repr)
+
+    def __rmul__(self, scalar):
+        return self.__mul__(scalar)
+
+
+def fn(field, n, constraints=None, basis=None, 
+       add=None, mul=None, *, ns_matrix=None, rs_matrix=None):
+    """
+    pass
+    """
+    name = f'{field.__name__}^{n}'
+
+    def in_fn(vec):
+        try: return sp.Matrix(vec).shape == (n, 1)
+        except Exception: return False
+
+    class fn(VectorSpace, name=name):
+        set = Set(object, in_fn, name=name)
+        fn = Fn(field, n, add=add, mul=mul)
+        def __to_fn__(self, vec): return vec
+        def __from_fn__(self, vec): return vec
+
+    if not (ns_matrix is None and rs_matrix is None):
+        vectorspace = Fn(
             field, n, constraints, add, mul, 
             ns_matrix=ns_matrix, rs_matrix=rs_matrix
             )
+        return fn(fn=vectorspace)
+    return fn(constraints, basis)
 
-        vectorspace = cls(vectors, fn, lambda vec: vec)
-        if basis is not None:
-            vectorspace = vectorspace.span(basis=basis)
-        return vectorspace
 
-    @classmethod
-    def matrix(cls, field, shape, constraints=None, basis=None, 
+def matrix_space(field, shape, constraints=None, basis=None, 
+                 add=None, mul=None):
+    """
+    pass
+    """
+    name = f'M({field.__name__}, {shape})'
+
+    def in_matrix_space(mat):
+        return mat.shape == shape
+
+    class matrix_space(VectorSpace, name=name):
+        set = Set(sp.Matrix, in_matrix_space, name=name)
+        fn = Fn(field, sp.prod(shape), add=add, mul=mul)
+        def __to_fn__(self, mat): return mat.flat()
+        def __from_fn__(self, vec): return sp.Matrix(*shape, vec)
+    return matrix_space(constraints, basis)
+
+
+def poly_space(field, max_degree, constraints=None, basis=None, 
                add=None, mul=None):
-        """
-        pass
-        """
-        def in_matrix(mat): return mat.shape == shape
-        def to_fn(mat): return mat.flat()
-        def from_fn(vec): return sp.Matrix(*shape, vec)
-        
-        name = f'{shape[0]} by {shape[1]} matrices'
-        vectors = Set(sp.Matrix, in_matrix, name=name)
-        fn = Fn(field, sp.prod(shape), constraints, add, mul)
+    """
+    pass
+    """
+    name = f'P({field.__name__}, {max_degree})'
 
-        vectorspace = cls(vectors, fn, (to_fn, from_fn))
-        if basis is not None:
-            vectorspace = vectorspace.span(basis=basis)
-        return vectorspace
+    def in_poly_space(poly):
+        return sp.degree(poly) <= max_degree
 
-    @classmethod
-    def poly(cls, field, max_degree, constraints=None, basis=None, 
-             add=None, mul=None):
-        """
-        pass
-        """
-        def in_poly(poly):
-            return sp.degree(poly) <= max_degree
-        def to_fn(poly):
+    class poly_space(VectorSpace, name=name):
+        set = Set(sp.Poly, in_poly_space, name=name)
+        fn = Fn(field, max_degree + 1, add=add, mul=mul)
+        def __to_fn__(self, poly):
             coeffs = poly.all_coeffs()[::-1]  # Ascending order
             degree_diff = max_degree - len(coeffs) + 1
             return coeffs + ([0] * degree_diff)
-        def from_fn(vec):
+        def __from_fn__(self, vec):
             x = sp.symbols('x')
             return sp.Poly.from_list(vec[::-1], x)
+    return poly_space(constraints, basis)
 
-        name = f'P_{max_degree}(F)'
-        vectors = Set(sp.Poly, in_poly, name=name)
-        fn = Fn(field, max_degree + 1, constraints, add, mul)
 
-        vectorspace = cls(vectors, fn, (to_fn, from_fn))
-        if basis is not None:
-            vectorspace = vectorspace.span(basis=basis)
-        return vectorspace
-
-    @classmethod
-    def hom(cls, vs1, vs2):
-        """
-        pass
-        """
-        if not (isinstance(vs1, VectorSpace) and isinstance(vs2, VectorSpace)):
-            raise TypeError()
-        if vs1.field is not vs2.field:
-            raise VectorSpaceError()
-        return cls.matrix(vs1.field, (vs2.dim, vs1.dim))
+def hom(vs1, vs2):
+    """
+    pass
+    """
+    if not (isinstance(vs1, VectorSpace) and isinstance(vs2, VectorSpace)):
+        raise TypeError()
+    if vs1.field is not vs2.field:
+        raise VectorSpaceError()
+    return matrix_space(vs1.field, (vs2.dim, vs1.dim))
 
 
 def is_vectorspace(n, constraints):
@@ -1234,7 +1232,7 @@ def columnspace(matrix, field=Real):
     matrix = sp.Matrix(matrix).T
     matrix = u.rref(matrix, remove=True)
     n = matrix.rows
-    return VectorSpace.fn(field, n, constraints, rs_matrix=matrix)
+    return fn(field, n, constraints, rs_matrix=matrix)
 
 
 def rowspace(matrix, field=Real):
@@ -1268,7 +1266,7 @@ def rowspace(matrix, field=Real):
     constraints = [f'row({matrix})']
     matrix = u.rref(matrix, remove=True)
     n = matrix.cols
-    return VectorSpace.fn(field, n, constraints, rs_matrix=matrix)
+    return fn(field, n, constraints, rs_matrix=matrix)
 
 
 def nullspace(matrix, field=Real):
@@ -1305,7 +1303,7 @@ def nullspace(matrix, field=Real):
     constraints = [f'null({matrix})']
     matrix = u.rref(matrix, remove=True)
     n = matrix.cols
-    return VectorSpace.fn(field, n, constraints, ns_matrix=matrix)
+    return fn(field, n, constraints, ns_matrix=matrix)
 
 
 def left_nullspace(matrix, field=Real):

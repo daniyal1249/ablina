@@ -9,7 +9,7 @@ class InnerProductSpaceError(Exception):
         super().__init__(msg)
 
 
-class InnerProductSpace(VectorSpace):
+class InnerProductSpace:
     """
     pass
     """
@@ -32,16 +32,12 @@ class InnerProductSpace(VectorSpace):
         """
         if not isinstance(vectorspace, VectorSpace):
             raise TypeError('vectorspace must be of type VectorSpace.')
-        
-        super().__init__(
-            vectorspace._vectors, vectorspace._fn, 
-            (vectorspace._to_fn, vectorspace._from_fn)
-            )
-        self._innerproduct = self._init_innerproduct(innerproduct)
+        self._innerproduct = InnerProductSpace._init_innerproduct(innerproduct)
 
-    def _init_innerproduct(self, ip):
+    @staticmethod
+    def _init_innerproduct(ip):
         if ip is None:
-            return super().dot
+            raise NotImplementedError()
         return ip
     
     def dot(self, vec1, vec2):
@@ -65,7 +61,7 @@ class InnerProductSpace(VectorSpace):
         Examples
         --------
 
-        >>> vs = VectorSpace.fn(Real, 3)
+        >>> vs = fn(Real, 3)
         >>> vs.dot([1, 2, 3], [4, 5, 6])
         32
         >>> vs.dot([1, 0, 1], [0, 1, 0])
@@ -89,7 +85,7 @@ class InnerProductSpace(VectorSpace):
         Examples
         --------
 
-        >>> vs = VectorSpace.fn(Real, 3, constraints=['v0 == v1'])
+        >>> vs = fn(Real, 3, constraints=['v0 == v1'])
         >>> vs.ortho_complement().basis
         [[1, -1, 0]]
         >>> vs.ortho_complement().ortho_complement() == vs
