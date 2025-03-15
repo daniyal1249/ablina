@@ -180,6 +180,9 @@ class Fn(_StandardFn):
             self, field, n, constraints=None, add=None, mul=None, 
             *, isomorphism=None, ns_matrix=None, rs_matrix=None
             ):
+        """
+        pass
+        """
         if constraints is None:
             constraints = []
         if isomorphism is not None:
@@ -345,6 +348,9 @@ class VectorSpace:
             cls.__name__ = name
 
     def __init__(self, constraints=None, basis=None, *, fn=None):
+        """
+        pass
+        """
         self.set = Set(self.set.cls, lambda vec: vec in self)
         if fn is not None:
             self.fn = fn
@@ -446,7 +452,9 @@ class VectorSpace:
         """
         pass
         """
-        return self.sum(other)
+        if isinstance(other, VectorSpace):
+            return self.sum(other)
+        return self.coset(other)
     
     def __radd__(self, other):
         return self.coset(other)
@@ -809,7 +817,19 @@ class VectorSpace:
         if not isinstance(vs2, VectorSpace):
             raise TypeError()
         if not vs2.is_subspace(self):
-            raise VectorSpaceError()
+            raise TypeError()
+        
+        # name = f''
+
+        # def in_quotient_space(coset):
+        #     return
+
+        # class quotient_space(VectorSpace, name=name):
+        #     set = Set(AffineSpace, in_quotient_space, name=name)
+        #     fn = Fn(self.field, None, add=self.fn.add, mul=self.fn.mul)
+        #     def __to_fn__(self, coset): return
+        #     def __from_fn__(self, vec): return
+        # return quotient_space()
 
     # Methods involving the dot product
 
@@ -1028,6 +1048,9 @@ class AffineSpace:
     """
 
     def __init__(self, vectorspace, vector):
+        """
+        pass
+        """
         if not isinstance(vectorspace, VectorSpace):
             raise TypeError()
         if vector not in type(vectorspace)():
@@ -1055,13 +1078,33 @@ class AffineSpace:
         """
         MathematicalSet: The set containing the points in the affine space.
         """
-        return Set(self.vectorspace.set.cls, lambda vec: vec in self)
+        return Set(self.vectorspace.set.cls, lambda point: point in self)
+    
+    @property
+    def dim(self):
+        """
+        int: The dimension of the affine space.
+        """
+        return self.vectorspace.dim
 
-    def __contains__(self, vec):
-        if vec not in type(self.vectorspace)():
+    def __contains__(self, point):
+        """
+        Check whether a point is an element of the affine space.
+
+        Parameters
+        ----------
+        point : object
+            The point to check.
+
+        Returns
+        -------
+        bool
+            True if `point` is an element of `self`, otherwise False.
+        """
+        if point not in type(self.vectorspace)():
             return False
         vec1 = self.representative
-        vec2 = self.vectorspace.additive_inv(vec)
+        vec2 = self.vectorspace.additive_inv(point)
         return self.vectorspace.add(vec1, vec2) in self.vectorspace
 
     def __eq__(self, as2):
@@ -1069,11 +1112,13 @@ class AffineSpace:
             return False
         return self.representative in as2
 
-    def __add__(self, other):
-        pass
-
-    def __radd__(self, other):
-        return self.__add__(other)
+    def __add__(self, as2):
+        if not isinstance(as2, AffineSpace):
+            raise TypeError()
+        if self.vectorspace != as2.vectorspace:
+            raise TypeError('Affine spaces must be cosets of the same vector space.')
+        repr = self.vectorspace.add(self.representative, as2.representative)
+        return AffineSpace(self.vectorspace, repr)
 
     def __mul__(self, scalar):
         if not isinstance(scalar, self.vectorspace.field):
