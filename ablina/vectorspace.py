@@ -168,7 +168,15 @@ class _StandardFn:
         return True
     
     def gram_schmidt(self, *vectors):
-        raise NotImplementedError()
+        orthonormal_vecs = []
+        for v in vectors:
+            for q in orthonormal_vecs:
+                factor = self.dot(v, q)
+                proj = [factor * i for i in q]
+                v = [i - j for i, j in zip(v, proj)]
+            norm = self.norm(v)
+            orthonormal_vecs.append([i / norm for i in v])
+        return orthonormal_vecs
 
 
 class Fn(_StandardFn):
@@ -517,7 +525,7 @@ class VectorSpace:
 
         Parameters
         ----------
-        vector : list
+        vector : object
             A vector in the vector space.
         basis : list, optional
             pass
@@ -568,14 +576,14 @@ class VectorSpace:
 
         Parameters
         ----------
-        vector
+        vector : list
             The coordinate vector to convert.
         basis : list, optional
             A basis of the vector space.
 
         Returns
         -------
-        list
+        object
             The vector represented by `vector`.
 
         Raises
@@ -660,7 +668,7 @@ class VectorSpace:
 
         Raises
         ------
-        VectorSpaceError
+        TypeError
             If `self` and `vs2` do not share the same ambient space.
 
         See Also
@@ -698,7 +706,7 @@ class VectorSpace:
 
         Raises
         ------
-        VectorSpaceError
+        TypeError
             If `self` and `vs2` do not share the same ambient space.
 
         See Also
@@ -725,10 +733,9 @@ class VectorSpace:
         The span of the given vectors.
 
         Returns the smallest subspace of `self` that contains the vectors 
-        in `vectors`. As with all instances of the ``VectorSpace`` class, 
-        the basis of the resulting vector space is automatically 
-        determined. To override this, pass the vectors into `basis` instead. 
-        Note that the vectors must be linearly independent if passed into `basis`.
+        in `vectors`. In order to manually set the basis of the resulting 
+        space, pass the vectors into `basis` instead. Note that the 
+        vectors must be linearly independent if passed into `basis`.
 
         Parameters
         ----------
@@ -807,17 +814,51 @@ class VectorSpace:
     def coset(self, vector):
         """
         pass
+
+        Parameters
+        ----------
+        vector : object
+            A vector in the vector space.
+
+        Returns
+        -------
+        AffineSpace
+            pass
+
+        See Also
+        --------
+        VectorSpace.quotient
         """
         return AffineSpace(self, vector)
     
     def quotient(self, vs2):
         """
-        pass
+        The quotient of two vector spaces.
+
+        Parameters
+        ----------
+        vs2 : VectorSpace
+            The vector space to divide by.
+
+        Returns
+        -------
+        VectorSpace
+            The quotient of `self` by `vs2`.
+
+        Raises
+        ------
+        TypeError
+            If `vs2` is not a subspace of `self`.
+
+        See Also
+        --------
+        VectorSpace.coset
         """
-        if not isinstance(vs2, VectorSpace):
-            raise TypeError()
-        if not vs2.is_subspace(self):
-            raise TypeError()
+        raise NotImplementedError()
+        # if not isinstance(vs2, VectorSpace):
+        #     raise TypeError()
+        # if not vs2.is_subspace(self):
+        #     raise TypeError()
         
         # name = f''
 
@@ -970,18 +1011,27 @@ class VectorSpace:
         Parameters
         ----------
         *vectors
-            pass
+            The vectors in the vector space.
 
         Returns
         -------
         list
-            pass
+            An orthonormal list of vectors.
+        
+        Raises
+        ------
+        VectorSpaceError
+            If the provided vectors are not linearly independent.
 
         See Also
         --------
         VectorSpace.are_orthonormal
         """
-        raise NotImplementedError()
+        if not self.are_independent(*vectors):
+            raise VectorSpaceError('Vectors must be linearly independent.')
+        fn_vecs = [self.__to_fn__(vec) for vec in vectors]
+        orthonormal_vecs = self.fn.gram_schmidt(*fn_vecs)
+        return [self.__from_fn__(vec) for vec in orthonormal_vecs]
     
     def ortho_complement(self):
         """
@@ -1024,7 +1074,7 @@ class VectorSpace:
 
         Raises
         ------
-        VectorSpaceError
+        TypeError
             If `self` and `vs2` do not share the same ambient space.
 
         See Also
