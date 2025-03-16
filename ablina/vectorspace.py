@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from numbers import Complex, Real
 from random import gauss
 
@@ -331,7 +332,7 @@ class Fn(_StandardFn):
         raise NotImplementedError()
 
 
-class VectorSpace:
+class VectorSpace(ABC):
     """
     pass
     """
@@ -339,14 +340,10 @@ class VectorSpace:
     def __init_subclass__(cls, name=None, **kwargs):
         super().__init_subclass__(**kwargs)
         attributes = ['set', 'fn']
-        methods = ['__to_fn__', '__from_fn__']
-
+        
         for attr in attributes:
             if not hasattr(cls, attr):
                 raise TypeError(f'{cls.__name__} must define "{attr}".')
-        for method in methods:
-            if not callable(getattr(cls, method, None)):
-                raise TypeError(f'{cls.__name__} must define the method "{method}".')
         
         if not isinstance(cls.set, Set):
             raise TypeError(f'{cls.__name__}.set must be a MathematicalSet.')
@@ -371,6 +368,14 @@ class VectorSpace:
             if not self.are_independent(*basis):
                 raise VectorSpaceError('Basis vectors must be linearly independent.')
             self.fn = self.fn.span(basis=[self.__to_fn__(vec) for vec in basis])
+
+    @abstractmethod
+    def __to_fn__(self):
+        ...
+
+    @abstractmethod
+    def __from_fn__(self):
+        ...
     
     @property
     def field(self):
@@ -854,7 +859,6 @@ class VectorSpace:
         --------
         VectorSpace.coset
         """
-        raise NotImplementedError()
         # if not isinstance(vs2, VectorSpace):
         #     raise TypeError()
         # if not vs2.is_subspace(self):
@@ -871,6 +875,7 @@ class VectorSpace:
         #     def __to_fn__(self, coset): return
         #     def __from_fn__(self, vec): return
         # return quotient_space()
+        raise NotImplementedError()
 
     # Methods involving the dot product
 
