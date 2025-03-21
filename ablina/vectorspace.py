@@ -4,7 +4,7 @@ from random import gauss
 
 import sympy as sp
 
-from .mathset import Set
+from .mathset import MathSet
 from .parser import split_constraint, sympify
 from . import utils as u
 from . import vs_utils as vsu
@@ -345,8 +345,8 @@ class VectorSpace(ABC):
             if not hasattr(cls, attr):
                 raise TypeError(f'{cls.__name__} must define "{attr}".')
         
-        if not isinstance(cls.set, Set):
-            raise TypeError(f'{cls.__name__}.set must be a MathematicalSet.')
+        if not isinstance(cls.set, MathSet):
+            raise TypeError(f'{cls.__name__}.set must be a MathSet.')
         if not isinstance(cls.fn, Fn):
             raise TypeError(f'{cls.__name__}.fn must be of type Fn.')
         if name is not None:
@@ -356,7 +356,7 @@ class VectorSpace(ABC):
         """
         pass
         """
-        self.set = Set(self.set.cls, lambda vec: vec in self)
+        self.set = MathSet(self.set.cls, lambda vec: vec in self)
         if fn is not None:
             self.fn = fn
             return
@@ -870,7 +870,7 @@ class VectorSpace(ABC):
         #     return
 
         # class quotient_space(VectorSpace, name=name):
-        #     set = Set(AffineSpace, in_quotient_space, name=name)
+        #     set = MathSet(AffineSpace, in_quotient_space, name=name)
         #     fn = Fn(self.field, None, add=self.fn.add, mul=self.fn.mul)
         #     def __to_fn__(self, coset): return
         #     def __from_fn__(self, vec): return
@@ -1131,9 +1131,9 @@ class AffineSpace:
     @property
     def set(self):
         """
-        MathematicalSet: The set containing the points in the affine space.
+        MathSet: The set containing the points in the affine space.
         """
-        return Set(self.vectorspace.set.cls, lambda point: point in self)
+        return MathSet(self.vectorspace.set.cls, lambda point: point in self)
     
     @property
     def dim(self):
@@ -1197,7 +1197,7 @@ def fn(field, n, constraints=None, basis=None,
         except Exception: return False
 
     class fn(VectorSpace, name=name):
-        set = Set(object, in_fn, name=name)
+        set = MathSet(object, in_fn, name=name)
         fn = Fn(field, n, add=add, mul=mul)
         def __to_fn__(self, vec): return vec
         def __from_fn__(self, vec): return vec
@@ -1222,7 +1222,7 @@ def matrix_space(field, shape, constraints=None, basis=None,
         return mat.shape == shape
 
     class matrix_space(VectorSpace, name=name):
-        set = Set(sp.Matrix, in_matrix_space, name=name)
+        set = MathSet(sp.Matrix, in_matrix_space, name=name)
         fn = Fn(field, sp.prod(shape), add=add, mul=mul)
         def __to_fn__(self, mat): return mat.flat()
         def __from_fn__(self, vec): return sp.Matrix(*shape, vec)
@@ -1240,7 +1240,7 @@ def poly_space(field, max_degree, constraints=None, basis=None,
         return sp.degree(poly) <= max_degree
 
     class poly_space(VectorSpace, name=name):
-        set = Set(sp.Poly, in_poly_space, name=name)
+        set = MathSet(sp.Poly, in_poly_space, name=name)
         fn = Fn(field, max_degree + 1, add=add, mul=mul)
         def __to_fn__(self, poly):
             coeffs = poly.all_coeffs()[::-1]  # Ascending order

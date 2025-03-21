@@ -10,7 +10,7 @@ from numbers import Complex, Real
 
 from .innerproduct import InnerProductSpace
 from .linearmap import LinearMap, Isomorphism, IdentityMap
-from .mathset import MathematicalSet, Set
+from .mathset import MathSet
 from .vectorspace import (
     VectorSpace, Fn, AffineSpace, fn, matrix_space, poly_space, hom, 
     is_vectorspace, columnspace, rowspace, nullspace, left_nullspace, 
@@ -21,7 +21,7 @@ __all__ = [
     'Complex', 'Real',
     'InnerProductSpace',
     'LinearMap', 'Isomorphism', 'IdentityMap',
-    'MathematicalSet', 'Set',
+    'MathSet',
     'VectorSpace', 'Fn', 'AffineSpace', 'fn', 'matrix_space', 'poly_space',
     'hom', 'is_vectorspace', 'columnspace', 'rowspace', 'nullspace',
     'left_nullspace', 'image', 'kernel'
