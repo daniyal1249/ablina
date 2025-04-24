@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from numbers import Complex, Real
 from random import gauss
 
@@ -332,7 +331,7 @@ class Fn(_StandardFn):
         raise NotImplementedError()
 
 
-class VectorSpace(ABC):
+class VectorSpace:
     """
     pass
     """
@@ -340,10 +339,14 @@ class VectorSpace(ABC):
     def __init_subclass__(cls, name=None, **kwargs):
         super().__init_subclass__(**kwargs)
         attributes = ['set', 'fn']
+        methods = ['__to_fn__', '__from_fn__']
         
         for attr in attributes:
             if not hasattr(cls, attr):
                 raise TypeError(f'{cls.__name__} must define "{attr}".')
+        for method in methods:
+            if not callable(getattr(cls, method, None)):
+                raise TypeError(f'{cls.__name__} must define the method "{method}".')
         
         if not isinstance(cls.set, MathSet):
             raise TypeError(f'{cls.__name__}.set must be a MathSet.')
@@ -368,14 +371,6 @@ class VectorSpace(ABC):
             if not self.are_independent(*basis):
                 raise VectorSpaceError('Basis vectors must be linearly independent.')
             self.fn = self.fn.span(basis=[self.__to_fn__(vec) for vec in basis])
-
-    @abstractmethod
-    def __to_fn__(self):
-        ...
-
-    @abstractmethod
-    def __from_fn__(self):
-        ...
     
     @property
     def field(self):
@@ -1102,17 +1097,17 @@ class AffineSpace:
     pass
     """
 
-    def __init__(self, vectorspace, vector):
+    def __init__(self, vectorspace, representative):
         """
         pass
         """
         if not isinstance(vectorspace, VectorSpace):
             raise TypeError()
-        if vector not in type(vectorspace)():
+        if representative not in type(vectorspace)():
             raise TypeError()
         
         self._vectorspace = vectorspace
-        self._representative = vector
+        self._representative = representative
 
     @property
     def vectorspace(self):

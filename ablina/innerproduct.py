@@ -1,6 +1,5 @@
 import sympy as sp
 
-from .operations import InnerProduct
 from .vectorspace import VectorSpace
 
 
@@ -32,10 +31,10 @@ class InnerProductSpace:
         """
         if not isinstance(vectorspace, VectorSpace):
             raise TypeError('vectorspace must be of type VectorSpace.')
-        self._innerproduct = InnerProductSpace._init_innerproduct(innerproduct)
+        self._innerproduct = InnerProductSpace._init_ip(innerproduct)
 
     @staticmethod
-    def _init_innerproduct(ip):
+    def _init_ip(ip):
         if ip is None:
             raise NotImplementedError()
         return ip
