@@ -298,49 +298,49 @@ class LinearMap:
             name = None
         return LinearMap(map2.domain, self.codomain, mapping, matrix, name)
     
-    def range(self):
+    def image(self):
         """
-        The range, or image, of the linear map.
+        The image, or range, of the linear map.
 
         Returns
         -------
         VectorSpace
-            The range of `self`.
+            The image of `self`.
 
         See Also
         --------
-        LinearMap.image
+        LinearMap.range
         """
         basis = [vec.tolist() for vec in self.matrix.columnspace()]
         basis = [self.domain.from_coordinate(vec) for vec in basis]
         return self.domain.span(*basis)
 
-    def nullspace(self):
+    def kernel(self):
         """
-        The null space, or kernel, of the linear map.
+        The kernel, or null space, of the linear map.
 
         Returns
         -------
         VectorSpace
-            The nullspace of `self`.
+            The kernel of `self`.
 
         See Also
         --------
-        LinearMap.kernel
+        LinearMap.nullspace
         """
         basis = [vec.tolist() for vec in self.matrix.nullspace()]
         basis = [self.domain.from_coordinate(vec) for vec in basis]
         return self.domain.span(*basis)
     
-    def pseudoinverse(self):
-        """
-        The pseudoinverse of the linear map.
-        """
-        raise NotImplementedError()
-    
     def adjoint(self):
         """
         The adjoint of the linear map.
+        """
+        raise NotImplementedError()
+    
+    def pseudoinverse(self):
+        """
+        The pseudoinverse of the linear map.
         """
         raise NotImplementedError()
 
@@ -390,8 +390,52 @@ class LinearMap:
         return is_invertible(self.matrix)
 
     # Aliases
-    image = range
-    kernel = nullspace
+    range = image
+    nullspace = kernel
+
+
+class LinearOperator(LinearMap):
+    """
+    pass
+    """
+
+    def __init__(self, vectorspace, mapping=None, matrix=None, name=None):
+        super().__init__(vectorspace, vectorspace, mapping, matrix, name)
+
+
+class LinearFunctional(LinearMap):
+    """
+    pass
+    """
+
+    def __init__(self, vectorspace, mapping=None, matrix=None, name=None):
+        """
+        pass
+
+        Parameters
+        ----------
+        vectorspace : VectorSpace
+            The vector space the linear functional is defined on.
+        mapping : callable, optional
+            A function that takes a vector in the vector space and 
+            returns a scalar in the field.
+        matrix : list of list or sympy.Matrix, optional
+            The matrix representation of the linear functional with 
+            respect to the basis of the vector space.
+        name : str, optional
+            pass
+
+        Returns
+        -------
+        LinearFunctional
+            pass
+
+        Raises
+        ------
+        LinearMapError
+            If neither the mapping nor the matrix is provided.
+        """
+        super().__init__(vectorspace, ..., mapping, matrix, name)
 
 
 class Isomorphism(LinearMap):
