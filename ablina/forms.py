@@ -1,3 +1,5 @@
+from numbers import Complex, Real
+
 import sympy as sp
 
 from .utils import is_invertible, of_arity
@@ -9,7 +11,7 @@ class FormError(Exception):
         super().__init__(msg)
 
 
-class BilinearForm:
+class SesquilinearForm:
     """
     pass
     """
@@ -21,19 +23,19 @@ class BilinearForm:
         Parameters
         ----------
         vectorspace : VectorSpace
-            The vector space the bilinear form is defined on.
+            The vector space the form is defined on.
         mapping : callable, optional
             A function that takes two vectors in the vector space and 
             returns a scalar in the field.
         matrix : list of list or sympy.Matrix, optional
-            The matrix representation of the bilinear form with respect 
-            to the basis of the vector space.
+            The matrix representation of the form with respect to the 
+            basis of the vector space.
         name : str, optional
             pass
 
         Returns
         -------
-        BilinearForm
+        SesquilinearForm
             pass
 
         Raises
@@ -47,11 +49,11 @@ class BilinearForm:
             raise FormError('Either a matrix or mapping must be provided.')
         
         if mapping is None:
-            mapping = BilinearForm._from_matrix(vectorspace, matrix)
+            mapping = SesquilinearForm._from_matrix(vectorspace, matrix)
         elif not of_arity(mapping, 2):
             raise TypeError('Mapping must be a function of arity 2.')
         if matrix is None:
-            matrix = BilinearForm._to_matrix(vectorspace, mapping)
+            matrix = SesquilinearForm._to_matrix(vectorspace, mapping)
         else:
             matrix = sp.Matrix(matrix)
         
@@ -63,26 +65,20 @@ class BilinearForm:
 
     @staticmethod
     def _to_matrix(vectorspace, mapping):
-        # matrix = []
-        # for vec in domain.basis:
-        #     mapped_vec = mapping(vec)
-        #     coord_vec = codomain.to_coordinate(mapped_vec)
-        #     matrix.extend(coord_vec)
-        # return sp.Matrix(domain.dim, codomain.dim, matrix).T
-        pass
+        basis = vectorspace.basis
+        n = len(basis)
+        return sp.Matrix(n, n, lambda i, j: mapping(basis[i], basis[j]))
 
     @staticmethod
-    def _from_matrix(vectorspace, matrix):
-        # matrix = sp.Matrix(matrix)
-        # def to_coord(vec): return sp.Matrix(domain.to_coordinate(vec))
-        # def from_coord(vec): return codomain.from_coordinate(vec.flat())
-        # return lambda vec: from_coord(matrix @ to_coord(vec))
-        pass
+    def _from_matrix(vectorspace: VectorSpace, matrix):
+        matrix = sp.Matrix(matrix)
+        def to_coord(vec): return sp.Matrix(vectorspace.to_coordinate(vec))
+        return lambda u, v: (to_coord(u).H @ matrix @ to_coord(v))[0]
 
     @property
     def vectorspace(self):
         """
-        VectorSpace: The vector space the bilinear form is defined on.
+        VectorSpace: The vector space the form is defined on.
         """
         return self._vectorspace
     
@@ -96,18 +92,69 @@ class BilinearForm:
     @property
     def matrix(self):
         """
-        sympy.Matrix: The matrix representation of the bilinear form.
+        sympy.Matrix: The matrix representation of the form.
         """
         return self._matrix
+    
+    def __repr__(self):
+        return (
+            f'SesquilinearForm(vectorspace={self.vectorspace}, '
+            f'mapping={self.mapping.__name__}, '
+            f'matrix={self.matrix})'
+            )
+    
+    def __str__(self):
+        return self.__repr__()
+
+    def __eq__(self, map2):
+        if not isinstance(map2, SesquilinearForm):
+            return NotImplemented
+        return (
+            self.vectorspace == map2.vectorspace 
+            and self.matrix == map2.matrix
+            )
+    
+    def __call__(self, vec1, vec2):
+        """
+        pass
+        """
+        if vec1 not in self.vectorspace or vec2 not in self.vectorspace:
+            raise TypeError(f'Vectors must be elements of the vector space.')
+        return self.mapping(vec1, vec2)
+    
+    def signature(self):
+        pass
+
+    def inertia(self):
+        pass
+    
+    def is_degenerate(self):
+        return not is_invertible(self.matrix)
+    
+    def is_symmetric(self):
+        return self.matrix.is_symmetric()
+
+    def is_hermitian(self):
+        if self.vectorspace.field is not Complex:
+            raise TypeError()
+        return self.matrix.is_hermitian
+
+    def is_positive_definite(self):
+        return self.matrix.is_positive_definite
+
+    def is_negative_definite(self):
+        return self.matrix.is_negative_definite
+
+    def is_positive_semidefinite(self):
+        return self.matrix.is_positive_semidefinite
+
+    def is_negative_semidefinite(self):
+        return self.matrix.is_negative_semidefinite
 
 
-class SesquilinearForm:
+class InnerProduct(SesquilinearForm):
     pass
 
 
-class HermitianForm(SesquilinearForm):
-    pass
-
-
-class InnerProduct:
+class QuadraticForm:
     pass
