@@ -148,8 +148,8 @@ class SesquilinearForm:
         """
         Check whether the form is degenerate.
 
-        A form <,> is degenerate if there exists an x /= 0 such that 
-        <x, y> = 0 for all y.
+        A form `<,>` is degenerate if there exists an x ≠ 0 such that 
+        `<x, y> = 0` for all y.
 
         Returns
         -------
@@ -202,7 +202,7 @@ class SesquilinearForm:
         """
         Check whether the form is positive definite.
 
-        This method checks whether <x, x> is positive for all x /= 0. 
+        This method checks whether `<x, x>` is positive for all x ≠ 0. 
         Note that the form is not required to be symmetric/hermitian.
 
         Returns
@@ -220,7 +220,7 @@ class SesquilinearForm:
         """
         Check whether the form is negative definite.
 
-        This method checks whether <x, x> is negative for all x /= 0. 
+        This method checks whether `<x, x>` is negative for all x ≠ 0. 
         Note that the form is not required to be symmetric/hermitian.
 
         Returns
@@ -238,7 +238,7 @@ class SesquilinearForm:
         """
         Check whether the form is positive semidefinite.
 
-        This method checks whether <x, x> is nonnegative for all x. 
+        This method checks whether `<x, x>` is nonnegative for all x. 
         Note that the form is not required to be symmetric/hermitian.
 
         Returns
@@ -256,7 +256,7 @@ class SesquilinearForm:
         """
         Check whether the form is negative semidefinite.
 
-        This method checks whether <x, x> is nonpositive for all x. 
+        This method checks whether `<x, x>` is nonpositive for all x. 
         Note that the form is not required to be symmetric/hermitian.
 
         Returns
@@ -274,8 +274,8 @@ class SesquilinearForm:
         """
         Check whether the form is indefinite.
 
-        This method checks whether there exists x, y such that <x, x> is 
-        positive and <y, y> is negative. Note that the form is not 
+        This method checks whether there exists x, y such that `<x, x>` is 
+        positive and `<y, y>` is negative. Note that the form is not 
         required to be symmetric/hermitian.
 
         Returns
