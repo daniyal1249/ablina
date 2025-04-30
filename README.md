@@ -1,8 +1,6 @@
-<!-- <div style="text-align: center;">
+<div style="text-align: center;">
   <img src="ablina.svg" alt="ablina" style="width: 100%; height: auto;" />
-</div> -->
-
-# ablina
+</div>
 
 ## Documentation
 
