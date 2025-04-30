@@ -154,6 +154,8 @@ class LinearMap:
         return self.__repr__()
 
     def __eq__(self, map2):
+        if not isinstance(map2, LinearMap):
+            return NotImplemented
         return (
             self.domain == map2.domain 
             and self.codomain == map2.codomain 
