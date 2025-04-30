@@ -145,39 +145,144 @@ class SesquilinearForm:
         return p - m
 
     def is_degenerate(self):
+        """
+        Check whether the form is degenerate.
+
+        A form <,> is degenerate if there exists an x /= 0 such that 
+        <x, y> = 0 for all y.
+
+        Returns
+        -------
+        bool
+            True if `self` is degenerate, otherwise False.
+        """
         return not is_invertible(self.matrix)
     
     def is_symmetric(self):
+        """
+        Check whether the form is symmetric.
+
+        Returns
+        -------
+        bool
+            True if `self` is symmetric, otherwise False.
+
+        See Also
+        --------
+        SesquilinearForm.is_hermitian
+        """
         return self.matrix.is_symmetric()
 
     def is_hermitian(self):
+        """
+        Check whether the form is hermitian.
+
+        Note that this method is only valid for forms defined on complex 
+        vector spaces. An exception is raised otherwise.
+
+        Returns
+        -------
+        bool
+            True if `self` is hermitian, otherwise False.
+
+        Raises
+        ------
+        FormError
+            If the form is not defined on a complex vector space.
+
+        See Also
+        --------
+        SesquilinearForm.is_symmetric
+        """
         if self.vectorspace.field is not Complex:
             raise FormError()
         return self.matrix.is_hermitian
 
     def is_positive_definite(self):
-        if not self.matrix.is_hermitian:
-            return False
+        """
+        Check whether the form is positive definite.
+
+        This method checks whether <x, x> is positive for all x /= 0. 
+        Note that the form is not required to be symmetric/hermitian.
+
+        Returns
+        -------
+        bool
+            True if `self` is positive definite, otherwise False.
+
+        See Also
+        --------
+        SesquilinearForm.is_positive_semidefinite
+        """
         return self.matrix.is_positive_definite
 
     def is_negative_definite(self):
-        if not self.matrix.is_hermitian:
-            return False
+        """
+        Check whether the form is negative definite.
+
+        This method checks whether <x, x> is negative for all x /= 0. 
+        Note that the form is not required to be symmetric/hermitian.
+
+        Returns
+        -------
+        bool
+            True if `self` is negative definite, otherwise False.
+
+        See Also
+        --------
+        SesquilinearForm.is_negative_semidefinite
+        """
         return self.matrix.is_negative_definite
 
     def is_positive_semidefinite(self):
-        if not self.matrix.is_hermitian:
-            return False
+        """
+        Check whether the form is positive semidefinite.
+
+        This method checks whether <x, x> is nonnegative for all x. 
+        Note that the form is not required to be symmetric/hermitian.
+
+        Returns
+        -------
+        bool
+            True if `self` is positive semidefinite, otherwise False.
+
+        See Also
+        --------
+        SesquilinearForm.is_positive_definite
+        """
         return self.matrix.is_positive_semidefinite
 
     def is_negative_semidefinite(self):
-        if not self.matrix.is_hermitian:
-            return False
+        """
+        Check whether the form is negative semidefinite.
+
+        This method checks whether <x, x> is nonpositive for all x. 
+        Note that the form is not required to be symmetric/hermitian.
+
+        Returns
+        -------
+        bool
+            True if `self` is negative semidefinite, otherwise False.
+
+        See Also
+        --------
+        SesquilinearForm.is_negative_definite
+        """
         return self.matrix.is_negative_semidefinite
 
     def is_indefinite(self):
-        if not self.matrix.is_hermitian:
-            return False
+        """
+        Check whether the form is indefinite.
+
+        This method checks whether there exists x, y such that <x, x> is 
+        positive and <y, y> is negative. Note that the form is not 
+        required to be symmetric/hermitian.
+
+        Returns
+        -------
+        bool
+            True if `self` is indefinite, otherwise False.
+        """
         return self.matrix.is_indefinite
 
 
@@ -213,12 +318,17 @@ class InnerProduct(SesquilinearForm):
         FormError
             If neither the mapping nor the matrix is provided.
         InnerProductError
-            If 
+            If the form is not a valid inner product.
         """
         super().__init__(vectorspace, mapping, matrix, name)
 
+        if self.vectorspace.field is Real:
+            if not self.is_symmetric():
+                raise InnerProductError('Real inner product must be symmetric.')
+        elif not self.is_hermitian():
+            raise InnerProductError('Complex inner product must be hermitian.')
         if not self.is_positive_definite():
-            raise InnerProductError('Form is not positive definite.')
+            raise InnerProductError('Inner product must be positive definite.')
 
 
 class QuadraticForm:
