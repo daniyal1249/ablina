@@ -133,10 +133,11 @@ class SesquilinearForm:
                 raise FormError()
         elif not self.is_hermitian():
             raise FormError()
+        tol = 1e-8
         eigenvals = self.matrix.evalf().eigenvals().items()
-        p = sum(m for val, m in eigenvals if val > 0)
-        m = sum(m for val, m in eigenvals if val < 0)
-        z = sum(m for val, m in eigenvals if abs(val) < 1e-8)
+        p = sum(m for val, m in eigenvals if val >= tol)
+        m = sum(m for val, m in eigenvals if val <= -tol)
+        z = sum(m for val, m in eigenvals if abs(val) < tol)
         return p, m, z
     
     def signature(self):
