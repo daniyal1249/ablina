@@ -1,3 +1,3 @@
-# Inner product space
+# Inner product spaces
 
 ::: ablina.innerproduct

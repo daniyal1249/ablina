@@ -1,3 +1,3 @@
-# Linear map
+# Linear maps
 
 ::: ablina.linearmap

@@ -34,11 +34,11 @@ nav:
     - Getting started: guides/getting-started.md
     - Installation: guides/installation.md
   - API reference:
-    - Set: reference/mathset.md
-    - Vector space: reference/vectorspace.md
-    - Linear map: reference/linearmap.md
-    - Forms: reference/forms.md
-    - Inner product space: reference/innerproduct.md
+    - Sets: reference/mathset.md
+    - Vector spaces: reference/vectorspace.md
+    - Linear maps: reference/linearmap.md
+    - Forms: reference/form.md
+    - Inner product spaces: reference/innerproduct.md
   - Resources: resources.md
 
 

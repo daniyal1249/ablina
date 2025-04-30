@@ -1,3 +1,3 @@
-# Vector space
+# Vector spaces
 
 ::: ablina.vectorspace
