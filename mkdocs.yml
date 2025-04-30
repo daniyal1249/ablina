@@ -37,6 +37,7 @@ nav:
     - Set: reference/mathset.md
     - Vector space: reference/vectorspace.md
     - Linear map: reference/linearmap.md
+    - Forms: reference/forms.md
     - Inner product space: reference/innerproduct.md
   - Resources: resources.md
 
