@@ -103,7 +103,7 @@ class _StandardFn:
     def to_coordinate(self, vector, basis=None):
         if basis is None:
             basis = self._rs_matrix.tolist()
-        elif not self.is_basis(*basis):
+        elif not self._is_basis(*basis):
             raise ValueError('The provided vectors do not form a basis.')
         if not basis:
             return []
@@ -115,7 +115,7 @@ class _StandardFn:
     def from_coordinate(self, vector, basis=None):  # Check field
         if basis is None:
             basis = self._rs_matrix.tolist()
-        elif not self.is_basis(*basis):
+        elif not self._is_basis(*basis):
             raise ValueError('The provided vectors do not form a basis.')
         try:
             matrix, coord_vec = sp.Matrix(basis).T, sp.Matrix(vector)
@@ -128,7 +128,7 @@ class _StandardFn:
         matrix = sp.Matrix(vectors)
         return matrix.rank() == matrix.rows
     
-    def is_basis(self, *vectors):
+    def _is_basis(self, *vectors):
         matrix = sp.Matrix(vectors)
         return matrix.rank() == matrix.rows and len(vectors) == self.dim
 
@@ -276,10 +276,6 @@ class Fn(_StandardFn):
     def are_independent(self, *vectors):
         standard_vecs = [self._to_standard(vec) for vec in vectors]
         return super().are_independent(*standard_vecs)
-    
-    def is_basis(self, *vectors):
-        standard_vecs = [self._to_standard(vec) for vec in vectors]
-        return super().is_basis(*standard_vecs)
 
     # Methods relating to vector spaces
 
@@ -663,10 +659,7 @@ class VectorSpace:
         bool
             True if the vectors form a basis, otherwise False.
         """
-        if not all(vec in self for vec in vectors):
-            raise TypeError('Vectors must be elements of the vector space.')
-        fn_vecs = [self.__to_fn__(vec) for vec in vectors]
-        return self.fn.is_basis(*fn_vecs)
+        return self.are_independent(*vectors) and len(vectors) == self.dim
 
     # Methods relating to vector spaces
 
