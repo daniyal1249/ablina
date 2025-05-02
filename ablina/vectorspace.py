@@ -104,7 +104,7 @@ class _StandardFn:
         if basis is None:
             basis = self._rs_matrix.tolist()
         elif not self._is_basis(*basis):
-            raise ValueError('The provided vectors do not form a basis.')
+            raise ValueError('Provided vectors do not form a basis.')
         if not basis:
             return []
         
@@ -116,7 +116,7 @@ class _StandardFn:
         if basis is None:
             basis = self._rs_matrix.tolist()
         elif not self._is_basis(*basis):
-            raise ValueError('The provided vectors do not form a basis.')
+            raise ValueError('Provided vectors do not form a basis.')
         try:
             matrix, coord_vec = sp.Matrix(basis).T, sp.Matrix(vector)
             vec = matrix @ coord_vec
@@ -660,6 +660,15 @@ class VectorSpace:
             True if the vectors form a basis, otherwise False.
         """
         return self.are_independent(*vectors) and len(vectors) == self.dim
+    
+    def change_of_basis(self, basis):
+        """
+        pass
+        """
+        if not self.is_basis(*basis):
+            raise ValueError('Provided vectors do not form a basis.')
+        basechange = [self.to_coordinate(vec) for vec in basis]
+        return (sp.Matrix(basechange).T).inv()
 
     # Methods relating to vector spaces
 

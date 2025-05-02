@@ -261,21 +261,16 @@ class LinearMap:
         pass
         """
         if domain_basis is None:
-            domain_basis = self.domain.basis
-        elif not self.domain.is_basis(*domain_basis):
-            raise ValueError('Provided domain basis is not a basis of the domain.')
+            domain_matrix = sp.eye(self.domain.dim)
+        else:
+            domain_matrix = self.domain.change_of_basis(domain_basis)
         if codomain_basis is None:
-            codomain_basis = self.codomain.basis
-        elif not self.codomain.is_basis(*codomain_basis):
-            raise ValueError('Provided codomain basis is not a basis of the codomain.')
-        
-        domain_matrix = [self.domain.to_coordinate(vec) for vec in domain_basis]
-        domain_matrix = sp.Matrix(domain_matrix).T
-        codomain_matrix = [self.codomain.to_coordinate(vec) for vec in codomain_basis]
-        codomain_matrix = (sp.Matrix(codomain_matrix).T).inv()
+            codomain_matrix = sp.eye(self.codomain.dim)
+        else:
+            codomain_matrix = self.codomain.change_of_basis(codomain_basis) 
 
-        map_matrix = codomain_matrix @ self.matrix @ domain_matrix
-        return map_matrix, domain_matrix.inv(), codomain_matrix
+        map_matrix = codomain_matrix @ self.matrix @ domain_matrix.inv()
+        return map_matrix, domain_matrix, codomain_matrix
 
     def composition(self, map2):
         """
@@ -425,27 +420,22 @@ class LinearOperator(LinearMap):
         super().__init__(vectorspace, vectorspace, mapping, matrix, name)
 
     def __eq__(self, map2):
-        # if not isinstance(map2, LinearMap):
-        #     return False
-        # if not (self.domain == map2.domain and self.codomain == map2.codomain):
-        #     return False
-        # matrix, _ = self.change_of_basis(map2.domain.basis, map2.codomain.basis)
-        # return map2.matrix == matrix  # FIX: consider .equals()
-        raise NotImplementedError()
+        if isinstance(map2, LinearOperator):
+            if self.domain != map2.domain:
+                return False
+            matrix, _ = self.change_of_basis(map2.domain.basis)
+            return map2.matrix == matrix  # FIX: consider .equals()
+        if isinstance(map2, LinearMap):
+            return map2.__eq__(self)
+        return False
     
     def change_of_basis(self, basis):
         """
         pass
         """
-        if not self.domain.is_basis(*basis):
-            raise ValueError('Provided basis is not a basis of the vector space.')
-        
-        basechange = [self.domain.to_coordinate(vec) for vec in basis]
-        basechange = sp.Matrix(basechange).T
-        basechange_inv = basechange.inv()
-
-        map_matrix = basechange_inv @ self.matrix @ basechange
-        return map_matrix, basechange_inv
+        basechange = self.domain.change_of_basis(basis)
+        map_matrix = basechange @ self.matrix @ basechange.inv()
+        return map_matrix, basechange
 
 
 class LinearFunctional(LinearMap):
