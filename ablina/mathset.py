@@ -182,7 +182,7 @@ class MathSet:
         >>> [1, 2, 3] in set3
         True
         """
-        self._validate(set2)
+        self._validate_type(set2)
         return MathSet(self.cls, self.predicates + set2.predicates)
 
     def union(self, set2):
@@ -221,7 +221,7 @@ class MathSet:
         >>> [1, 2, 3] in set3
         True
         """
-        self._validate(set2)
+        self._validate_type(set2)
         def union_pred(obj):
             return (
                 all(pred(obj) for pred in self.predicates) 
@@ -314,7 +314,7 @@ class MathSet:
         >>> set2.is_subset(set3)
         False
         """
-        self._validate(set2)
+        self._validate_type(set2)
         return all(pred in self.predicates for pred in set2.predicates)
     
     def add_predicates(self, *predicates):
@@ -347,7 +347,7 @@ class MathSet:
             predicates = predicates[0]
         return MathSet(self.cls, *self.predicates, *predicates)
 
-    def _validate(self, set2):
+    def _validate_type(self, set2):
         if not isinstance(set2, MathSet):
             raise TypeError(
                 f'Expected a MathSet, got {type(set2).__name__} instead.'

@@ -420,14 +420,14 @@ class LinearOperator(LinearMap):
         super().__init__(vectorspace, vectorspace, mapping, matrix, name)
 
     def __eq__(self, map2):
+        if not isinstance(map2, LinearMap):
+            return False
         if isinstance(map2, LinearOperator):
             if self.domain != map2.domain:
                 return False
             matrix, _ = self.change_of_basis(map2.domain.basis)
             return map2.matrix == matrix  # FIX: consider .equals()
-        if isinstance(map2, LinearMap):
-            return map2.__eq__(self)
-        return False
+        return map2 == self
     
     def change_of_basis(self, basis):
         """
@@ -436,6 +436,21 @@ class LinearOperator(LinearMap):
         basechange = self.domain.change_of_basis(basis)
         map_matrix = basechange @ self.matrix @ basechange.inv()
         return map_matrix, basechange
+    
+    def is_symmetric(self, innerproduct=None):
+        pass
+
+    def is_hermitian(self, innerproduct=None):
+        pass
+
+    def is_orthogonal(self, innerproduct=None):
+        pass
+
+    def is_unitary(self, innerproduct=None):
+        pass
+    
+    def is_normal(self, innerproduct=None):
+        pass
 
 
 class LinearFunctional(LinearMap):
@@ -512,7 +527,7 @@ class IdentityMap(Isomorphism):
         Parameters
         ----------
         vectorspace : VectorSpace
-            The domain and codomain of the identity map.
+            The vector space the identity map is defined on.
 
         Returns
         -------

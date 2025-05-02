@@ -83,11 +83,6 @@ class _StandardFn:
             return bool((self._ns_matrix @ vec).is_zero_matrix)
         except Exception:
             return False
-    
-    def __eq__(self, vs2):
-        if self is vs2:
-            return True
-        return self.is_subspace(vs2) and vs2.is_subspace(self)
 
     # Methods relating to vectors
 
@@ -112,7 +107,7 @@ class _StandardFn:
         coord_vec = matrix.solve_least_squares(vec)
         return coord_vec.flat()
 
-    def from_coordinate(self, vector, basis=None):  # Check field
+    def from_coordinate(self, vector, basis=None):  # FIX: check field
         if basis is None:
             basis = self._rs_matrix.tolist()
         elif not self._is_basis(*basis):
