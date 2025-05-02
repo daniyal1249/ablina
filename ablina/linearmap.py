@@ -76,15 +76,15 @@ class LinearMap:
         self._matrix = matrix
         if name is not None:
             self.__name__ = name
-
+    
     @staticmethod
     def _to_matrix(domain, codomain, mapping):
         matrix = []
         for vec in domain.basis:
             mapped_vec = mapping(vec)
             coord_vec = codomain.to_coordinate(mapped_vec)
-            matrix.extend(coord_vec)
-        return sp.Matrix(domain.dim, codomain.dim, matrix).T
+            matrix.append(coord_vec)
+        return sp.Matrix(matrix).T
 
     @staticmethod
     def _from_matrix(domain, codomain, matrix):
@@ -131,14 +131,14 @@ class LinearMap:
     @property
     def rank(self):
         """
-        int: The rank of the linear map.
+        int: The dimension of the image of the linear map.
         """
         return self.matrix.rank()
     
     @property
     def nullity(self):
         """
-        int: The nullity of the linear map.
+        int: The dimension of the kernel of the linear map.
         """
         return self.matrix.cols - self.rank
     
@@ -155,12 +155,11 @@ class LinearMap:
 
     def __eq__(self, map2):
         if not isinstance(map2, LinearMap):
-            return NotImplemented
-        return (
-            self.domain == map2.domain 
-            and self.codomain == map2.codomain 
-            and self.matrix == map2.matrix
-            )
+            return False
+        if not (self.domain == map2.domain and self.codomain == map2.codomain):
+            return False
+        matrix, _, _ = self.change_of_basis(map2.domain.basis, map2.codomain.basis)
+        return map2.matrix == matrix  # FIX: consider .equals()
     
     def __add__(self, map2):
         """
@@ -257,6 +256,27 @@ class LinearMap:
             raise TypeError(f'{vec} is not an element of the domain.')
         return self.mapping(vec)
     
+    def change_of_basis(self, domain_basis=None, codomain_basis=None):
+        """
+        pass
+        """
+        if domain_basis is None:
+            domain_basis = self.domain.basis
+        elif not self.domain.is_basis(*domain_basis):
+            raise ValueError('Provided domain basis is not a basis of the domain.')
+        if codomain_basis is None:
+            codomain_basis = self.codomain.basis
+        elif not self.codomain.is_basis(*codomain_basis):
+            raise ValueError('Provided codomain basis is not a basis of the codomain.')
+        
+        domain_matrix = [self.domain.to_coordinate(vec) for vec in domain_basis]
+        domain_matrix = sp.Matrix(domain_matrix).T
+        codomain_matrix = [self.codomain.to_coordinate(vec) for vec in codomain_basis]
+        codomain_matrix = (sp.Matrix(codomain_matrix).T).inv()
+
+        map_matrix = codomain_matrix @ self.matrix @ domain_matrix
+        return map_matrix, domain_matrix.inv(), codomain_matrix
+
     def composition(self, map2):
         """
         The composition of two linear maps.
@@ -403,6 +423,29 @@ class LinearOperator(LinearMap):
 
     def __init__(self, vectorspace, mapping=None, matrix=None, name=None):
         super().__init__(vectorspace, vectorspace, mapping, matrix, name)
+
+    def __eq__(self, map2):
+        # if not isinstance(map2, LinearMap):
+        #     return False
+        # if not (self.domain == map2.domain and self.codomain == map2.codomain):
+        #     return False
+        # matrix, _ = self.change_of_basis(map2.domain.basis, map2.codomain.basis)
+        # return map2.matrix == matrix  # FIX: consider .equals()
+        raise NotImplementedError()
+    
+    def change_of_basis(self, basis):
+        """
+        pass
+        """
+        if not self.domain.is_basis(*basis):
+            raise ValueError('Provided basis is not a basis of the vector space.')
+        
+        basechange = [self.domain.to_coordinate(vec) for vec in basis]
+        basechange = sp.Matrix(basechange).T
+        basechange_inv = basechange.inv()
+
+        map_matrix = basechange_inv @ self.matrix @ basechange
+        return map_matrix, basechange_inv
 
 
 class LinearFunctional(LinearMap):

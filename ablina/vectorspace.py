@@ -9,11 +9,6 @@ from . import utils as u
 from . import vs_utils as vsu
 
 
-class VectorSpaceError(Exception):
-    def __init__(self, msg=''):
-        super().__init__(msg)
-
-
 class NotAVectorSpaceError(Exception):
     def __init__(self, msg=''):
         super().__init__(msg)
@@ -108,8 +103,8 @@ class _StandardFn:
     def to_coordinate(self, vector, basis=None):
         if basis is None:
             basis = self._rs_matrix.tolist()
-        elif not self._is_basis(*basis):
-            raise VectorSpaceError('The provided vectors do not form a basis.')
+        elif not self.is_basis(*basis):
+            raise ValueError('The provided vectors do not form a basis.')
         if not basis:
             return []
         
@@ -120,20 +115,20 @@ class _StandardFn:
     def from_coordinate(self, vector, basis=None):  # Check field
         if basis is None:
             basis = self._rs_matrix.tolist()
-        elif not self._is_basis(*basis):
-            raise VectorSpaceError('The provided vectors do not form a basis.')
+        elif not self.is_basis(*basis):
+            raise ValueError('The provided vectors do not form a basis.')
         try:
             matrix, coord_vec = sp.Matrix(basis).T, sp.Matrix(vector)
             vec = matrix @ coord_vec
         except Exception as e:
-            raise VectorSpaceError('Invalid coordinate vector.') from e
+            raise ValueError('Invalid coordinate vector.') from e
         return vec.flat() if vec else [0] * self.n
     
     def are_independent(self, *vectors):
         matrix = sp.Matrix(vectors)
         return matrix.rank() == matrix.rows
     
-    def _is_basis(self, *vectors):
+    def is_basis(self, *vectors):
         matrix = sp.Matrix(vectors)
         return matrix.rank() == matrix.rows and len(vectors) == self.dim
 
@@ -281,6 +276,10 @@ class Fn(_StandardFn):
     def are_independent(self, *vectors):
         standard_vecs = [self._to_standard(vec) for vec in vectors]
         return super().are_independent(*standard_vecs)
+    
+    def is_basis(self, *vectors):
+        standard_vecs = [self._to_standard(vec) for vec in vectors]
+        return super().is_basis(*standard_vecs)
 
     # Methods relating to vector spaces
 
@@ -369,7 +368,7 @@ class VectorSpace:
             )
         if basis is not None:
             if not self.are_independent(*basis):
-                raise VectorSpaceError('Basis vectors must be linearly independent.')
+                raise ValueError('Basis vectors must be linearly independent.')
             self.fn = self.fn.span(basis=[self.__to_fn__(vec) for vec in basis])
     
     @property
@@ -537,7 +536,7 @@ class VectorSpace:
 
         Raises
         ------
-        VectorSpaceError
+        ValueError
             If the provided basis vectors do not form a basis for the 
             vector space.
 
@@ -588,8 +587,8 @@ class VectorSpace:
 
         Raises
         ------
-        VectorSpaceError
-            If `vector` is of incorrect length.
+        ValueError
+            If `vector` has invalid length.
 
         See Also
         --------
@@ -649,6 +648,25 @@ class VectorSpace:
             raise TypeError('Vectors must be elements of the vector space.')
         fn_vecs = [self.__to_fn__(vec) for vec in vectors]
         return self.fn.are_independent(*fn_vecs)
+    
+    def is_basis(self, *vectors):
+        """
+        Check whether the given vectors form a basis.
+
+        Parameters
+        ----------
+        *vectors
+            The vectors in the vector space.
+
+        Returns
+        -------
+        bool
+            True if the vectors form a basis, otherwise False.
+        """
+        if not all(vec in self for vec in vectors):
+            raise TypeError('Vectors must be elements of the vector space.')
+        fn_vecs = [self.__to_fn__(vec) for vec in vectors]
+        return self.fn.is_basis(*fn_vecs)
 
     # Methods relating to vector spaces
 
@@ -751,7 +769,7 @@ class VectorSpace:
 
         Raises
         ------
-        VectorSpaceError
+        ValueError
             If the provided basis vectors are not linearly independent.
 
         Examples
@@ -811,13 +829,13 @@ class VectorSpace:
     
     # Methods relating to affine spaces
     
-    def coset(self, vector):
+    def coset(self, representative):
         """
         pass
 
         Parameters
         ----------
-        vector : object
+        representative : object
             A vector in the vector space.
 
         Returns
@@ -829,7 +847,7 @@ class VectorSpace:
         --------
         VectorSpace.quotient
         """
-        return AffineSpace(self, vector)
+        return AffineSpace(self, representative)
     
     def quotient(self, vs2):
         """
@@ -1020,7 +1038,7 @@ class VectorSpace:
         
         Raises
         ------
-        VectorSpaceError
+        ValueError
             If the provided vectors are not linearly independent.
 
         See Also
@@ -1028,7 +1046,7 @@ class VectorSpace:
         VectorSpace.are_orthonormal
         """
         if not self.are_independent(*vectors):
-            raise VectorSpaceError('Vectors must be linearly independent.')
+            raise ValueError('Vectors must be linearly independent.')
         fn_vecs = [self.__to_fn__(vec) for vec in vectors]
         orthonormal_vecs = self.fn.gram_schmidt(*fn_vecs)
         return [self.__from_fn__(vec) for vec in orthonormal_vecs]
@@ -1254,7 +1272,7 @@ def hom(vs1, vs2):
     if not (isinstance(vs1, VectorSpace) and isinstance(vs2, VectorSpace)):
         raise TypeError()
     if vs1.field is not vs2.field:
-        raise VectorSpaceError()
+        raise TypeError()
     return matrix_space(vs1.field, (vs2.dim, vs1.dim))
 
 

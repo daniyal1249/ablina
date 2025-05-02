@@ -123,7 +123,7 @@ class SesquilinearForm:
             )
     
     def __call__(self, vec1, vec2):
-        if vec1 not in self.vectorspace or vec2 not in self.vectorspace:
+        if not (vec1 in self.vectorspace and vec2 in self.vectorspace):
             raise TypeError(f'Vectors must be elements of the vector space.')
         return self.mapping(vec1, vec2)
 
