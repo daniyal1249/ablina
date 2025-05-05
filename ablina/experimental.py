@@ -132,59 +132,9 @@ def is_associative(field, n, operation):
             return value
     return True
 
+
 # To test associativity of multiplication (2 scalars one vector), define
 # operation to be normal mul if both are scalars, and scalar mul otherwise
-
-def solve_func_eq(equation, f):
-    """
-    Attempt to solve a univariate functional equation by guessing common 
-    forms of solutions.
-
-    Parameters
-    ----------
-    equation : sympy.Expr or sympy.Eq
-        The functional equation to solve.
-    func : sympy.Function
-        The function to solve for.
-
-    Returns
-    -------
-    valid_funcs : set of sympy.Expr
-        pass
-    """
-    _a, _b, x = sp.symbols('_a _b x')
-    w = sp.Wild('w')
-    
-    solution_forms = [
-        lambda x: _a * x + _b,          # Linear
-        lambda x: _a * sp.log(x) + _b,  # Logarithmic
-        lambda x: _a * sp.exp(x)        # Exponential
-        ]
-    
-    valid_funcs = set()
-    for form in solution_forms:
-        # Substitute the forms into the equation
-        subbed_eq = equation.replace(f(w), form(w))
-        invalid_vars = subbed_eq.free_symbols - {_a, _b}
-        try:
-            sols = sp.solve(subbed_eq, [_a, _b], dict=True)
-            sols = sols if sols else [dict()]
-        except Exception:
-            continue
-
-        for sol in sols:
-            invalid_expr = False
-            for expr in sol.values():
-                if expr.free_symbols.intersection(invalid_vars):
-                    invalid_expr = True
-                    break
-            if invalid_expr:
-                continue
-            
-            if sol or is_tautology(subbed_eq):  # Include tautologies
-                valid_func = sp.simplify(form(x).subs(sol))
-                valid_funcs.add(valid_func)
-    return valid_funcs
 
 
 def is_tautology(equation):
@@ -204,7 +154,75 @@ def is_tautology(equation):
     eq = sp.simplify(equation)
     if isinstance(eq, sp.Eq):
         return False
-    return bool(eq)  # Must be a sympy bool if not Eq
+    return bool(eq)  # eq must be a sympy bool if not Eq
+
+
+def substitute_form(equation, f, form):
+    w = sp.Wild('w')
+    return equation.replace(f(w), form(w))
+
+
+def find_valid_params(equation, f, form, params):
+    x = sp.symbols('x')
+    subbed_eq = substitute_form(equation, f, form)
+    if is_tautology(subbed_eq):
+        return [form(x)]
+    
+    try:
+        sols = sp.solve(subbed_eq, params, dict=True)
+    except Exception:
+        return []
+    
+    valid_sols = []
+    for sol in sols:
+        if all(expr.free_symbols <= set(params) for expr in sol.values()):
+            valid_sols.append(sol)
+    return [form(x).subs(sol) for sol in valid_sols]
+
+
+def solve_func_eq(equation, f):
+    """
+    Attempt to solve a univariate functional equation by guessing 
+    common forms of solutions.
+
+    Parameters
+    ----------
+    equation : sympy.Expr or sympy.Eq
+        The functional equation to solve.
+    func : sympy.Function
+        The function to solve for.
+
+    Returns
+    -------
+    valid_funcs : set of sympy.Expr
+        pass
+    """
+    a = sp.symbols('_a')
+    b = sp.symbols('_b', nonzero=True)
+
+    forms = [
+        (lambda x: a, [a]),                     # Constant
+        (lambda x: b * x + a, [a, b]),          # Linear
+        (lambda x: b * sp.log(x) + a, [a, b]),  # Logarithmic
+        (lambda x: b * 2**x, [b]),              # Exponential (base 2)
+        (lambda x: b * sp.exp(x), [b])          # Exponential (base e)
+        ]
+    
+    valid_sols = set()
+    for form, params in forms:
+        sols = find_valid_params(equation, f, form, params)
+        valid_sols.update(sols)
+    return valid_sols
+
+
+def find_add_isomorphism(field, n, add):
+    f = sp.Function('f')
+    u, v = symbols((f'u:{n}', f'v:{n}'), field=field)
+
+
+def find_mul_isomorphism(field, n, mul):
+    f = sp.Function('f')
+    u, v = symbols((f'u:{n}', f'v:{n}'), field=field)
 
 
 def standard_isomorphism(field, n, add, mul):
