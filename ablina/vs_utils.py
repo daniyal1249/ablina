@@ -72,7 +72,7 @@ def to_complement(matrix):
 
 
 # For testing
-def standard_isomorphism(field, n, add, mul):
+def internal_isomorphism(field, n, add, mul):
     return lambda x: x, lambda x: x
 
 

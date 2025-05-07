@@ -329,6 +329,128 @@ class InnerProduct(SesquilinearForm):
             raise InnerProductError('Complex inner product must be hermitian.')
         if not self.is_positive_definite():
             raise InnerProductError('Inner product must be positive definite.')
+    
+    def norm(self, vector):
+        """
+        The norm, or magnitude, of a vector.
+
+        Parameters
+        ----------
+        vector
+            A vector in the vector space.
+
+        Returns
+        -------
+        float
+            The norm of `vector`.
+        """
+        return sp.sqrt(self(vector, vector))
+    
+    def are_orthogonal(self, vec1, vec2):
+        """
+        Check whether two vectors are orthogonal.
+
+        Parameters
+        ----------
+        vec1, vec2
+            The vectors in the vector space.
+
+        Returns
+        -------
+        bool
+            True if the vectors are orthogonal, otherwise False.
+        """
+        return self(vec1, vec2) == 0
+    
+    def are_orthonormal(self, *vectors):
+        """
+        Check whether the vectors are orthonormal.
+
+        Parameters
+        ----------
+        *vectors
+            The vectors in the vector space.
+
+        Returns
+        -------
+        bool
+            True if the vectors are orthonormal, otherwise False.
+        """
+        # Improve efficiency
+        if not all(self.norm(vec) == 1 for vec in vectors):
+            return False
+        for vec1 in vectors:
+            for vec2 in vectors:
+                if not (vec1 is vec2 or self.are_orthogonal(vec1, vec2)):
+                    return False
+        return True
+    
+    def gram_schmidt(self, *vectors):
+        """
+        pass
+
+        Parameters
+        ----------
+        *vectors
+            The vectors in the vector space.
+
+        Returns
+        -------
+        list
+            An orthonormal list of vectors.
+        
+        Raises
+        ------
+        ValueError
+            If the provided vectors are not linearly independent.
+        """
+        # if not self.are_independent(*vectors):
+        #     raise ValueError('Vectors must be linearly independent.')
+        vs = self.vectorspace
+        orthonormal_vecs = []
+        for v in vectors:
+            for q in orthonormal_vecs:
+                factor = self.mapping(v, q)  # check
+                proj = vs.mul(factor, q)
+                v = vs.add(v, vs.additive_inv(proj))
+            unit_v = vs.mul(1 / self.norm(v), v)
+            orthonormal_vecs.append(unit_v)
+        return orthonormal_vecs
+    
+    def ortho_complement(self):
+        """
+        The orthogonal complement of a vector space.
+
+        Returns
+        -------
+        VectorSpace
+            The orthogonal complement of `self`.
+        """
+        fn = self.fn.ortho_complement()
+        return type(self)(fn=fn)
+    
+    def ortho_projection(self, vs2):
+        """
+        The orthogonal projection of `self` onto `vs2`.
+
+        Parameters
+        ----------
+        vs2 : VectorSpace
+            pass
+
+        Returns
+        -------
+        VectorSpace
+            pass
+
+        Raises
+        ------
+        TypeError
+            If `self` and `vs2` do not share the same ambient space.
+        """
+        self._validate_type(vs2)
+        fn = self.fn.ortho_projection(vs2.fn)
+        return type(self)(fn=fn)
 
 
 class QuadraticForm:

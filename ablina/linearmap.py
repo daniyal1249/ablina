@@ -9,11 +9,6 @@ class LinearMapError(Exception):
         super().__init__(msg)
 
 
-class IsomorphismError(Exception):
-    def __init__(self, msg=''):
-        super().__init__(msg)
-
-
 class LinearMap:
     """
     pass
@@ -51,14 +46,14 @@ class LinearMap:
             If the field of the domain and codomain are not the same.
         """
         if not isinstance(domain, VectorSpace):
-            raise TypeError('The domain must be a VectorSpace.')
+            raise TypeError('Domain must be a VectorSpace.')
         if not isinstance(codomain, VectorSpace):
-            raise TypeError('The codomain must be a VectorSpace.')
+            raise TypeError('Codomain must be a VectorSpace.')
         if mapping is None and matrix is None:
             raise LinearMapError('Either a matrix or mapping must be provided.')
         if domain.field is not codomain.field:
             raise LinearMapError(
-                'The domain and codomain must be vector spaces over the same field.'
+                'Domain and codomain must be vector spaces over the same field.'
                 )
         
         if mapping is None:
@@ -158,7 +153,8 @@ class LinearMap:
             return False
         if not (self.domain == map2.domain and self.codomain == map2.codomain):
             return False
-        matrix, _, _ = self.change_of_basis(map2.domain.basis, map2.codomain.basis)
+        basis1, basis2 = map2.domain.basis, map2.codomain.basis
+        matrix, _, _ = LinearMap.change_of_basis(self, basis1, basis2)
         return map2.matrix == matrix  # FIX: consider .equals()
     
     def __add__(self, map2):
@@ -261,16 +257,16 @@ class LinearMap:
         pass
         """
         if domain_basis is None:
-            domain_matrix = sp.eye(self.domain.dim)
+            domain_basechange = sp.eye(self.domain.dim)
         else:
-            domain_matrix = self.domain.change_of_basis(domain_basis)
+            domain_basechange = self.domain.change_of_basis(domain_basis)
         if codomain_basis is None:
-            codomain_matrix = sp.eye(self.codomain.dim)
+            codomain_basechange = sp.eye(self.codomain.dim)
         else:
-            codomain_matrix = self.codomain.change_of_basis(codomain_basis) 
+            codomain_basechange = self.codomain.change_of_basis(codomain_basis) 
 
-        map_matrix = codomain_matrix @ self.matrix @ domain_matrix.inv()
-        return map_matrix, domain_matrix, codomain_matrix
+        map_matrix = codomain_basechange @ self.matrix @ domain_basechange.inv()
+        return map_matrix, domain_basechange, codomain_basechange
 
     def composition(self, map2):
         """
@@ -418,16 +414,6 @@ class LinearOperator(LinearMap):
 
     def __init__(self, vectorspace, mapping=None, matrix=None, name=None):
         super().__init__(vectorspace, vectorspace, mapping, matrix, name)
-
-    def __eq__(self, map2):
-        if not isinstance(map2, LinearMap):
-            return False
-        if isinstance(map2, LinearOperator):
-            if self.domain != map2.domain:
-                return False
-            matrix, _ = self.change_of_basis(map2.domain.basis)
-            return map2.matrix == matrix  # FIX: consider .equals()
-        return map2 == self
     
     def change_of_basis(self, basis):
         """
@@ -497,7 +483,7 @@ class Isomorphism(LinearMap):
         super().__init__(domain, codomain, mapping, matrix, name)
 
         if not self.is_bijective():
-            raise IsomorphismError('Linear map is not invertible.')
+            raise LinearMapError('Linear map is not invertible.')
 
     def __repr__(self):
         return super().__repr__().replace('LinearMap', 'Isomorphism')

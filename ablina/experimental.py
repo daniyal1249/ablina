@@ -137,9 +137,9 @@ def is_associative(field, n, operation):
 # operation to be normal mul if both are scalars, and scalar mul otherwise
 
 
-def is_tautology(equation):
+def truth_eval(equation):
     """
-    Check whether an equation is a tautology.
+    Check whether an equation is a tautology or contradiction.
 
     Parameters
     ----------
@@ -149,11 +149,11 @@ def is_tautology(equation):
     Returns
     -------
     bool
-        True if `equation` always holds, otherwise False.
+        pass
     """
     eq = sp.simplify(equation)
     if isinstance(eq, sp.Eq):
-        return False
+        return None
     return bool(eq)  # eq must be a sympy bool if not Eq
 
 
@@ -165,19 +165,23 @@ def substitute_form(equation, f, form):
 def find_valid_params(equation, f, form, params):
     x = sp.symbols('x')
     subbed_eq = substitute_form(equation, f, form)
-    if is_tautology(subbed_eq):
-        return [form(x)]
+    if truth_eval(subbed_eq):
+        return form(x)
     
     try:
         sols = sp.solve(subbed_eq, params, dict=True)
     except Exception:
-        return []
+        return None
     
-    valid_sols = []
+    # valid_sols = []
+    # for sol in sols:
+    #     if all(expr.free_symbols <= set(params) for expr in sol.values()):
+    #         valid_sols.append(sol)
+    # return [form(x).subs(sol) for sol in valid_sols]
+
     for sol in sols:
         if all(expr.free_symbols <= set(params) for expr in sol.values()):
-            valid_sols.append(sol)
-    return [form(x).subs(sol) for sol in valid_sols]
+            return form(x).subs(sol)
 
 
 def solve_func_eq(equation, f):
@@ -197,22 +201,27 @@ def solve_func_eq(equation, f):
     valid_funcs : set of sympy.Expr
         pass
     """
-    a = sp.symbols('_a')
-    b = sp.symbols('_b', nonzero=True)
+    a0, a1 = sp.symbols('_a:2')
+    b0, b1 = sp.symbols('_b:2', nonzero=True)
 
     forms = [
-        (lambda x: a, [a]),                     # Constant
-        (lambda x: b * x + a, [a, b]),          # Linear
-        (lambda x: b * sp.log(x) + a, [a, b]),  # Logarithmic
-        (lambda x: b * 2**x, [b]),              # Exponential (base 2)
-        (lambda x: b * sp.exp(x), [b])          # Exponential (base e)
+        # (lambda x: a, [a]),                       # Constant
+        (lambda x: b0 * x + a0, [a0, b0]),          # Linear
+        (lambda x: b1 * sp.log(x) + a1, [a1, b1]),  # Logarithmic
+        # (lambda x: b * 2**x, [b]),                # Exponential (base 2)
+        # (lambda x: b * sp.exp(x), [b]),           # Exponential (base e)
         ]
     
-    valid_sols = set()
+    # valid_sols = set()
+    # for form, params in forms:
+    #     sols = find_valid_params(equation, f, form, params)
+    #     valid_sols.update(sols)
+    # return valid_sols
+
     for form, params in forms:
-        sols = find_valid_params(equation, f, form, params)
-        valid_sols.update(sols)
-    return valid_sols
+        sol = find_valid_params(equation, f, form, params)
+        if sol:
+            return sol
 
 
 def find_add_isomorphism(field, n, add):
@@ -225,7 +234,7 @@ def find_mul_isomorphism(field, n, mul):
     u, v = symbols((f'u:{n}', f'v:{n}'), field=field)
 
 
-def standard_isomorphism(field, n, add, mul):
+def internal_isomorphism(field, n, add, mul):
     """
     pass
 
