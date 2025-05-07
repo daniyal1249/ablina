@@ -72,7 +72,7 @@ class _StandardFn:
     
     @property
     def dim(self):
-        return len(self.basis)
+        return self._rs_matrix.rows
     
     def __contains__(self, vec):
         if not u.in_field(self.field, *vec):
@@ -87,7 +87,7 @@ class _StandardFn:
     # Methods relating to vectors
 
     def vector(self, std=1, arbitrary=False):
-        size = self._rs_matrix.rows
+        size = self.dim
         if arbitrary:
             weights = list(u.symbols(f'c:{size}', field=self.field))
         else:
@@ -97,8 +97,8 @@ class _StandardFn:
 
     def to_coordinate(self, vector, basis=None):
         if basis is None:
-            basis = self._rs_matrix.tolist()
-        elif not self._is_basis(*basis):
+            basis = _StandardFn.basis.__get__(self)
+        elif not _StandardFn.is_basis(self, *basis):
             raise ValueError('Provided vectors do not form a basis.')
         if not basis:
             return []
@@ -109,8 +109,8 @@ class _StandardFn:
 
     def from_coordinate(self, vector, basis=None):  # FIX: check field
         if basis is None:
-            basis = self._rs_matrix.tolist()
-        elif not self._is_basis(*basis):
+            basis = _StandardFn.basis.__get__(self)
+        elif not _StandardFn.is_basis(self, *basis):
             raise ValueError('Provided vectors do not form a basis.')
         try:
             matrix, coord_vec = sp.Matrix(basis).T, sp.Matrix(vector)
@@ -123,50 +123,18 @@ class _StandardFn:
         matrix = sp.Matrix(vectors)
         return matrix.rank() == matrix.rows
     
-    def _is_basis(self, *vectors):
+    def is_basis(self, *vectors):
         matrix = sp.Matrix(vectors)
         return matrix.rank() == matrix.rows and len(vectors) == self.dim
 
     # Methods relating to vector spaces
 
     def is_subspace(self, vs2):
-        for i in range(self._rs_matrix.rows):
+        for i in range(self.dim):
             vec = self._rs_matrix.row(i).T
             if not (vs2._ns_matrix @ vec).is_zero_matrix:
                 return False
         return True
-
-    # Methods involving the dot product
-
-    def dot(self, vec1, vec2):
-        return sum(i * j for i, j in zip(vec1, vec2))
-    
-    def norm(self, vector):
-        return sp.sqrt(self.dot(vector, vector))
-    
-    def are_orthogonal(self, vec1, vec2):
-        return self.dot(vec1, vec2) == 0
-    
-    def are_orthonormal(self, *vectors):
-        # Improve efficiency
-        if not all(self.norm(vec) == 1 for vec in vectors):
-            return False
-        for vec1 in vectors:
-            for vec2 in vectors:
-                if not (vec1 is vec2 or self.are_orthogonal(vec1, vec2)):
-                    return False
-        return True
-    
-    def gram_schmidt(self, *vectors):
-        orthonormal_vecs = []
-        for v in vectors:
-            for q in orthonormal_vecs:
-                factor = self.dot(v, q)
-                proj = [factor * i for i in q]
-                v = [i - j for i, j in zip(v, proj)]
-            norm = self.norm(v)
-            orthonormal_vecs.append([i / norm for i in v])
-        return orthonormal_vecs
 
 
 class Fn(_StandardFn):
@@ -211,7 +179,7 @@ class Fn(_StandardFn):
         if mul is None:
             def mul(scalar, vec): return [scalar * i for i in vec]
         if iso is None:
-            iso = vsu.standard_isomorphism(field, n, add, mul)
+            iso = vsu.internal_isomorphism(field, n, add, mul)
 
         return add, mul, iso
 
@@ -271,6 +239,10 @@ class Fn(_StandardFn):
     def are_independent(self, *vectors):
         standard_vecs = [self._to_standard(vec) for vec in vectors]
         return super().are_independent(*standard_vecs)
+    
+    def is_basis(self, *vectors):
+        standard_vecs = [self._to_standard(vec) for vec in vectors]
+        return super().is_basis(*standard_vecs)
 
     # Methods relating to vector spaces
 
@@ -306,19 +278,6 @@ class Fn(_StandardFn):
             isomorphism=(self._to_standard, self._from_standard), 
             rs_matrix=standard_vecs
             )
-
-    # Methods involving the dot product
-    
-    def ortho_complement(self):
-        constraints = [f'ortho_complement({', '.join(self.constraints)})']
-        return Fn(
-            self.field, self.n, constraints, self.add, self.mul, 
-            isomorphism=(self._to_standard, self._from_standard), 
-            rs_matrix=self._ns_matrix
-            )
-    
-    def ortho_projection(self, vs2):
-        raise NotImplementedError()
 
 
 class VectorSpace:
@@ -654,7 +613,10 @@ class VectorSpace:
         bool
             True if the vectors form a basis, otherwise False.
         """
-        return self.are_independent(*vectors) and len(vectors) == self.dim
+        if not all(vec in self for vec in vectors):
+            raise TypeError('Vectors must be elements of the vector space.')
+        fn_vecs = [self.__to_fn__(vec) for vec in vectors]
+        return self.fn.is_basis(*fn_vecs)
     
     def change_of_basis(self, basis):
         """
@@ -886,219 +848,6 @@ class VectorSpace:
         #     def __from_fn__(self, vec): return
         # return quotient_space()
         raise NotImplementedError()
-
-    # Methods involving the dot product
-
-    def dot(self, vec1, vec2):
-        """
-        The dot product between two vectors.
-
-        Parameters
-        ----------
-        vec1, vec2
-            The vectors in the vector space.
-
-        Returns
-        -------
-        float
-            The dot product between `vec1` and `vec2`.
-
-        See Also
-        --------
-        VectorSpace.norm, VectorSpace.are_orthogonal
-
-        Examples
-        --------
-
-        >>> vs = fn(Real, 3)
-        >>> vs.dot([1, 2, 3], [4, 5, 6])
-        32
-        >>> vs.dot([1, 0, 1], [0, 1, 0])
-        0
-        """
-        if not (vec1 in self and vec2 in self):
-            raise TypeError('Vectors must be elements of the vector space.')
-        fn_vec1, fn_vec2 = self.__to_fn__(vec1), self.__to_fn__(vec2)
-        return self.fn.dot(fn_vec1, fn_vec2)
-    
-    def norm(self, vector):
-        """
-        The norm, or magnitude, of a vector.
-
-        Parameters
-        ----------
-        vector
-            A vector in the vector space.
-
-        Returns
-        -------
-        float
-            The norm of `vector`.
-
-        See Also
-        --------
-        VectorSpace.dot, VectorSpace.are_orthonormal
-
-        Examples
-        --------
-
-        >>> vs = fn(Real, 3)
-        >>> vs.norm([1, 2, 3])
-        sqrt(14)
-        >>> vs.norm([0, 0, 0])
-        0
-        """
-        return sp.sqrt(self.dot(vector, vector))
-    
-    def are_orthogonal(self, vec1, vec2):
-        """
-        Check whether two vectors are orthogonal.
-
-        Parameters
-        ----------
-        vec1, vec2
-            The vectors in the vector space.
-
-        Returns
-        -------
-        bool
-            True if the vectors are orthogonal, otherwise False.
-
-        See Also
-        --------
-        VectorSpace.dot
-
-        Examples
-        --------
-
-        >>> vs = fn(Real, 3)
-        >>> vs.are_orthogonal([1, 2, 3], [4, 5, 6])
-        False
-        >>> vs.are_orthogonal([1, 0, 1], [0, 1, 0])
-        True
-        """
-        return self.dot(vec1, vec2) == 0
-    
-    def are_orthonormal(self, *vectors):
-        """
-        Check whether the vectors are orthonormal.
-
-        Parameters
-        ----------
-        *vectors
-            The vectors in the vector space.
-
-        Returns
-        -------
-        bool
-            True if the vectors are orthonormal, otherwise False.
-
-        See Also
-        --------
-        VectorSpace.dot, VectorSpace.norm
-
-        Examples
-        --------
-
-        >>> vs = fn(Real, 3)
-        >>> vs.are_orthonormal([1, 2, 3], [4, 5, 6])
-        False
-        >>> vs.are_orthonormal([1, 0, 0], [0, 1, 0])
-        True
-        >>> vs.are_orthonormal([1, 0, 0])
-        True
-        >>> vs.are_orthonormal()
-        True
-        """
-        # Improve efficiency
-        if not all(self.norm(vec) == 1 for vec in vectors):
-            return False
-        for vec1 in vectors:
-            for vec2 in vectors:
-                if not (vec1 is vec2 or self.are_orthogonal(vec1, vec2)):
-                    return False
-        return True
-    
-    def gram_schmidt(self, *vectors):
-        """
-        pass
-
-        Parameters
-        ----------
-        *vectors
-            The vectors in the vector space.
-
-        Returns
-        -------
-        list
-            An orthonormal list of vectors.
-        
-        Raises
-        ------
-        ValueError
-            If the provided vectors are not linearly independent.
-
-        See Also
-        --------
-        VectorSpace.are_orthonormal
-        """
-        if not self.are_independent(*vectors):
-            raise ValueError('Vectors must be linearly independent.')
-        fn_vecs = [self.__to_fn__(vec) for vec in vectors]
-        orthonormal_vecs = self.fn.gram_schmidt(*fn_vecs)
-        return [self.__from_fn__(vec) for vec in orthonormal_vecs]
-    
-    def ortho_complement(self):
-        """
-        The orthogonal complement of a vector space.
-
-        Returns
-        -------
-        VectorSpace
-            The orthogonal complement of `self`.
-
-        See Also
-        --------
-        VectorSpace.ortho_projection, VectorSpace.dot
-
-        Examples
-        --------
-
-        >>> vs = fn(Real, 3, constraints=['v0 == v1'])
-        >>> vs.ortho_complement().basis
-        [[1, -1, 0]]
-        >>> vs.ortho_complement().ortho_complement() == vs
-        True
-        """
-        fn = self.fn.ortho_complement()
-        return type(self)(fn=fn)
-    
-    def ortho_projection(self, vs2):
-        """
-        The orthogonal projection of `self` onto `vs2`.
-
-        Parameters
-        ----------
-        vs2 : VectorSpace
-            pass
-
-        Returns
-        -------
-        VectorSpace
-            pass
-
-        Raises
-        ------
-        TypeError
-            If `self` and `vs2` do not share the same ambient space.
-
-        See Also
-        --------
-        VectorSpace.ortho_complement, VectorSpace.dot
-        """
-        self._validate_type(vs2)
-        fn = self.fn.ortho_projection(vs2.fn)
-        return type(self)(fn=fn)
 
     def _validate_type(self, vs2):
         if not isinstance(vs2, VectorSpace):
