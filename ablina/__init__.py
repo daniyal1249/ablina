@@ -9,7 +9,6 @@ __url__ = 'https://github.com/daniyal1249/ablina'
 from numbers import Complex, Real
 
 from .form import InnerProduct, QuadraticForm, SesquilinearForm
-from .innerproduct import InnerProductSpace
 from .linearmap import LinearMap, Isomorphism, IdentityMap
 from .mathset import MathSet
 from .vectorspace import (
@@ -21,7 +20,6 @@ from .vectorspace import (
 __all__ = [
     'Complex', 'Real',
     'InnerProduct', 'QuadraticForm', 'SesquilinearForm',
-    'InnerProductSpace',
     'LinearMap', 'Isomorphism', 'IdentityMap',
     'MathSet',
     'VectorSpace', 'Fn', 'AffineSpace', 'fn', 'matrix_space', 'poly_space',
