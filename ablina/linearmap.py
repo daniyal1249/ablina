@@ -584,7 +584,7 @@ class Isomorphism(LinearMap):
         return Isomorphism(self.codomain, self.domain, matrix=matrix)
 
 
-class IdentityMap(Isomorphism):
+class IdentityMap(Isomorphism, LinearOperator):
     """
     pass
     """
