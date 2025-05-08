@@ -51,6 +51,8 @@ class SesquilinearForm:
         FormError
             If neither the mapping nor the matrix is provided.
         """
+        if not isinstance(name, str):
+            raise TypeError('Name must be a string.')
         if not isinstance(vectorspace, VectorSpace):
             raise TypeError('vectorspace must be of type VectorSpace.')
         if mapping is None and matrix is None:

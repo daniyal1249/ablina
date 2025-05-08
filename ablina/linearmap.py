@@ -47,6 +47,8 @@ class LinearMap:
         LinearMapError
             If the field of the domain and codomain are not the same.
         """
+        if not isinstance(name, str):
+            raise TypeError('Name must be a string.')
         if not isinstance(domain, VectorSpace):
             raise TypeError('Domain must be a VectorSpace.')
         if not isinstance(codomain, VectorSpace):

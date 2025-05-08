@@ -302,14 +302,21 @@ class VectorSpace:
         if not isinstance(cls.fn, Fn):
             raise TypeError(f'{cls.__name__}.fn must be of type Fn.')
         
-        cls.name = cls.__name__ if name is None else name
+        cls.name = cls.__name__
+        if name is not None:
+            if not isinstance(name, str):
+                raise TypeError('Name must be a string.')
+            cls.name = name
 
     def __init__(self, name, constraints=None, basis=None, *, fn=None):
         """
         pass
         """
+        if not isinstance(name, str):
+            raise TypeError('Name must be a string.')
         self.name = name
         self.set = MathSet(name, self.set.cls, lambda vec: vec in self)
+
         if fn is not None:
             self.fn = fn
             return

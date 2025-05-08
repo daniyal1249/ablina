@@ -24,8 +24,10 @@ class MathSet:
         MathSet
             pass
         """
+        if not isinstance(name, str):
+            raise TypeError('Name must be a string.')
         if not isinstance(cls, type):
-            raise TypeError()
+            raise TypeError('cls must be a class.')
         
         if len(predicates) == 1 and isinstance(predicates[0], list):
             predicates = predicates[0]
