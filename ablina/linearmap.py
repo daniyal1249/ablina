@@ -1,6 +1,8 @@
+from numbers import Real
+
 import sympy as sp
 
-from .utils import is_invertible, of_arity
+from . import utils as u
 from .vectorspace import VectorSpace
 
 
@@ -58,7 +60,7 @@ class LinearMap:
         
         if mapping is None:
             mapping = LinearMap._from_matrix(domain, codomain, matrix)
-        elif not of_arity(mapping, 1):
+        elif not u.of_arity(mapping, 1):
             raise TypeError('Mapping must be a function of arity 1.')
         if matrix is None:
             matrix = LinearMap._to_matrix(domain, codomain, mapping)
@@ -400,7 +402,7 @@ class LinearMap:
         --------
         LinearMap.is_injective, LinearMap.is_surjective
         """
-        return is_invertible(self.matrix)
+        return u.is_invertible(self.matrix)
 
     # Aliases
     range = image
@@ -423,20 +425,101 @@ class LinearOperator(LinearMap):
         map_matrix = basechange @ self.matrix @ basechange.inv()
         return map_matrix, basechange
     
-    def is_symmetric(self, innerproduct=None):
-        pass
+    def is_symmetric(self, innerproduct):
+        """
+        Check whether the linear operator is symmetric.
 
-    def is_hermitian(self, innerproduct=None):
-        pass
+        Note that this method is only valid for operators defined on 
+        real vector spaces. An exception is raised otherwise.
 
-    def is_orthogonal(self, innerproduct=None):
-        pass
+        Returns
+        -------
+        bool
+            True if `self` is symmetric, otherwise False.
 
-    def is_unitary(self, innerproduct=None):
-        pass
+        Raises
+        ------
+        LinearMapError
+            If `self` is not defined on a real vector space.
+
+        See Also
+        --------
+        LinearOperator.is_hermitian
+        """
+        if self.domain.field is not Real:
+            raise LinearMapError()
+        matrix, _ = self.change_of_basis(innerproduct.orthonormal_basis)
+        return matrix.is_symmetric()
+
+    def is_hermitian(self, innerproduct):
+        """
+        Check whether the linear operator is hermitian.
+
+        Returns
+        -------
+        bool
+            True if `self` is hermitian, otherwise False.
+
+        See Also
+        --------
+        LinearOperator.is_symmetric
+        """
+        matrix, _ = self.change_of_basis(innerproduct.orthonormal_basis)
+        return matrix.is_hermitian
+
+    def is_orthogonal(self, innerproduct):
+        """
+        Check whether the linear operator is orthogonal.
+
+        Note that this method is only valid for operators defined on 
+        real vector spaces. An exception is raised otherwise.
+
+        Returns
+        -------
+        bool
+            True if `self` is orthogonal, otherwise False.
+
+        Raises
+        ------
+        LinearMapError
+            If `self` is not defined on a real vector space.
+
+        See Also
+        --------
+        LinearOperator.is_unitary
+        """
+        if self.domain.field is not Real:
+            raise LinearMapError()
+        matrix, _ = self.change_of_basis(innerproduct.orthonormal_basis)
+        return u.is_orthogonal(matrix)
+
+    def is_unitary(self, innerproduct):
+        """
+        Check whether the linear operator is unitary.
+
+        Returns
+        -------
+        bool
+            True if `self` is unitary, otherwise False.
+
+        See Also
+        --------
+        LinearOperator.is_orthogonal
+        """
+        matrix, _ = self.change_of_basis(innerproduct.orthonormal_basis)
+        return u.is_unitary(matrix)
     
-    def is_normal(self, innerproduct=None):
-        pass
+    def is_normal(self, innerproduct):
+        """
+        Check whether the linear operator is normal.
+
+        Returns
+        -------
+        bool
+            True if `self` is normal, otherwise False.
+        """
+        matrix, _ = self.change_of_basis(innerproduct.orthonormal_basis)
+        return u.is_normal(matrix)
 
 
 class LinearFunctional(LinearMap):

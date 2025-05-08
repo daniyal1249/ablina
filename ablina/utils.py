@@ -85,15 +85,45 @@ def is_invertible(matrix):
     return matrix.is_square and matrix.det() != 0
 
 
+def is_orthogonal(matrix):
+    """
+    Returns True if the matrix is orthogonal, otherwise False.
+    """
+    # Make sure the matrix is real
+    return is_unitary(matrix)
+
+
+def is_unitary(matrix):
+    """
+    Returns True if the matrix is unitary, otherwise False.
+    """
+    matrix = sp.Matrix(matrix)
+    if not matrix.is_square:
+        return False
+    identity = sp.eye(matrix.rows)
+    return (matrix.H @ matrix).equals(identity)
+
+
+def is_normal(matrix):
+    """
+    Returns True if the matrix is normal, otherwise False.
+    """
+    matrix = sp.Matrix(matrix)
+    if not matrix.is_square:
+        return False
+    adjoint = matrix.H
+    return (matrix @ adjoint).equals(adjoint @ matrix)
+
+
 def rref(matrix, remove=False):
     """
     Returns the rref of the matrix. Removes all zero rows if remove is True.
     """
     matrix = sp.Matrix(matrix)
     rref, _ = matrix.rref()
-    
     if not remove:
         return rref
+    
     for i in range(rref.rows - 1, -1, -1):
         if any(rref.row(i)):
             break

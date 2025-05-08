@@ -177,25 +177,18 @@ class SesquilinearForm:
         """
         Check whether the form is hermitian.
 
-        Note that this method is only valid for forms defined on complex 
-        vector spaces. An exception is raised otherwise.
+        Note that this method is equivalent to ``self.is_symmetric`` 
+        for forms defined on real vector spaces.
 
         Returns
         -------
         bool
             True if `self` is hermitian, otherwise False.
 
-        Raises
-        ------
-        FormError
-            If the form is not defined on a complex vector space.
-
         See Also
         --------
         SesquilinearForm.is_symmetric
         """
-        if self.vectorspace.field is not Complex:
-            raise FormError()
         return self.matrix.is_hermitian
 
     def is_positive_definite(self):
@@ -329,6 +322,12 @@ class InnerProduct(SesquilinearForm):
             raise InnerProductError('Complex inner product must be hermitian.')
         if not self.is_positive_definite():
             raise InnerProductError('Inner product must be positive definite.')
+        
+        self._orthonormal_basis = self.gram_schmidt(*self.vectorspace.basis)
+        
+    @property
+    def orthonormal_basis(self):
+        return self._orthonormal_basis
     
     def norm(self, vector):
         """
@@ -360,7 +359,7 @@ class InnerProduct(SesquilinearForm):
         bool
             True if the vectors are orthogonal, otherwise False.
         """
-        return self(vec1, vec2) == 0
+        return self(vec1, vec2) == 0  # FIX: maybe include tolerance
     
     def are_orthonormal(self, *vectors):
         """
@@ -404,13 +403,14 @@ class InnerProduct(SesquilinearForm):
         ValueError
             If the provided vectors are not linearly independent.
         """
-        # if not self.are_independent(*vectors):
-        #     raise ValueError('Vectors must be linearly independent.')
         vs = self.vectorspace
+        if not vs.are_independent(*vectors):
+            raise ValueError('Vectors must be linearly independent.')
+        
         orthonormal_vecs = []
         for v in vectors:
             for q in orthonormal_vecs:
-                factor = self.mapping(v, q)  # check
+                factor = self.mapping(v, q)
                 proj = vs.mul(factor, q)
                 v = vs.add(v, vs.additive_inv(proj))
             unit_v = vs.mul(1 / self.norm(v), v)
