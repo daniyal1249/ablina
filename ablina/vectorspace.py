@@ -301,8 +301,8 @@ class VectorSpace:
             raise TypeError(f'{cls.__name__}.set must be a MathSet.')
         if not isinstance(cls.fn, Fn):
             raise TypeError(f'{cls.__name__}.fn must be of type Fn.')
-        if name is not None:
-            cls.__name__ = name
+        
+        cls.name = cls.__name__ if name is None else name
 
     def __init__(self, constraints=None, basis=None, *, fn=None):
         """
@@ -381,6 +381,22 @@ class VectorSpace:
         int: The dimension of the vector space.
         """
         return self.fn.dim
+    
+    def __repr__(self):
+        return f'{type(self).__name__}(basis={self.basis})'
+    
+    def __str__(self):
+        name = f'Subspace of {self.name}'
+        lines = [
+            name,
+            '-' * len(name),
+            f'Field      {self.field.__name__}',
+            f'Identity   {self.additive_id}',
+            f'Basis      {self.basis}',
+            f'Dimension  {self.dim}',
+            f'Vector     {self.vector(arbitrary=True)}'
+        ]
+        return '\n'.join(lines)
 
     def __contains__(self, vec):
         """
@@ -852,7 +868,7 @@ class VectorSpace:
     def _validate_type(self, vs2):
         if not isinstance(vs2, VectorSpace):
             raise TypeError()
-        if type(self).__name__ != type(vs2).__name__:
+        if type(self).name != type(vs2).name:
             raise TypeError()
 
 
@@ -949,7 +965,7 @@ def fn(field, n, constraints=None, basis=None,
     """
     pass
     """
-    name = f'{field.__name__}^{n}'
+    name = f'{'R' if field is Real else 'C'}^{n}'
 
     def in_fn(vec):
         try: return sp.Matrix(vec).shape == (n, 1)
@@ -975,7 +991,7 @@ def matrix_space(field, shape, constraints=None, basis=None,
     """
     pass
     """
-    name = f'M({field.__name__}, {shape})'
+    name = f'M({'R' if field is Real else 'C'}, {shape})'
 
     def in_matrix_space(mat):
         return mat.shape == shape
@@ -993,7 +1009,7 @@ def poly_space(field, max_degree, constraints=None, basis=None,
     """
     pass
     """
-    name = f'P({field.__name__}, {max_degree})'
+    name = f'P({'R' if field is Real else 'C'}, {max_degree})'
 
     def in_poly_space(poly):
         return sp.degree(poly) <= max_degree

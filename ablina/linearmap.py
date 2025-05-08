@@ -72,7 +72,7 @@ class LinearMap:
         self._mapping = mapping
         self._matrix = matrix
         if name is not None:
-            self.__name__ = name
+            self.name = name
     
     @staticmethod
     def _to_matrix(domain, codomain, mapping):
@@ -141,14 +141,28 @@ class LinearMap:
     
     def __repr__(self):
         return (
-            f'LinearMap(domain={self.domain}, '
-            f'codomain={self.codomain}, '
+            f'LinearMap(domain={self.domain.name}, '
+            f'codomain={self.codomain.name}, '
             f'mapping={self.mapping.__name__}, '
             f'matrix={self.matrix})'
             )
     
     def __str__(self):
-        return self.__repr__()
+        name = self.name if hasattr(self, 'name') else 'T'
+        signature = f'{name} : {self.domain.name} -> {self.codomain.name}'
+
+        lines = [
+            signature,
+            '-' * len(signature),
+            f'Field        {self.field.__name__}',
+            f'Rank         {self.rank}',
+            f'Nullity      {self.nullity}',
+            f'Injective?   {self.is_injective()}',
+            f'Surjective?  {self.is_surjective()}',
+            f'Bijective?   {self.is_bijective()}',
+            f'Matrix       {self.matrix}'
+            ]
+        return '\n'.join(lines)
 
     def __eq__(self, map2):
         if not isinstance(map2, LinearMap):
@@ -307,8 +321,8 @@ class LinearMap:
         def mapping(vec):
             return self.mapping(map2.mapping(vec))
         matrix = self.matrix @ map2.matrix
-        if hasattr(self, '__name__') and hasattr(map2, '__name__'):
-            name = f'{self.__name__} o {map2.__name__}'
+        if hasattr(self, 'name') and hasattr(map2, 'name'):
+            name = f'{self.name} o {map2.name}'
         else:
             name = None
         return LinearMap(map2.domain, self.codomain, mapping, matrix, name)
@@ -416,6 +430,13 @@ class LinearOperator(LinearMap):
 
     def __init__(self, vectorspace, mapping=None, matrix=None, name=None):
         super().__init__(vectorspace, vectorspace, mapping, matrix, name)
+
+    def __repr__(self):
+        return (
+            f'LinearOperator(vectorspace={self.domain.name}, '
+            f'mapping={self.mapping.__name__}, '
+            f'matrix={self.matrix})'
+            )
     
     def change_of_basis(self, basis):
         """
@@ -556,6 +577,13 @@ class LinearFunctional(LinearMap):
         """
         super().__init__(vectorspace, ..., mapping, matrix, name)
 
+    def __repr__(self):
+        return (
+            f'LinearFunctional(vectorspace={self.domain.name}, '
+            f'mapping={self.mapping.__name__}, '
+            f'matrix={self.matrix})'
+            )
+
 
 class Isomorphism(LinearMap):
     """
@@ -571,6 +599,18 @@ class Isomorphism(LinearMap):
     def __repr__(self):
         return super().__repr__().replace('LinearMap', 'Isomorphism')
     
+    def __str__(self):
+        name = self.name if hasattr(self, 'name') else 'T'
+        signature = f'{name} : {self.domain.name} -> {self.codomain.name}'
+
+        lines = [
+            signature,
+            '-' * len(signature),
+            f'Field   {self.field.__name__}',
+            f'Matrix  {self.matrix}'
+            ]
+        return '\n'.join(lines)
+
     def inverse(self):
         """
         The inverse of the linear map.
@@ -584,7 +624,7 @@ class Isomorphism(LinearMap):
         return Isomorphism(self.codomain, self.domain, matrix=matrix)
 
 
-class IdentityMap(Isomorphism, LinearOperator):
+class IdentityMap(LinearOperator):
     """
     pass
     """
@@ -603,4 +643,18 @@ class IdentityMap(Isomorphism, LinearOperator):
         IdentityMap
             pass
         """
-        super().__init__(vectorspace, vectorspace, lambda vec: vec)
+        super().__init__(vectorspace, lambda vec: vec)
+
+    def __repr__(self):
+        return f'IdentityMap(vectorspace={self.domain.name})'
+    
+    def __str__(self):
+        signature = f'Id : {self.domain.name} -> {self.codomain.name}'
+
+        lines = [
+            signature,
+            '-' * len(signature),
+            f'Field   {self.field.__name__}',
+            f'Matrix  {self.matrix}'
+        ]
+        return '\n'.join(lines)

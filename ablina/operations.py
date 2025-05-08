@@ -44,11 +44,11 @@ class VectorAdd(Operation):
     def __eq__(self, add2):
         if add2 is self:
             return True
-        # Initialize two arbitrary vectors (xs and ys)
-        xs, ys = symbols((f'x:{self.n}', f'y:{self.n}'), field=self.field)
-        xs, ys = list(xs), list(ys)
+        # Initialize two arbitrary vectors (u and v)
+        u, v = symbols((f'u:{self.n}', f'v:{self.n}'), field=self.field)
+        u, v = list(u), list(v)
         try:
-            for lhs, rhs in zip(self.func(xs, ys), add2.func(xs, ys)):
+            for lhs, rhs in zip(self.func(u, v), add2.func(u, v)):
                 if not sp.sympify(lhs).equals(sp.sympify(rhs)):
                     return False
             return True
@@ -73,18 +73,13 @@ class ScalarMul(Operation):
     def __eq__(self, mul2):
         if mul2 is self:
             return True
-        # Initialize an arbitrary vector (xs) and scalar (c)
-        xs, c = symbols((f'x:{self.n}', 'c'), field=self.field)
-        xs = list(xs)
+        # Initialize an arbitrary vector (v) and scalar (c)
+        v, c = symbols((f'v:{self.n}', 'c'), field=self.field)
+        v = list(v)
         try:
-            for lhs, rhs in zip(self.func(c, xs), mul2.func(c, xs)):
+            for lhs, rhs in zip(self.func(c, v), mul2.func(c, v)):
                 if not sp.sympify(lhs).equals(sp.sympify(rhs)):
                     return False
             return True
         except Exception:
             return None
-
-
-class InnerProduct(Operation):
-    def __init__(self, func):
-        super().__init__(func, 2)

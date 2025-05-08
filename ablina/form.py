@@ -69,7 +69,7 @@ class SesquilinearForm:
         self._mapping = mapping
         self._matrix = matrix
         if name is not None:
-            self.__name__ = name
+            self.name = name
 
     @staticmethod
     def _to_matrix(vectorspace, mapping):
@@ -106,13 +106,26 @@ class SesquilinearForm:
     
     def __repr__(self):
         return (
-            f'SesquilinearForm(vectorspace={self.vectorspace}, '
+            f'SesquilinearForm(vectorspace={self.vectorspace.name}, '
             f'mapping={self.mapping.__name__}, '
             f'matrix={self.matrix})'
             )
     
     def __str__(self):
-        return self.__repr__()
+        vs = self.vectorspace
+        field = 'R' if vs.field is Real else 'C'
+        name = self.name if hasattr(self, 'name') else '<,>'
+        signature = f'{name} : {vs.name} x {vs.name} -> {field}'
+
+        lines = [
+            signature,
+            '-' * len(signature),
+            f'Symmetric?          {self.is_symmetric()}',
+            f'Hermitian?          {self.is_hermitian()}',
+            f'Positive Definite?  {self.is_positive_definite()}',
+            f'Matrix              {self.matrix}'
+            ]
+        return '\n'.join(lines)
 
     def __eq__(self, form2):
         if not isinstance(form2, SesquilinearForm):
@@ -328,6 +341,23 @@ class InnerProduct(SesquilinearForm):
     @property
     def orthonormal_basis(self):
         return self._orthonormal_basis
+    
+    def __repr__(self):
+        return super().__repr__().replace('SesquilinearForm', 'InnerProduct')
+    
+    def __str__(self):
+        vs = self.vectorspace
+        field = 'R' if vs.field is Real else 'C'
+        name = self.name if hasattr(self, 'name') else '<,>'
+        signature = f'{name} : {vs.name} x {vs.name} -> {field}'
+
+        lines = [
+            signature,
+            '-' * len(signature),
+            f'Orthonormal Basis  {self.orthonormal_basis}',
+            f'Matrix             {self.matrix}'
+            ]
+        return '\n'.join(lines)
     
     def norm(self, vector):
         """

@@ -34,7 +34,7 @@ class MathSet:
         self._cls = cls
         self._predicates = remove_duplicates(predicates)
         if name is not None:
-            self.__name__ = name
+            self.name = name
 
     @property
     def cls(self):
@@ -56,11 +56,14 @@ class MathSet:
             f'{[pred.__name__ for pred in self.predicates]})'
             )
     
+    def __str__(self):
+        return self.__repr__()
+    
     def __eq__(self, set2):
         if not isinstance(set2, MathSet):
             return False
-        if hasattr(self, '__name__') and hasattr(set2, '__name__'):
-            return self.__name__ == set2.__name__
+        if hasattr(self, 'name') and hasattr(set2, 'name'):
+            return self.name == set2.name
         # Order of the predicates matters
         return self.cls is set2.cls and self.predicates == set2.predicates
     
