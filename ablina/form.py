@@ -24,12 +24,14 @@ class SesquilinearForm:
     pass
     """
 
-    def __init__(self, vectorspace, mapping=None, matrix=None, name=None):
+    def __init__(self, name, vectorspace, mapping=None, matrix=None):
         """
         pass
 
         Parameters
         ----------
+        name : str
+            The name of the form.
         vectorspace : VectorSpace
             The vector space the form is defined on.
         mapping : callable, optional
@@ -38,8 +40,6 @@ class SesquilinearForm:
         matrix : list of list or sympy.Matrix, optional
             The matrix representation of the form with respect to the 
             basis of the vector space.
-        name : str, optional
-            pass
 
         Returns
         -------
@@ -65,11 +65,10 @@ class SesquilinearForm:
         else:
             matrix = sp.Matrix(matrix)
         
+        self.name = name
         self._vectorspace = vectorspace
         self._mapping = mapping
         self._matrix = matrix
-        if name is not None:
-            self.name = name
 
     @staticmethod
     def _to_matrix(vectorspace, mapping):
@@ -106,7 +105,8 @@ class SesquilinearForm:
     
     def __repr__(self):
         return (
-            f'SesquilinearForm(vectorspace={self.vectorspace.name}, '
+            f'SesquilinearForm(name={self.name}, '
+            f'vectorspace={self.vectorspace.name}, '
             f'mapping={self.mapping.__name__}, '
             f'matrix={self.matrix})'
             )
@@ -114,8 +114,7 @@ class SesquilinearForm:
     def __str__(self):
         vs = self.vectorspace
         field = 'R' if vs.field is Real else 'C'
-        name = self.name if hasattr(self, 'name') else '<,>'
-        signature = f'{name} : {vs.name} x {vs.name} -> {field}'
+        signature = f'{self.name} : {vs.name} x {vs.name} -> {field}'
 
         lines = [
             signature,
@@ -129,7 +128,7 @@ class SesquilinearForm:
 
     def __eq__(self, form2):
         if not isinstance(form2, SesquilinearForm):
-            return NotImplemented
+            return NotImplemented  # FIX: check
         return (
             self.vectorspace == form2.vectorspace 
             and self.matrix == form2.matrix
@@ -297,12 +296,14 @@ class InnerProduct(SesquilinearForm):
     pass
     """
 
-    def __init__(self, vectorspace, mapping=None, matrix=None, name=None):
+    def __init__(self, name, vectorspace, mapping=None, matrix=None):
         """
         pass
 
         Parameters
         ----------
+        name : str
+            The name of the inner product.
         vectorspace : VectorSpace
             The vector space the inner product is defined on.
         mapping : callable, optional
@@ -311,8 +312,6 @@ class InnerProduct(SesquilinearForm):
         matrix : list of list or sympy.Matrix, optional
             The matrix representation of the inner product with respect 
             to the basis of the vector space.
-        name : str, optional
-            pass
 
         Returns
         -------
@@ -326,7 +325,7 @@ class InnerProduct(SesquilinearForm):
         InnerProductError
             If the form is not a valid inner product.
         """
-        super().__init__(vectorspace, mapping, matrix, name)
+        super().__init__(name, vectorspace, mapping, matrix)
 
         if self.vectorspace.field is Real:
             if not self.is_symmetric():
@@ -348,8 +347,7 @@ class InnerProduct(SesquilinearForm):
     def __str__(self):
         vs = self.vectorspace
         field = 'R' if vs.field is Real else 'C'
-        name = self.name if hasattr(self, 'name') else '<,>'
-        signature = f'{name} : {vs.name} x {vs.name} -> {field}'
+        signature = f'{self.name} : {vs.name} x {vs.name} -> {field}'
 
         lines = [
             signature,
@@ -456,8 +454,9 @@ class InnerProduct(SesquilinearForm):
         VectorSpace
             The orthogonal complement of `self`.
         """
-        fn = self.fn.ortho_complement()
-        return type(self)(fn=fn)
+        # fn = self.fn.ortho_complement()
+        # return type(self)(fn=fn)
+        raise NotImplementedError()
     
     def ortho_projection(self, vs2):
         """
@@ -478,9 +477,10 @@ class InnerProduct(SesquilinearForm):
         TypeError
             If `self` and `vs2` do not share the same ambient space.
         """
-        self._validate_type(vs2)
-        fn = self.fn.ortho_projection(vs2.fn)
-        return type(self)(fn=fn)
+        # self._validate_type(vs2)
+        # fn = self.fn.ortho_projection(vs2.fn)
+        # return type(self)(fn=fn)
+        raise NotImplementedError()
 
 
 class QuadraticForm:

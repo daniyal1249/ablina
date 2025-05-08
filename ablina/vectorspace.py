@@ -304,11 +304,12 @@ class VectorSpace:
         
         cls.name = cls.__name__ if name is None else name
 
-    def __init__(self, constraints=None, basis=None, *, fn=None):
+    def __init__(self, name, constraints=None, basis=None, *, fn=None):
         """
         pass
         """
-        self.set = MathSet(self.set.cls, lambda vec: vec in self)
+        self.name = name
+        self.set = MathSet(name, self.set.cls, lambda vec: vec in self)
         if fn is not None:
             self.fn = fn
             return
@@ -383,10 +384,10 @@ class VectorSpace:
         return self.fn.dim
     
     def __repr__(self):
-        return f'{type(self).__name__}(basis={self.basis})'
+        return f'{type(self).__name__}(name={self.name}, basis={self.basis})'
     
     def __str__(self):
-        name = f'Subspace of {self.name}'
+        name = f'{self.name} (subspace of {type(self).name})'
         lines = [
             name,
             '-' * len(name),
@@ -471,7 +472,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = fn(Real, 3, constraints=['2*v0 == v1'])
+        >>> vs = fn('vs', Real, 3, constraints=['2*v0 == v1'])
         >>> vs.vector()
         [1, 2, 0]
         >>> vs.vector()
@@ -513,7 +514,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = fn(Real, 3, constraints=['v0 == 2*v1'])
+        >>> vs = fn('vs', Real, 3, constraints=['v0 == 2*v1'])
         >>> vs.basis
         [[1, 1/2, 0], [0, 0, 1]]
         >>> vs.to_coordinate([2, 1, 2])
@@ -563,7 +564,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = fn(Real, 3, constraints=['v0 == 2*v1'])
+        >>> vs = fn('vs', Real, 3, constraints=['v0 == 2*v1'])
         >>> vs.basis
         [[1, 1/2, 0], [0, 0, 1]]
         >>> vs.from_coordinate([1, 1])
@@ -600,7 +601,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = fn(Real, 3)
+        >>> vs = fn('vs', Real, 3)
         >>> vs.are_independent([1, 0, 0], [0, 1, 0])
         True
         >>> vs.are_independent([1, 2, 3], [2, 4, 6])
@@ -671,8 +672,8 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs1 = fn(Real, 3, constraints=['v0 == v1'])
-        >>> vs2 = fn(Real, 3, constraints=['v1 == v2'])
+        >>> vs1 = fn('vs1', Real, 3, constraints=['v0 == v1'])
+        >>> vs2 = fn('vs2', Real, 3, constraints=['v1 == v2'])
         >>> vs = vs1.sum(vs2)
         >>> vs.basis
         [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
@@ -680,8 +681,9 @@ class VectorSpace:
         True
         """
         self._validate_type(vs2)
+        name = f'sum({self.name}, {vs2.name})'
         fn = self.fn.sum(vs2.fn)
-        return type(self)(fn=fn)
+        return type(self)(name, fn=fn)
     
     def intersection(self, vs2):
         """
@@ -709,8 +711,8 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs1 = fn(Real, 3, constraints=['v0 == v1'])
-        >>> vs2 = fn(Real, 3, constraints=['v1 == v2'])
+        >>> vs1 = fn('vs1', Real, 3, constraints=['v0 == v1'])
+        >>> vs2 = fn('vs2', Real, 3, constraints=['v1 == v2'])
         >>> vs = vs1.intersection(vs2)
         >>> vs.basis
         [[1, 1, 1]]
@@ -718,10 +720,11 @@ class VectorSpace:
         True
         """
         self._validate_type(vs2)
+        name = f'inter({self.name}, {vs2.name})'
         fn = self.fn.intersection(vs2.fn)
-        return type(self)(fn=fn)
+        return type(self)(name, fn=fn)
     
-    def span(self, *vectors, basis=None):
+    def span(self, name, *vectors, basis=None):
         """
         The span of the given vectors.
 
@@ -732,6 +735,8 @@ class VectorSpace:
 
         Parameters
         ----------
+        name : str
+            The name of the resulting subspace.
         *vectors
             The vectors in the vector space.
         basis : list, optional
@@ -750,22 +755,22 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = fn(Real, 3)
-        >>> vs.span([1, 2, 3], [4, 5, 6]).basis
+        >>> vs = fn('vs', Real, 3)
+        >>> vs.span('span1', [1, 2, 3], [4, 5, 6]).basis
         [[1, 0, -1], [0, 1, 2]]
-        >>> vs.span(basis=[[1, 2, 3], [4, 5, 6]]).basis
+        >>> vs.span('span2', basis=[[1, 2, 3], [4, 5, 6]]).basis
         [[1, 2, 3], [4, 5, 6]]
-        >>> vs.span().basis
+        >>> vs.span('span3').basis
         []
         """
         if basis is not None:
-            return type(self)(basis=basis)
+            return type(self)(name, basis=basis)
         if not all(vec in self for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
         
         fn_vecs = [self.__to_fn__(vec) for vec in vectors]
         fn = self.fn.span(*fn_vecs)
-        return type(self)(fn=fn)
+        return type(self)(name, fn=fn)
     
     def is_subspace(self, vs2):
         """
@@ -784,9 +789,9 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = fn(Real, 3)
-        >>> vs1 = fn(Real, 3, constraints=['v0 == v1'])
-        >>> vs2 = fn(Real, 3, constraints=['v1 == v2'])
+        >>> vs = fn('vs', Real, 3)
+        >>> vs1 = fn('vs1', Real, 3, constraints=['v0 == v1'])
+        >>> vs2 = fn('vs2', Real, 3, constraints=['v1 == v2'])
         >>> vs1.is_subspace(vs)
         True
         >>> vs2.is_subspace(vs)
@@ -858,7 +863,7 @@ class VectorSpace:
         #     return
 
         # class quotient_space(VectorSpace, name=name):
-        #     set = MathSet(AffineSpace, in_quotient_space, name=name)
+        #     set = MathSet(name, AffineSpace, in_quotient_space)
         #     fn = Fn(self.field, None, add=self.fn.add, mul=self.fn.mul)
         #     def __to_fn__(self, coset): return
         #     def __from_fn__(self, vec): return
@@ -867,9 +872,9 @@ class VectorSpace:
 
     def _validate_type(self, vs2):
         if not isinstance(vs2, VectorSpace):
-            raise TypeError()
+            raise TypeError(f'Expected a VectorSpace, got {type(vs2).__name__} instead.')
         if type(self).name != type(vs2).name:
-            raise TypeError()
+            raise TypeError(f'Vector spaces must be subspaces of the same ambient space.')
 
 
 class AffineSpace:
@@ -908,7 +913,9 @@ class AffineSpace:
         """
         MathSet: The set containing the points in the affine space.
         """
-        return MathSet(self.vectorspace.set.cls, lambda point: point in self)
+        vs = self.vectorspace
+        name = f'{self.representative} + {self.name})'  # FIX: rework
+        return MathSet(name, vs.set.cls, lambda point: point in self)
     
     @property
     def dim(self):
@@ -931,11 +938,13 @@ class AffineSpace:
         bool
             True if `point` is an element of `self`, otherwise False.
         """
-        if point not in type(self.vectorspace)():
+        vs = self.vectorspace
+        if point not in type(vs)():
             return False
+        
         vec1 = self.representative
-        vec2 = self.vectorspace.additive_inv(point)
-        return self.vectorspace.add(vec1, vec2) in self.vectorspace
+        vec2 = vs.additive_inv(point)
+        return vs.add(vec1, vec2) in vs
 
     def __eq__(self, as2):
         if not isinstance(as2, AffineSpace):
@@ -943,79 +952,82 @@ class AffineSpace:
         return self.representative in as2
 
     def __add__(self, as2):
+        vs = self.vectorspace
         if not isinstance(as2, AffineSpace):
             raise TypeError()
-        if self.vectorspace != as2.vectorspace:
+        if vs != as2.vectorspace:
             raise TypeError('Affine spaces must be cosets of the same vector space.')
-        repr = self.vectorspace.add(self.representative, as2.representative)
-        return AffineSpace(self.vectorspace, repr)
+        
+        repr = vs.add(self.representative, as2.representative)
+        return AffineSpace(vs, repr)
 
     def __mul__(self, scalar):
-        if not isinstance(scalar, self.vectorspace.field):
+        vs = self.vectorspace
+        if not isinstance(scalar, vs.field):
             raise TypeError('Scalar must be an element of the field.')
-        repr = self.vectorspace.mul(scalar, self.representative)
-        return AffineSpace(self.vectorspace, repr)
+        repr = vs.mul(scalar, self.representative)
+        return AffineSpace(vs, repr)
 
     def __rmul__(self, scalar):
         return self.__mul__(scalar)
 
 
-def fn(field, n, constraints=None, basis=None, 
+def fn(name, field, n, constraints=None, basis=None, 
        add=None, mul=None, *, ns_matrix=None, rs_matrix=None):
     """
     pass
     """
-    name = f'{'R' if field is Real else 'C'}^{n}'
+    cls_name = f'{'R' if field is Real else 'C'}^{n}'
 
     def in_fn(vec):
         try: return sp.Matrix(vec).shape == (n, 1)
         except Exception: return False
 
-    class fn(VectorSpace, name=name):
-        set = MathSet(object, in_fn, name=name)
+    class fn(VectorSpace, name=cls_name):
+        set = MathSet(cls_name, object, in_fn)
         fn = Fn(field, n, add=add, mul=mul)
         def __to_fn__(self, vec): return vec
         def __from_fn__(self, vec): return vec
 
     if not (ns_matrix is None and rs_matrix is None):
-        vectorspace = Fn(
+        vs = Fn(
             field, n, constraints, add, mul, 
             ns_matrix=ns_matrix, rs_matrix=rs_matrix
             )
-        return fn(fn=vectorspace)
-    return fn(constraints, basis)
+        return fn(name, fn=vs)
+    return fn(name, constraints, basis)
 
 
-def matrix_space(field, shape, constraints=None, basis=None, 
+def matrix_space(name, field, shape, constraints=None, basis=None, 
                  add=None, mul=None):
     """
     pass
     """
-    name = f'M({'R' if field is Real else 'C'}, {shape})'
+    cls_name = f'M({'R' if field is Real else 'C'}, {shape})'
 
     def in_matrix_space(mat):
         return mat.shape == shape
 
-    class matrix_space(VectorSpace, name=name):
-        set = MathSet(sp.Matrix, in_matrix_space, name=name)
+    class matrix_space(VectorSpace, name=cls_name):
+        set = MathSet(cls_name, sp.Matrix, in_matrix_space)
         fn = Fn(field, sp.prod(shape), add=add, mul=mul)
         def __to_fn__(self, mat): return mat.flat()
         def __from_fn__(self, vec): return sp.Matrix(*shape, vec)
-    return matrix_space(constraints, basis)
+    return matrix_space(name, constraints, basis)
 
 
-def poly_space(field, max_degree, constraints=None, basis=None, 
+def poly_space(name, field, max_degree, constraints=None, basis=None, 
                add=None, mul=None):
     """
     pass
     """
-    name = f'P({'R' if field is Real else 'C'}, {max_degree})'
+    cls_name = f'P({'R' if field is Real else 'C'}, {max_degree})'
 
     def in_poly_space(poly):
         return sp.degree(poly) <= max_degree
 
-    class poly_space(VectorSpace, name=name):
-        set = MathSet(sp.Poly, in_poly_space, name=name)
+    class poly_space(VectorSpace, name=cls_name):
+        set = MathSet(cls_name, sp.Poly, in_poly_space)
         fn = Fn(field, max_degree + 1, add=add, mul=mul)
         def __to_fn__(self, poly):
             coeffs = poly.all_coeffs()[::-1]  # Ascending order
@@ -1024,7 +1036,7 @@ def poly_space(field, max_degree, constraints=None, basis=None,
         def __from_fn__(self, vec):
             x = sp.symbols('x')
             return sp.Poly.from_list(vec[::-1], x)
-    return poly_space(constraints, basis)
+    return poly_space(name, constraints, basis)
 
 
 def hom(vs1, vs2):
@@ -1035,7 +1047,8 @@ def hom(vs1, vs2):
         raise TypeError()
     if vs1.field is not vs2.field:
         raise TypeError()
-    return matrix_space(vs1.field, (vs2.dim, vs1.dim))
+    name = f'hom({vs1.name}, {vs2.name})'
+    return matrix_space(name, vs1.field, (vs2.dim, vs1.dim))
 
 
 def is_vectorspace(n, constraints):

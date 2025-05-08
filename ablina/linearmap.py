@@ -16,12 +16,14 @@ class LinearMap:
     pass
     """
     
-    def __init__(self, domain, codomain, mapping=None, matrix=None, name=None):
+    def __init__(self, name, domain, codomain, mapping=None, matrix=None):
         """
         pass
 
         Parameters
         ----------
+        name : str
+            The name of the linear map.
         domain : VectorSpace
             The domain of the linear map.
         codomain : VectorSpace
@@ -32,8 +34,6 @@ class LinearMap:
         matrix : list of list or sympy.Matrix, optional
             The matrix representation of the linear map with respect to 
             the basis vectors of the domain and codomain.
-        name : str, optional
-            pass
 
         Returns
         -------
@@ -67,12 +67,11 @@ class LinearMap:
         else:
             matrix = sp.Matrix(matrix)
         
+        self.name = name
         self._domain = domain
         self._codomain = codomain
         self._mapping = mapping
         self._matrix = matrix
-        if name is not None:
-            self.name = name
     
     @staticmethod
     def _to_matrix(domain, codomain, mapping):
@@ -141,15 +140,15 @@ class LinearMap:
     
     def __repr__(self):
         return (
-            f'LinearMap(domain={self.domain.name}, '
+            f'LinearMap(name={self.name}, '
+            f'domain={self.domain.name}, '
             f'codomain={self.codomain.name}, '
             f'mapping={self.mapping.__name__}, '
             f'matrix={self.matrix})'
             )
     
     def __str__(self):
-        name = self.name if hasattr(self, 'name') else 'T'
-        signature = f'{name} : {self.domain.name} -> {self.codomain.name}'
+        signature = f'{self.name} : {self.domain.name} -> {self.codomain.name}'
 
         lines = [
             signature,
@@ -190,22 +189,23 @@ class LinearMap:
         Examples
         --------
         
-        >>> R3 = fn(Real, 3)
+        >>> R3 = fn('R3', Real, 3)
         >>> def mapping1(vec): return [2*i for i in vec]
         >>> def mapping2(vec): return [3*i for i in vec]
-        >>> map1 = LinearMap(R3, R3, mapping1)
-        >>> map2 = LinearMap(R3, R3, mapping2)
+        >>> map1 = LinearMap('map1', R3, R3, mapping1)
+        >>> map2 = LinearMap('map2', R3, R3, mapping2)
         >>> map3 = map1 + map2
         >>> map3([1, 2, 3])
         [5, 10, 15]
         """
         # FIX: Add check to make sure the domains and codomains are equal
+        name = f'{self.name} + {map2.name}'
         def mapping(vec):
             vec1 = self.mapping(vec)
             vec2 = map2.mapping(vec)
             return self.codomain.add(vec1, vec2)
         matrix = self.matrix + map2.matrix
-        return LinearMap(self.domain, self.codomain, mapping, matrix)
+        return LinearMap(name, self.domain, self.codomain, mapping, matrix)
     
     def __mul__(self, scalar):
         """
@@ -224,19 +224,21 @@ class LinearMap:
         Examples
         --------
         
-        >>> R3 = fn(Real, 3)
+        >>> R3 = fn('R3', Real, 3)
         >>> def mapping(vec): return [2*i for i in vec]
-        >>> map1 = LinearMap(R3, R3, mapping)
+        >>> map1 = LinearMap('map1', R3, R3, mapping)
         >>> map2 = 3 * map1
         >>> map2([1, 2, 3])
         [6, 12, 18]
         """
         if not isinstance(scalar, self.field):
             raise TypeError('Scalar must be an element of the vector space field.')
+        
+        name = f'{scalar} * {self.name}'
         def mapping(vec):
             return self.codomain.mul(scalar, self.mapping(vec))
         matrix = self.matrix * scalar
-        return LinearMap(self.domain, self.codomain, mapping, matrix)
+        return LinearMap(name, self.domain, self.codomain, mapping, matrix)
     
     def __rmul__(self, scalar):
         return self.__mul__(scalar)
@@ -258,9 +260,9 @@ class LinearMap:
         Examples
         --------
         
-        >>> R3 = fn(Real, 3)
+        >>> R3 = fn('R3', Real, 3)
         >>> def mapping(vec): return [2*i for i in vec]
-        >>> map1 = LinearMap(R3, R3, mapping)
+        >>> map1 = LinearMap('map1', R3, R3, mapping)
         >>> map1([1, 2, 3])
         [2, 4, 6]
         """
@@ -306,11 +308,11 @@ class LinearMap:
         Examples
         --------
         
-        >>> R3 = fn(Real, 3)
+        >>> R3 = fn('R3', Real, 3)
         >>> def mapping1(vec): return [2*i for i in vec]
         >>> def mapping2(vec): return [3*i for i in vec]
-        >>> map1 = LinearMap(R3, R3, mapping1)
-        >>> map2 = LinearMap(R3, R3, mapping2)
+        >>> map1 = LinearMap('map1', R3, R3, mapping1)
+        >>> map2 = LinearMap('map2', R3, R3, mapping2)
         >>> map3 = map1.composition(map2)
         >>> map3([1, 2, 3])
         [6, 12, 18]
@@ -318,14 +320,11 @@ class LinearMap:
         if self.domain != map2.codomain:
             raise LinearMapError('The linear maps are not compatible.')
         
+        name = f'{self.name} o {map2.name}'
         def mapping(vec):
             return self.mapping(map2.mapping(vec))
         matrix = self.matrix @ map2.matrix
-        if hasattr(self, 'name') and hasattr(map2, 'name'):
-            name = f'{self.name} o {map2.name}'
-        else:
-            name = None
-        return LinearMap(map2.domain, self.codomain, mapping, matrix, name)
+        return LinearMap(name, map2.domain, self.codomain, mapping, matrix)
     
     def image(self):
         """
@@ -428,12 +427,13 @@ class LinearOperator(LinearMap):
     pass
     """
 
-    def __init__(self, vectorspace, mapping=None, matrix=None, name=None):
-        super().__init__(vectorspace, vectorspace, mapping, matrix, name)
+    def __init__(self, name, vectorspace, mapping=None, matrix=None):
+        super().__init__(name, vectorspace, vectorspace, mapping, matrix)
 
     def __repr__(self):
         return (
-            f'LinearOperator(vectorspace={self.domain.name}, '
+            f'LinearOperator(name={self.name}, '
+            f'vectorspace={self.domain.name}, '
             f'mapping={self.mapping.__name__}, '
             f'matrix={self.matrix})'
             )
@@ -548,12 +548,14 @@ class LinearFunctional(LinearMap):
     pass
     """
 
-    def __init__(self, vectorspace, mapping=None, matrix=None, name=None):
+    def __init__(self, name, vectorspace, mapping=None, matrix=None):
         """
         pass
 
         Parameters
         ----------
+        name : str
+            The name of the linear functional.
         vectorspace : VectorSpace
             The vector space the linear functional is defined on.
         mapping : callable, optional
@@ -562,8 +564,6 @@ class LinearFunctional(LinearMap):
         matrix : list of list or sympy.Matrix, optional
             The matrix representation of the linear functional with 
             respect to the basis of the vector space.
-        name : str, optional
-            pass
 
         Returns
         -------
@@ -575,11 +575,12 @@ class LinearFunctional(LinearMap):
         LinearMapError
             If neither the mapping nor the matrix is provided.
         """
-        super().__init__(vectorspace, ..., mapping, matrix, name)
+        super().__init__(name, vectorspace, ..., mapping, matrix)
 
     def __repr__(self):
         return (
-            f'LinearFunctional(vectorspace={self.domain.name}, '
+            f'LinearFunctional(name={self.name}, '
+            f'vectorspace={self.domain.name}, '
             f'mapping={self.mapping.__name__}, '
             f'matrix={self.matrix})'
             )
@@ -590,8 +591,8 @@ class Isomorphism(LinearMap):
     pass
     """
 
-    def __init__(self, domain, codomain, mapping=None, matrix=None, name=None):
-        super().__init__(domain, codomain, mapping, matrix, name)
+    def __init__(self, name, domain, codomain, mapping=None, matrix=None):
+        super().__init__(name, domain, codomain, mapping, matrix)
 
         if not self.is_bijective():
             raise LinearMapError('Linear map is not invertible.')
@@ -600,8 +601,7 @@ class Isomorphism(LinearMap):
         return super().__repr__().replace('LinearMap', 'Isomorphism')
     
     def __str__(self):
-        name = self.name if hasattr(self, 'name') else 'T'
-        signature = f'{name} : {self.domain.name} -> {self.codomain.name}'
+        signature = f'{self.name} : {self.domain.name} -> {self.codomain.name}'
 
         lines = [
             signature,
@@ -643,13 +643,13 @@ class IdentityMap(LinearOperator):
         IdentityMap
             pass
         """
-        super().__init__(vectorspace, lambda vec: vec)
+        super().__init__('Id', vectorspace, lambda vec: vec)
 
     def __repr__(self):
         return f'IdentityMap(vectorspace={self.domain.name})'
     
     def __str__(self):
-        signature = f'Id : {self.domain.name} -> {self.codomain.name}'
+        signature = f'{self.name} : {self.domain.name} -> {self.codomain.name}'
 
         lines = [
             signature,

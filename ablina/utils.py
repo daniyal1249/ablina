@@ -7,6 +7,7 @@ import sympy as sp
 def symbols(names, field=Complex, **kwargs):
     """
     Returns sympy symbols with the specified names and field (Real or Complex).
+
     Additional constraints can be specified as keyword args.
     """
     if field is Real:
@@ -50,7 +51,9 @@ def in_field(field, *exprs):
 def is_linear(expr, vars=None):
     """
     Determines if an equation or expression is linear with respect to the 
-    variables in vars. If vars is None, all variables in expr are checked.
+    variables in `vars`. 
+    
+    If `vars` is None, all variables in `expr` are checked.
     """
     if vars is None:
         vars = expr.free_symbols
@@ -117,7 +120,9 @@ def is_normal(matrix):
 
 def rref(matrix, remove=False):
     """
-    Returns the rref of the matrix. Removes all zero rows if remove is True.
+    Returns the rref of the matrix.
+
+    If `remove` is True, all zero rows are removed.
     """
     matrix = sp.Matrix(matrix)
     rref, _ = matrix.rref()
@@ -133,8 +138,13 @@ def rref(matrix, remove=False):
 
 def of_arity(func, arity):
     """
-    Returns True if the function can accept arity positional arguments, 
-    otherwise False. Raises a TypeError if func is not callable.
+    Returns True if the function can accept `arity` positional arguments, 
+    otherwise False.
+
+    Raises
+    ------
+    TypeError
+        If `func` is not callable.
     """
     sig = inspect.signature(func)
     if len(sig.parameters) < arity:
