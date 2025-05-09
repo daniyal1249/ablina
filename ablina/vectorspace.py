@@ -74,13 +74,13 @@ class _StandardFn:
     def dim(self):
         return self._rs_matrix.rows
     
-    def __contains__(self, vec):
-        if not u.in_field(self.field, *vec):
+    def __contains__(self, vector):
+        if not u.in_field(self.field, *vector):
             return False
         try:
             # Check if vec satisfies vector space constraints
-            vec = sp.Matrix(vec)
-            return bool((self._ns_matrix @ vec).is_zero_matrix)
+            vector = sp.Matrix(vector)
+            return bool((self._ns_matrix @ vector).is_zero_matrix)
         except Exception:
             return False
 
@@ -205,9 +205,9 @@ class Fn(_StandardFn):
     def basis(self):
         return [self._from_standard(vec) for vec in super().basis]
 
-    def __contains__(self, vec):
+    def __contains__(self, vector):
         try:
-            standard_vec = self._to_standard(vec)
+            standard_vec = self._to_standard(vector)
         except Exception:
             return False
         return super().__contains__(standard_vec)
@@ -394,7 +394,7 @@ class VectorSpace:
         return f'{type(self).__name__}(name={self.name}, basis={self.basis})'
     
     def __str__(self):
-        name = f'{self.name} (subspace of {type(self).name})'
+        name = f'{self.name} (Subspace of {type(self).name})'
         lines = [
             name,
             '-' * len(name),
@@ -406,23 +406,23 @@ class VectorSpace:
         ]
         return '\n'.join(lines)
 
-    def __contains__(self, vec):
+    def __contains__(self, vector):
         """
         Check whether a vector is an element of the vector space.
 
         Parameters
         ----------
-        vec : object
+        vector : object
             The vector to check.
 
         Returns
         -------
         bool
-            True if `vec` is an element of `self`, otherwise False.
+            True if `vector` is an element of `self`, otherwise False.
         """
-        if vec not in type(self).set:
+        if vector not in type(self).set:
             return False
-        return self.__to_fn__(vec) in self.fn
+        return self.__to_fn__(vector) in self.fn
     
     def __eq__(self, vs2):
         if self is vs2:
@@ -479,14 +479,14 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = fn('vs', Real, 3, constraints=['2*v0 == v1'])
-        >>> vs.vector()
+        >>> V = fn('V', Real, 3, constraints=['2*v0 == v1'])
+        >>> V.vector()
         [1, 2, 0]
-        >>> vs.vector()
+        >>> V.vector()
         [-1, -2, 1]
-        >>> vs.vector(std=10)
+        >>> V.vector(std=10)
         [11, 22, 13]
-        >>> vs.vector(arbitrary=True)
+        >>> V.vector(arbitrary=True)
         [c0, 2*c0, c1]
         """
         fn_vec = self.fn.vector(std, arbitrary)
@@ -521,10 +521,10 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = fn('vs', Real, 3, constraints=['v0 == 2*v1'])
-        >>> vs.basis
+        >>> V = fn('V', Real, 3, constraints=['v0 == 2*v1'])
+        >>> V.basis
         [[1, 1/2, 0], [0, 0, 1]]
-        >>> vs.to_coordinate([2, 1, 2])
+        >>> V.to_coordinate([2, 1, 2])
         [2, 0]
         """
         if vector not in self:
@@ -571,13 +571,13 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = fn('vs', Real, 3, constraints=['v0 == 2*v1'])
-        >>> vs.basis
+        >>> V = fn('V', Real, 3, constraints=['v0 == 2*v1'])
+        >>> V.basis
         [[1, 1/2, 0], [0, 0, 1]]
-        >>> vs.from_coordinate([1, 1])
+        >>> V.from_coordinate([1, 1])
         [1, 1/2, 1]
         >>> new_basis = [[2, 1, 1], [0, 0, 1]]
-        >>> vs.from_coordinate([1, 1], basis=new_basis)
+        >>> V.from_coordinate([1, 1], basis=new_basis)
         [2, 1, 2]
         """
         if basis is not None:
@@ -608,14 +608,14 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = fn('vs', Real, 3)
-        >>> vs.are_independent([1, 0, 0], [0, 1, 0])
+        >>> V = fn('V', Real, 3)
+        >>> V.are_independent([1, 0, 0], [0, 1, 0])
         True
-        >>> vs.are_independent([1, 2, 3], [2, 4, 6])
+        >>> V.are_independent([1, 2, 3], [2, 4, 6])
         False
-        >>> vs.are_independent([0, 0, 0])
+        >>> V.are_independent([0, 0, 0])
         False
-        >>> vs.are_independent()
+        >>> V.are_independent()
         True
         """
         if not all(vec in self for vec in vectors):
@@ -679,12 +679,12 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs1 = fn('vs1', Real, 3, constraints=['v0 == v1'])
-        >>> vs2 = fn('vs2', Real, 3, constraints=['v1 == v2'])
-        >>> vs = vs1.sum(vs2)
-        >>> vs.basis
+        >>> U = fn('U', Real, 3, constraints=['v0 == v1'])
+        >>> V = fn('V', Real, 3, constraints=['v1 == v2'])
+        >>> W = U.sum(V)
+        >>> W.basis
         [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-        >>> vs1 + vs2 == vs
+        >>> U + V == W
         True
         """
         self._validate_type(vs2)
@@ -718,12 +718,12 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs1 = fn('vs1', Real, 3, constraints=['v0 == v1'])
-        >>> vs2 = fn('vs2', Real, 3, constraints=['v1 == v2'])
-        >>> vs = vs1.intersection(vs2)
-        >>> vs.basis
+        >>> U = fn('U', Real, 3, constraints=['v0 == v1'])
+        >>> V = fn('V', Real, 3, constraints=['v1 == v2'])
+        >>> W = U.intersection(V)
+        >>> W.basis
         [[1, 1, 1]]
-        >>> vs1 & vs2 == vs
+        >>> U & V == W
         True
         """
         self._validate_type(vs2)
@@ -762,12 +762,12 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = fn('vs', Real, 3)
-        >>> vs.span('span1', [1, 2, 3], [4, 5, 6]).basis
+        >>> V = fn('V', Real, 3)
+        >>> V.span('span1', [1, 2, 3], [4, 5, 6]).basis
         [[1, 0, -1], [0, 1, 2]]
-        >>> vs.span('span2', basis=[[1, 2, 3], [4, 5, 6]]).basis
+        >>> V.span('span2', basis=[[1, 2, 3], [4, 5, 6]]).basis
         [[1, 2, 3], [4, 5, 6]]
-        >>> vs.span('span3').basis
+        >>> V.span('span3').basis
         []
         """
         if basis is not None:
@@ -796,16 +796,16 @@ class VectorSpace:
         Examples
         --------
 
-        >>> vs = fn('vs', Real, 3)
-        >>> vs1 = fn('vs1', Real, 3, constraints=['v0 == v1'])
-        >>> vs2 = fn('vs2', Real, 3, constraints=['v1 == v2'])
-        >>> vs1.is_subspace(vs)
+        >>> V = fn('V', Real, 3)
+        >>> U = fn('U', Real, 3, constraints=['v0 == v1'])
+        >>> W = fn('W', Real, 3, constraints=['v1 == v2'])
+        >>> U.is_subspace(V)
         True
-        >>> vs2.is_subspace(vs)
+        >>> W.is_subspace(V)
         True
-        >>> vs1.is_subspace(vs2)
+        >>> U.is_subspace(W)
         False
-        >>> vs.is_subspace(vs)
+        >>> V.is_subspace(V)
         True
         """
         try:
@@ -1092,12 +1092,14 @@ def is_vectorspace(n, constraints):
     return True
 
 
-def columnspace(matrix, field=Real):
+def columnspace(name, matrix, field=Real):
     """
     Return the column space, or image, of a matrix.
 
     Parameters
     ----------
+    name : str
+        The name of the column space.
     matrix : list of list or sympy.Matrix
         The matrix to take the column space of.
     field : {Real, Complex}
@@ -1116,26 +1118,28 @@ def columnspace(matrix, field=Real):
     --------
 
     >>> matrix = [[1, 2], [3, 4]]
-    >>> vs = columnspace(matrix)
-    >>> print(vs.basis)
+    >>> V = columnspace('V', matrix)
+    >>> V.basis
     [[1, 0], [0, 1]]
-    >>> vs = image(matrix)
-    >>> print(vs.basis)
+    >>> U = image('U', matrix)
+    >>> U.basis
     [[1, 0], [0, 1]]
     """
     constraints = [f'col({matrix})']
     matrix = sp.Matrix(matrix).T
     matrix = u.rref(matrix, remove=True)
     n = matrix.rows
-    return fn(field, n, constraints, rs_matrix=matrix)
+    return fn(name, field, n, constraints, rs_matrix=matrix)
 
 
-def rowspace(matrix, field=Real):
+def rowspace(name, matrix, field=Real):
     """
     Return the row space of a matrix.
 
     Parameters
     ----------
+    name : str
+        The name of the row space.
     matrix : list of list or sympy.Matrix
         The matrix to take the row space of.
     field : {Real, Complex}
@@ -1154,22 +1158,24 @@ def rowspace(matrix, field=Real):
     --------
 
     >>> matrix = [[1, 2], [3, 4]]
-    >>> vs = rowspace(matrix)
-    >>> print(vs.basis)
+    >>> V = rowspace('V', matrix)
+    >>> V.basis
     [[1, 0], [0, 1]]
     """
     constraints = [f'row({matrix})']
     matrix = u.rref(matrix, remove=True)
     n = matrix.cols
-    return fn(field, n, constraints, rs_matrix=matrix)
+    return fn(name, field, n, constraints, rs_matrix=matrix)
 
 
-def nullspace(matrix, field=Real):
+def nullspace(name, matrix, field=Real):
     """
     Return the null space, or kernel, of a matrix.
 
     Parameters
     ----------
+    name : str
+        The name of the null space.
     matrix : list of list or sympy.Matrix
         The matrix to take the null space of.
     field : {Real, Complex}
@@ -1188,25 +1194,27 @@ def nullspace(matrix, field=Real):
     --------
 
     >>> matrix = [[1, 2], [3, 4]]
-    >>> vs = nullspace(matrix)
-    >>> print(vs.basis)
+    >>> V = nullspace('V', matrix)
+    >>> V.basis
     []
-    >>> vs = kernel(matrix)
-    >>> print(vs.basis)
+    >>> U = kernel('U', matrix)
+    >>> U.basis
     []
     """
     constraints = [f'null({matrix})']
     matrix = u.rref(matrix, remove=True)
     n = matrix.cols
-    return fn(field, n, constraints, ns_matrix=matrix)
+    return fn(name, field, n, constraints, ns_matrix=matrix)
 
 
-def left_nullspace(matrix, field=Real):
+def left_nullspace(name, matrix, field=Real):
     """
     Return the left null space of a matrix.
 
     Parameters
     ----------
+    name : str
+        The name of the left null space.
     matrix : list of list or sympy.Matrix
         The matrix to take the left null space of.
     field : {Real, Complex}
@@ -1225,17 +1233,17 @@ def left_nullspace(matrix, field=Real):
     --------
 
     >>> matrix = [[1, 2], [3, 4]]
-    >>> vs = left_nullspace(matrix)
-    >>> print(vs.basis)
+    >>> V = left_nullspace('V', matrix)
+    >>> V.basis
     []
     >>> matrix = sympy.Matrix([[1, 2], [3, 4]])
-    >>> vs1 = left_nullspace(matrix)
-    >>> vs2 = nullspace(matrix.T)
-    >>> print(vs1 == vs2)
+    >>> U = left_nullspace('U', matrix)
+    >>> W = nullspace('W', matrix.T)
+    >>> U == W
     True
     """
     matrix = sp.Matrix(matrix).T
-    return nullspace(matrix, field)
+    return nullspace(name, matrix, field)
 
 
 # Aliases
