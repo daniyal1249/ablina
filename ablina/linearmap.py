@@ -142,7 +142,7 @@ class LinearMap:
     
     def __repr__(self):
         return (
-            f'LinearMap(name={self.name}, '
+            f'LinearMap(name="{self.name}", '
             f'domain={self.domain.name}, '
             f'codomain={self.codomain.name}, '
             f'mapping={self.mapping.__name__}, '
@@ -434,7 +434,7 @@ class LinearOperator(LinearMap):
 
     def __repr__(self):
         return (
-            f'LinearOperator(name={self.name}, '
+            f'LinearOperator(name="{self.name}", '
             f'vectorspace={self.domain.name}, '
             f'mapping={self.mapping.__name__}, '
             f'matrix={self.matrix})'
@@ -581,7 +581,7 @@ class LinearFunctional(LinearMap):
 
     def __repr__(self):
         return (
-            f'LinearFunctional(name={self.name}, '
+            f'LinearFunctional(name="{self.name}", '
             f'vectorspace={self.domain.name}, '
             f'mapping={self.mapping.__name__}, '
             f'matrix={self.matrix})'
@@ -658,5 +658,5 @@ class IdentityMap(LinearOperator):
             '-' * len(signature),
             f'Field   {self.field.__name__}',
             f'Matrix  {self.matrix}'
-        ]
+            ]
         return '\n'.join(lines)

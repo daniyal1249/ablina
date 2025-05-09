@@ -14,45 +14,68 @@ class NotAVectorSpaceError(Exception):
         super().__init__(msg)
 
 
-class _StandardFn:
+class Fn:
+    """
+    pass
+    """
     def __init__(self, field, n, constraints=None, *, ns_matrix=None, rs_matrix=None):
+        """
+        pass
+        """
+        if constraints is None:
+            constraints = []
         if field not in (Real, Complex):
             raise TypeError('Field must be either Real or Complex.')
 
         # Verify whether constraints satisfy vector space properties
-        if constraints is None:
-            constraints = []
         if ns_matrix is None and rs_matrix is None:
             if not is_vectorspace(n, constraints):
                 raise NotAVectorSpaceError(
                     'Constraints do not satisfy vector space axioms.'
                     )
-        ns, rs = _StandardFn._init_matrices(n, constraints, ns_matrix, rs_matrix)
+
+        add, mul, additive_inv = Fn._init_operations()
+        ns, rs = Fn._init_matrices(n, constraints, ns_matrix, rs_matrix)
 
         self._field = field
         self._n = n
         self._constraints = constraints
+
+        self._add = add
+        self._mul = mul
+        self._additive_inv = additive_inv
+
         self._ns_matrix = ns
         self._rs_matrix = rs
 
     @staticmethod
-    def _init_matrices(n, constraints, ns_mat, rs_mat):
-        if ns_mat is not None:
-            ns_mat = sp.zeros(0, n) if u.is_empty(ns_mat) else sp.Matrix(ns_mat)
-        if rs_mat is not None:
-            rs_mat = sp.zeros(0, n) if u.is_empty(rs_mat) else sp.Matrix(rs_mat)
+    def _init_operations():
+        def add(vec1, vec2):
+            return [i + j for i, j in zip(vec1, vec2)]
+        def mul(scalar, vec):
+            return [scalar * i for i in vec]
+        def additive_inv(vec):
+            return [-i for i in vec]
+        return add, mul, additive_inv
+
+    @staticmethod
+    def _init_matrices(n, constraints, ns, rs):
+        if ns is not None:
+            ns = sp.zeros(0, n) if u.is_empty(ns) else sp.Matrix(ns)
+        if rs is not None:
+            rs = sp.zeros(0, n) if u.is_empty(rs) else sp.Matrix(rs)
         
         # Initialize ns_matrix
-        if ns_mat is None:
-            if rs_mat is None:
-                ns_mat = vsu.to_ns_matrix(n, constraints)
+        if ns is None:
+            if rs is None:
+                ns = vsu.to_ns_matrix(n, constraints)
             else:
-                ns_mat = vsu.to_complement(rs_mat)
+                ns = vsu.to_complement(rs)
         
         # Initialize rs_matrix
-        if rs_mat is None:
-            rs_mat = vsu.to_complement(ns_mat)
-        return ns_mat, rs_mat
+        if rs is None:
+            rs = vsu.to_complement(ns)
+        return ns, rs
 
     @property
     def field(self):
@@ -67,6 +90,22 @@ class _StandardFn:
         return self._constraints
     
     @property
+    def add(self):
+        return self._add
+    
+    @property
+    def mul(self):
+        return self._mul
+    
+    @property
+    def additive_inv(self):
+        return self._additive_inv
+    
+    @property
+    def additive_id(self):
+        return [0] * self.n
+    
+    @property
     def basis(self):
         return self._rs_matrix.tolist()
     
@@ -74,15 +113,30 @@ class _StandardFn:
     def dim(self):
         return self._rs_matrix.rows
     
+    def __repr__(self):
+        return (
+            f'Fn(field={self.field.__name__}, '
+            f'n={self.n}, '
+            f'constraints={self.constraints}, '
+            f'ns_matrix={self._ns_matrix}, '
+            f'rs_matrix={self._rs_matrix})'
+            )
+    
     def __contains__(self, vector):
         if not u.in_field(self.field, *vector):
             return False
         try:
-            # Check if vec satisfies vector space constraints
+            # Check if vector satisfies vector space constraints
             vector = sp.Matrix(vector)
             return bool((self._ns_matrix @ vector).is_zero_matrix)
         except Exception:
             return False
+    
+    def __add__(self, vs2):
+        return self.sum(vs2)
+    
+    def __and__(self, vs2):
+        return self.intersection(vs2)
 
     # Methods relating to vectors
 
@@ -97,8 +151,8 @@ class _StandardFn:
 
     def to_coordinate(self, vector, basis=None):
         if basis is None:
-            basis = _StandardFn.basis.__get__(self)
-        elif not _StandardFn.is_basis(self, *basis):
+            basis = self.basis
+        elif not self.is_basis(*basis):
             raise ValueError('Provided vectors do not form a basis.')
         if not basis:
             return []
@@ -109,25 +163,41 @@ class _StandardFn:
 
     def from_coordinate(self, vector, basis=None):  # FIX: check field
         if basis is None:
-            basis = _StandardFn.basis.__get__(self)
-        elif not _StandardFn.is_basis(self, *basis):
+            basis = self.basis
+        elif not self.is_basis(*basis):
             raise ValueError('Provided vectors do not form a basis.')
         try:
             matrix, coord_vec = sp.Matrix(basis).T, sp.Matrix(vector)
             vec = matrix @ coord_vec
         except Exception as e:
             raise ValueError('Invalid coordinate vector.') from e
-        return vec.flat() if vec else [0] * self.n
+        return vec.flat() if vec else self.additive_id
     
     def are_independent(self, *vectors):
         matrix = sp.Matrix(vectors)
         return matrix.rank() == matrix.rows
     
     def is_basis(self, *vectors):
-        matrix = sp.Matrix(vectors)
-        return matrix.rank() == matrix.rows and len(vectors) == self.dim
-
+        return self.are_independent(*vectors) and len(vectors) == self.dim
+    
     # Methods relating to vector spaces
+
+    def sum(self, vs2):
+        rs_matrix = sp.Matrix.vstack(self._rs_matrix, vs2._rs_matrix)
+        rs_matrix = u.rref(rs_matrix, remove=True)
+        constraints = self.constraints  # Rework
+        return Fn(self.field, self.n, constraints, rs_matrix=rs_matrix)
+    
+    def intersection(self, vs2):
+        ns_matrix = sp.Matrix.vstack(self._ns_matrix, vs2._ns_matrix)
+        ns_matrix = u.rref(ns_matrix, remove=True)
+        constraints = self.constraints + vs2.constraints
+        return Fn(self.field, self.n, constraints, ns_matrix=ns_matrix)
+    
+    def span(self, *vectors, basis=None):
+        vectors = u.rref(vectors, remove=True) if basis is None else basis
+        constraints = [f'span({', '.join(map(str, vectors))})']
+        return Fn(self.field, self.n, constraints, rs_matrix=vectors)
 
     def is_subspace(self, vs2):
         for i in range(self.dim):
@@ -137,149 +207,6 @@ class _StandardFn:
         return True
 
 
-class Fn(_StandardFn):
-    """
-    pass
-    """
-
-    def __init__(
-            self, field, n, constraints=None, add=None, mul=None, 
-            *, isomorphism=None, ns_matrix=None, rs_matrix=None
-            ):
-        """
-        pass
-        """
-        if constraints is None:
-            constraints = []
-        if isomorphism is not None:
-            if not (isinstance(isomorphism, tuple) and len(isomorphism) == 2):
-                raise TypeError('Isomorphism must be a 2-tuple of callables.')
-        
-        add, mul, iso = Fn._init_operations(field, n, add, mul, isomorphism)
-
-        self._to_standard, self._from_standard = iso
-        mapped_constraints = vsu.map_constraints(self._to_standard, constraints)
-        super().__init__(
-            field, n, mapped_constraints, ns_matrix=ns_matrix, rs_matrix=rs_matrix
-            )
-        
-        self._add = add  # VectorAdd(field, n, add)
-        self._mul = mul  # ScalarMul(field, n, mul)
-        # Reassign constraints
-        self._constraints = constraints
-
-    @staticmethod
-    def _init_operations(field, n, add, mul, iso):
-        # For efficiency
-        if add is None and mul is None:
-            iso = (lambda vec: vec, lambda vec: vec)
-
-        if add is None:
-            def add(vec1, vec2): return [i + j for i, j in zip(vec1, vec2)]
-        if mul is None:
-            def mul(scalar, vec): return [scalar * i for i in vec]
-        if iso is None:
-            iso = vsu.internal_isomorphism(field, n, add, mul)
-
-        return add, mul, iso
-
-    @property
-    def add(self):
-        return self._add
-    
-    @property
-    def mul(self):
-        return self._mul
-    
-    @property
-    def additive_id(self):
-        return [0] * self.n
-    
-    @property
-    def additive_inv(self):
-        def additive_inv(vec):
-            return [-i for i in vec]
-        return additive_inv
-    
-    @property
-    def basis(self):
-        return [self._from_standard(vec) for vec in super().basis]
-
-    def __contains__(self, vector):
-        try:
-            standard_vec = self._to_standard(vector)
-        except Exception:
-            return False
-        return super().__contains__(standard_vec)
-    
-    def __add__(self, vs2):
-        return self.sum(vs2)
-    
-    def __and__(self, vs2):
-        return self.intersection(vs2)
-
-    # Methods relating to vectors
-
-    def vector(self, std=1, arbitrary=False):
-        standard_vec = super().vector(std, arbitrary)
-        return self._from_standard(standard_vec)
-    
-    def to_coordinate(self, vector, basis=None):
-        if basis is not None:
-            basis = [self._to_standard(vec) for vec in basis]
-        standard_vec = self._to_standard(vector)
-        return super().to_coordinate(standard_vec, basis)
-    
-    def from_coordinate(self, vector, basis=None):
-        if basis is not None:
-            basis = [self._to_standard(vec) for vec in basis]
-        standard_vec = super().from_coordinate(vector, basis)
-        return self._from_standard(standard_vec)
-    
-    def are_independent(self, *vectors):
-        standard_vecs = [self._to_standard(vec) for vec in vectors]
-        return super().are_independent(*standard_vecs)
-    
-    def is_basis(self, *vectors):
-        standard_vecs = [self._to_standard(vec) for vec in vectors]
-        return super().is_basis(*standard_vecs)
-
-    # Methods relating to vector spaces
-
-    def sum(self, vs2):
-        rs_matrix = sp.Matrix.vstack(self._rs_matrix, vs2._rs_matrix)
-        rs_matrix = u.rref(rs_matrix, remove=True)
-        constraints = self.constraints  # Rework
-        return Fn(
-            self.field, self.n, constraints, self.add, self.mul, 
-            isomorphism=(self._to_standard, self._from_standard), 
-            rs_matrix=rs_matrix
-            )
-    
-    def intersection(self, vs2):
-        ns_matrix = sp.Matrix.vstack(self._ns_matrix, vs2._ns_matrix)
-        ns_matrix = u.rref(ns_matrix, remove=True)
-        constraints = self.constraints + vs2.constraints
-        return Fn(
-            self.field, self.n, constraints, self.add, self.mul, 
-            isomorphism=(self._to_standard, self._from_standard), 
-            ns_matrix=ns_matrix
-            )
-    
-    def span(self, *vectors, basis=None):
-        if basis is not None:
-            vectors = basis
-        standard_vecs = [self._to_standard(vec) for vec in vectors]
-        if basis is None:
-            standard_vecs = u.rref(standard_vecs, remove=True)
-        constraints = [f'span({', '.join(map(str, vectors))})']
-        return Fn(
-            self.field, self.n, constraints, self.add, self.mul, 
-            isomorphism=(self._to_standard, self._from_standard), 
-            rs_matrix=standard_vecs
-            )
-
-
 class VectorSpace:
     """
     pass
@@ -287,26 +214,18 @@ class VectorSpace:
 
     def __init_subclass__(cls, name=None, **kwargs):
         super().__init_subclass__(**kwargs)
-        attributes = ['set', 'fn']
-        methods = ['__to_fn__', '__from_fn__']
-        
-        for attr in attributes:
-            if not hasattr(cls, attr):
-                raise TypeError(f'{cls.__name__} must define "{attr}".')
-        for method in methods:
-            if not callable(getattr(cls, method, None)):
-                raise TypeError(f'{cls.__name__} must define the method "{method}".')
-        
-        if not isinstance(cls.set, MathSet):
-            raise TypeError(f'{cls.__name__}.set must be a MathSet.')
-        if not isinstance(cls.fn, Fn):
-            raise TypeError(f'{cls.__name__}.fn must be of type Fn.')
+        cls._validate_subclass_contract()
+        add, mul, additive_inv = cls._init_operations()
         
         cls.name = cls.__name__
         if name is not None:
             if not isinstance(name, str):
                 raise TypeError('Name must be a string.')
             cls.name = name
+
+        cls._add = staticmethod(add)
+        cls._mul = staticmethod(mul)
+        cls._additive_inv = staticmethod(additive_inv)
 
     def __init__(self, name, constraints=None, basis=None, *, fn=None):
         """
@@ -320,14 +239,48 @@ class VectorSpace:
         if fn is not None:
             self.fn = fn
             return
-        self.fn = Fn(
-            self.fn.field, self.fn.n, constraints, self.fn.add, self.fn.mul, 
-            isomorphism=(self.fn._to_standard, self.fn._from_standard)
-            )
+        self.fn = Fn(self.fn.field, self.fn.n, constraints)
+
         if basis is not None:
             if not self.are_independent(*basis):
                 raise ValueError('Basis vectors must be linearly independent.')
-            self.fn = self.fn.span(basis=[self.__to_fn__(vec) for vec in basis])
+            self.fn = self.fn.span(basis=[self.__push__(vec) for vec in basis])
+
+    @classmethod
+    def _validate_subclass_contract(cls):
+        attributes = ['set', 'fn']
+        methods = ['__push__', '__pull__']
+        
+        for attr in attributes:
+            if not hasattr(cls, attr):
+                raise TypeError(f'{cls.__name__} must define "{attr}".')
+        for method in methods:
+            if not callable(getattr(cls, method, None)):
+                raise TypeError(f'{cls.__name__} must define the method "{method}".')
+        
+        if not isinstance(cls.set, MathSet):
+            raise TypeError(f'{cls.__name__}.set must be a MathSet.')
+        if not isinstance(cls.fn, Fn):
+            raise TypeError(f'{cls.__name__}.fn must be of type Fn.')
+        
+        cls.__push__ = staticmethod(cls.__push__)
+        cls.__pull__ = staticmethod(cls.__pull__)
+
+    @classmethod
+    def _init_operations(cls):
+        def add(vec1, vec2):
+            fn_vec1, fn_vec2 = cls.__push__(vec1), cls.__push__(vec2)
+            sum = cls.fn.add(fn_vec1, fn_vec2)
+            return cls.__pull__(sum)
+        def mul(scalar, vec):
+            fn_vec = cls.__push__(vec)
+            prod = cls.fn.mul(scalar, fn_vec)
+            return cls.__pull__(prod)
+        def additive_inv(vec):
+            fn_vec = cls.__push__(vec)
+            inv = cls.fn.additive_inv(fn_vec)
+            return cls.__pull__(inv)
+        return add, mul, additive_inv
     
     @property
     def field(self):
@@ -341,47 +294,35 @@ class VectorSpace:
         """
         callable: The addition operator on the vector space.
         """
-        def add(vec1, vec2):
-            fn_vec1, fn_vec2 = self.__to_fn__(vec1), self.__to_fn__(vec2)
-            sum = self.fn.add(fn_vec1, fn_vec2)
-            return self.__from_fn__(sum)
-        return add
+        return self._add
     
     @property
     def mul(self):
         """
         callable: The multiplication operator on the vector space.
         """
-        def mul(scalar, vec):
-            fn_vec = self.__to_fn__(vec)
-            prod = self.fn.mul(scalar, fn_vec)
-            return self.__from_fn__(prod)
-        return mul
-    
-    @property
-    def additive_id(self):
-        """
-        object: The additive identity of the vector space.
-        """
-        return self.__from_fn__(self.fn.additive_id)
+        return self._mul
     
     @property
     def additive_inv(self):
         """
         callable: A function that returns the additive inverse of a given vector.
         """
-        def additive_inv(vec):
-            fn_vec = self.__to_fn__(vec)
-            inv = self.fn.additive_inv(fn_vec)
-            return self.__from_fn__(inv)
-        return additive_inv
+        return self._additive_inv
+    
+    @property
+    def additive_id(self):
+        """
+        object: The additive identity of the vector space.
+        """
+        return self.__pull__(self.fn.additive_id)
     
     @property
     def basis(self):
         """
         list: The basis of the vector space.
         """
-        return [self.__from_fn__(vec) for vec in self.fn.basis]
+        return [self.__pull__(vec) for vec in self.fn.basis]
     
     @property
     def dim(self):
@@ -391,7 +332,7 @@ class VectorSpace:
         return self.fn.dim
     
     def __repr__(self):
-        return f'{type(self).__name__}(name={self.name}, basis={self.basis})'
+        return f'{type(self).__name__}(name="{self.name}", basis={self.basis})'
     
     def __str__(self):
         name = f'{self.name} (Subspace of {type(self).name})'
@@ -403,7 +344,7 @@ class VectorSpace:
             f'Basis      {self.basis}',
             f'Dimension  {self.dim}',
             f'Vector     {self.vector(arbitrary=True)}'
-        ]
+            ]
         return '\n'.join(lines)
 
     def __contains__(self, vector):
@@ -422,7 +363,7 @@ class VectorSpace:
         """
         if vector not in type(self).set:
             return False
-        return self.__to_fn__(vector) in self.fn
+        return self.__push__(vector) in self.fn
     
     def __eq__(self, vs2):
         if self is vs2:
@@ -490,7 +431,7 @@ class VectorSpace:
         [c0, 2*c0, c1]
         """
         fn_vec = self.fn.vector(std, arbitrary)
-        return self.__from_fn__(fn_vec)
+        return self.__pull__(fn_vec)
     
     def to_coordinate(self, vector, basis=None):
         """
@@ -532,9 +473,9 @@ class VectorSpace:
         if basis is not None:
             if not all(vec in self for vec in basis):
                 raise TypeError('Basis vectors must be elements of the vector space.')
-            basis = [self.__to_fn__(vec) for vec in basis]
+            basis = [self.__push__(vec) for vec in basis]
 
-        fn_vec = self.__to_fn__(vector)
+        fn_vec = self.__push__(vector)
         return self.fn.to_coordinate(fn_vec, basis)
     
     def from_coordinate(self, vector, basis=None):
@@ -583,10 +524,10 @@ class VectorSpace:
         if basis is not None:
             if not all(vec in self for vec in basis):
                 raise TypeError('Basis vectors must be elements of the vector space.')
-            basis = [self.__to_fn__(vec) for vec in basis]
+            basis = [self.__push__(vec) for vec in basis]
         
         fn_vec = self.fn.from_coordinate(vector, basis)
-        return self.__from_fn__(fn_vec)
+        return self.__pull__(fn_vec)
     
     def are_independent(self, *vectors):
         """
@@ -620,7 +561,7 @@ class VectorSpace:
         """
         if not all(vec in self for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
-        fn_vecs = [self.__to_fn__(vec) for vec in vectors]
+        fn_vecs = [self.__push__(vec) for vec in vectors]
         return self.fn.are_independent(*fn_vecs)
     
     def is_basis(self, *vectors):
@@ -639,7 +580,7 @@ class VectorSpace:
         """
         if not all(vec in self for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
-        fn_vecs = [self.__to_fn__(vec) for vec in vectors]
+        fn_vecs = [self.__push__(vec) for vec in vectors]
         return self.fn.is_basis(*fn_vecs)
     
     def change_of_basis(self, basis):
@@ -775,7 +716,7 @@ class VectorSpace:
         if not all(vec in self for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
         
-        fn_vecs = [self.__to_fn__(vec) for vec in vectors]
+        fn_vecs = [self.__push__(vec) for vec in vectors]
         fn = self.fn.span(*fn_vecs)
         return type(self)(name, fn=fn)
     
@@ -872,8 +813,8 @@ class VectorSpace:
         # class quotient_space(VectorSpace, name=name):
         #     set = MathSet(name, AffineSpace, in_quotient_space)
         #     fn = Fn(self.field, None, add=self.fn.add, mul=self.fn.mul)
-        #     def __to_fn__(self, coset): return
-        #     def __from_fn__(self, vec): return
+        #     def __push__(self, coset): return
+        #     def __pull__(self, vec): return
         # return quotient_space()
         raise NotImplementedError()
 
@@ -979,8 +920,8 @@ class AffineSpace:
         return self.__mul__(scalar)
 
 
-def fn(name, field, n, constraints=None, basis=None, 
-       add=None, mul=None, *, ns_matrix=None, rs_matrix=None):
+def fn(name, field, n, constraints=None, basis=None, *, 
+       ns_matrix=None, rs_matrix=None):
     """
     pass
     """
@@ -992,21 +933,17 @@ def fn(name, field, n, constraints=None, basis=None,
 
     class fn(VectorSpace, name=cls_name):
         set = MathSet(cls_name, object, in_fn)
-        fn = Fn(field, n, add=add, mul=mul)
-        def __to_fn__(self, vec): return vec
-        def __from_fn__(self, vec): return vec
+        fn = Fn(field, n)
+        def __push__(vec): return vec
+        def __pull__(vec): return vec
 
     if not (ns_matrix is None and rs_matrix is None):
-        vs = Fn(
-            field, n, constraints, add, mul, 
-            ns_matrix=ns_matrix, rs_matrix=rs_matrix
-            )
+        vs = Fn(field, n, constraints, ns_matrix=ns_matrix, rs_matrix=rs_matrix)
         return fn(name, fn=vs)
     return fn(name, constraints, basis)
 
 
-def matrix_space(name, field, shape, constraints=None, basis=None, 
-                 add=None, mul=None):
+def matrix_space(name, field, shape, constraints=None, basis=None):
     """
     pass
     """
@@ -1017,14 +954,13 @@ def matrix_space(name, field, shape, constraints=None, basis=None,
 
     class matrix_space(VectorSpace, name=cls_name):
         set = MathSet(cls_name, sp.Matrix, in_matrix_space)
-        fn = Fn(field, sp.prod(shape), add=add, mul=mul)
-        def __to_fn__(self, mat): return mat.flat()
-        def __from_fn__(self, vec): return sp.Matrix(*shape, vec)
+        fn = Fn(field, sp.prod(shape))
+        def __push__(mat): return mat.flat()
+        def __pull__(vec): return sp.Matrix(*shape, vec)
     return matrix_space(name, constraints, basis)
 
 
-def poly_space(name, field, max_degree, constraints=None, basis=None, 
-               add=None, mul=None):
+def poly_space(name, field, max_degree, constraints=None, basis=None):
     """
     pass
     """
@@ -1035,12 +971,12 @@ def poly_space(name, field, max_degree, constraints=None, basis=None,
 
     class poly_space(VectorSpace, name=cls_name):
         set = MathSet(cls_name, sp.Poly, in_poly_space)
-        fn = Fn(field, max_degree + 1, add=add, mul=mul)
-        def __to_fn__(self, poly):
+        fn = Fn(field, max_degree + 1)
+        def __push__(poly):
             coeffs = poly.all_coeffs()[::-1]  # Ascending order
             degree_diff = max_degree - len(coeffs) + 1
             return coeffs + ([0] * degree_diff)
-        def __from_fn__(self, vec):
+        def __pull__(vec):
             x = sp.symbols('x')
             return sp.Poly.from_list(vec[::-1], x)
     return poly_space(name, constraints, basis)

@@ -107,7 +107,7 @@ class SesquilinearForm:
     
     def __repr__(self):
         return (
-            f'SesquilinearForm(name={self.name}, '
+            f'SesquilinearForm(name="{self.name}", '
             f'vectorspace={self.vectorspace.name}, '
             f'mapping={self.mapping.__name__}, '
             f'matrix={self.matrix})'
