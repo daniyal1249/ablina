@@ -1,8 +1,8 @@
-from numbers import Complex, Real
 from random import gauss
 
 import sympy as sp
 
+from .field import R, C
 from .mathset import MathSet
 from .parser import split_constraint, sympify
 from . import utils as u
@@ -18,14 +18,15 @@ class Fn:
     """
     pass
     """
+
     def __init__(self, field, n, constraints=None, *, ns_matrix=None, rs_matrix=None):
         """
         pass
         """
         if constraints is None:
             constraints = []
-        if field not in (Real, Complex):
-            raise TypeError('Field must be either Real or Complex.')
+        if field not in (R, C):
+            raise TypeError('Field must be either R or C.')
 
         # Verify whether constraints satisfy vector space properties
         if ns_matrix is None and rs_matrix is None:
@@ -115,7 +116,7 @@ class Fn:
     
     def __repr__(self):
         return (
-            f'Fn(field={self.field.__name__}, '
+            f'Fn(field={self.field}, '
             f'n={self.n}, '
             f'constraints={self.constraints}, '
             f'ns_matrix={self._ns_matrix}, '
@@ -123,7 +124,7 @@ class Fn:
             )
     
     def __contains__(self, vector):
-        if not u.in_field(self.field, *vector):
+        if not all(i in self.field for i in vector):
             return False
         try:
             # Check if vector satisfies vector space constraints
@@ -285,7 +286,7 @@ class VectorSpace:
     @property
     def field(self):
         """
-        {Real, Complex}: The field of scalars.
+        {R, C}: The field of scalars.
         """
         return self.fn.field
     
@@ -339,7 +340,7 @@ class VectorSpace:
         lines = [
             name,
             '-' * len(name),
-            f'Field      {self.field.__name__}',
+            f'Field      {self.field}',
             f'Identity   {self.additive_id}',
             f'Basis      {self.basis}',
             f'Dimension  {self.dim}',
@@ -420,7 +421,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> V = fn('V', Real, 3, constraints=['2*v0 == v1'])
+        >>> V = fn('V', R, 3, constraints=['2*v0 == v1'])
         >>> V.vector()
         [1, 2, 0]
         >>> V.vector()
@@ -462,7 +463,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> V = fn('V', Real, 3, constraints=['v0 == 2*v1'])
+        >>> V = fn('V', R, 3, constraints=['v0 == 2*v1'])
         >>> V.basis
         [[1, 1/2, 0], [0, 0, 1]]
         >>> V.to_coordinate([2, 1, 2])
@@ -512,7 +513,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> V = fn('V', Real, 3, constraints=['v0 == 2*v1'])
+        >>> V = fn('V', R, 3, constraints=['v0 == 2*v1'])
         >>> V.basis
         [[1, 1/2, 0], [0, 0, 1]]
         >>> V.from_coordinate([1, 1])
@@ -549,7 +550,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> V = fn('V', Real, 3)
+        >>> V = fn('V', R, 3)
         >>> V.are_independent([1, 0, 0], [0, 1, 0])
         True
         >>> V.are_independent([1, 2, 3], [2, 4, 6])
@@ -620,8 +621,8 @@ class VectorSpace:
         Examples
         --------
 
-        >>> U = fn('U', Real, 3, constraints=['v0 == v1'])
-        >>> V = fn('V', Real, 3, constraints=['v1 == v2'])
+        >>> U = fn('U', R, 3, constraints=['v0 == v1'])
+        >>> V = fn('V', R, 3, constraints=['v1 == v2'])
         >>> W = U.sum(V)
         >>> W.basis
         [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
@@ -659,8 +660,8 @@ class VectorSpace:
         Examples
         --------
 
-        >>> U = fn('U', Real, 3, constraints=['v0 == v1'])
-        >>> V = fn('V', Real, 3, constraints=['v1 == v2'])
+        >>> U = fn('U', R, 3, constraints=['v0 == v1'])
+        >>> V = fn('V', R, 3, constraints=['v1 == v2'])
         >>> W = U.intersection(V)
         >>> W.basis
         [[1, 1, 1]]
@@ -703,7 +704,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> V = fn('V', Real, 3)
+        >>> V = fn('V', R, 3)
         >>> V.span('span1', [1, 2, 3], [4, 5, 6]).basis
         [[1, 0, -1], [0, 1, 2]]
         >>> V.span('span2', basis=[[1, 2, 3], [4, 5, 6]]).basis
@@ -737,9 +738,9 @@ class VectorSpace:
         Examples
         --------
 
-        >>> V = fn('V', Real, 3)
-        >>> U = fn('U', Real, 3, constraints=['v0 == v1'])
-        >>> W = fn('W', Real, 3, constraints=['v1 == v2'])
+        >>> V = fn('V', R, 3)
+        >>> U = fn('U', R, 3, constraints=['v0 == v1'])
+        >>> W = fn('W', R, 3, constraints=['v1 == v2'])
         >>> U.is_subspace(V)
         True
         >>> W.is_subspace(V)
@@ -911,7 +912,7 @@ class AffineSpace:
 
     def __mul__(self, scalar):
         vs = self.vectorspace
-        if not isinstance(scalar, vs.field):
+        if scalar not in vs.field:
             raise TypeError('Scalar must be an element of the field.')
         repr = vs.mul(scalar, self.representative)
         return AffineSpace(vs, repr)
@@ -925,17 +926,24 @@ def fn(name, field, n, constraints=None, basis=None, *,
     """
     pass
     """
-    cls_name = f'{'R' if field is Real else 'C'}^{n}'
+    if n == 1:
+        cls_name = f'{field}'
+        class fn(VectorSpace, name=cls_name):
+            set = MathSet(cls_name, object)
+            fn = Fn(field, 1)
+            def __push__(vec): return [vec]
+            def __pull__(vec): return vec[0]
+    else:
+        def in_fn(vec):
+            try: return sp.Matrix(vec).shape == (n, 1)
+            except Exception: return False
 
-    def in_fn(vec):
-        try: return sp.Matrix(vec).shape == (n, 1)
-        except Exception: return False
-
-    class fn(VectorSpace, name=cls_name):
-        set = MathSet(cls_name, object, in_fn)
-        fn = Fn(field, n)
-        def __push__(vec): return vec
-        def __pull__(vec): return vec
+        cls_name = f'{field}^{n}'
+        class fn(VectorSpace, name=cls_name):
+            set = MathSet(cls_name, object, in_fn)
+            fn = Fn(field, n)
+            def __push__(vec): return vec
+            def __pull__(vec): return vec
 
     if not (ns_matrix is None and rs_matrix is None):
         vs = Fn(field, n, constraints, ns_matrix=ns_matrix, rs_matrix=rs_matrix)
@@ -947,7 +955,7 @@ def matrix_space(name, field, shape, constraints=None, basis=None):
     """
     pass
     """
-    cls_name = f'M({'R' if field is Real else 'C'}, {shape})'
+    cls_name = f'M({field}, {shape})'
 
     def in_matrix_space(mat):
         return mat.shape == shape
@@ -964,7 +972,7 @@ def poly_space(name, field, max_degree, constraints=None, basis=None):
     """
     pass
     """
-    cls_name = f'P({'R' if field is Real else 'C'}, {max_degree})'
+    cls_name = f'P({field}, {max_degree})'
 
     def in_poly_space(poly):
         return sp.degree(poly) <= max_degree
@@ -1003,7 +1011,7 @@ def is_vectorspace(n, constraints):
     n : int
         The length of the vectors in the vector space.
     constraints : list of str
-        The constraints ..
+        The constraints to check.
 
     Returns
     -------
@@ -1028,7 +1036,7 @@ def is_vectorspace(n, constraints):
     return True
 
 
-def columnspace(name, matrix, field=Real):
+def columnspace(name, matrix, field=R):
     """
     Return the column space, or image, of a matrix.
 
@@ -1038,7 +1046,7 @@ def columnspace(name, matrix, field=Real):
         The name of the column space.
     matrix : list of list or sympy.Matrix
         The matrix to take the column space of.
-    field : {Real, Complex}
+    field : {R, C}
         The field of scalars.
 
     Returns
@@ -1068,7 +1076,7 @@ def columnspace(name, matrix, field=Real):
     return fn(name, field, n, constraints, rs_matrix=matrix)
 
 
-def rowspace(name, matrix, field=Real):
+def rowspace(name, matrix, field=R):
     """
     Return the row space of a matrix.
 
@@ -1078,7 +1086,7 @@ def rowspace(name, matrix, field=Real):
         The name of the row space.
     matrix : list of list or sympy.Matrix
         The matrix to take the row space of.
-    field : {Real, Complex}
+    field : {R, C}
         The field of scalars.
 
     Returns
@@ -1104,7 +1112,7 @@ def rowspace(name, matrix, field=Real):
     return fn(name, field, n, constraints, rs_matrix=matrix)
 
 
-def nullspace(name, matrix, field=Real):
+def nullspace(name, matrix, field=R):
     """
     Return the null space, or kernel, of a matrix.
 
@@ -1114,7 +1122,7 @@ def nullspace(name, matrix, field=Real):
         The name of the null space.
     matrix : list of list or sympy.Matrix
         The matrix to take the null space of.
-    field : {Real, Complex}
+    field : {R, C}
         The field of scalars.
 
     Returns
@@ -1143,7 +1151,7 @@ def nullspace(name, matrix, field=Real):
     return fn(name, field, n, constraints, ns_matrix=matrix)
 
 
-def left_nullspace(name, matrix, field=Real):
+def left_nullspace(name, matrix, field=R):
     """
     Return the left null space of a matrix.
 
@@ -1153,7 +1161,7 @@ def left_nullspace(name, matrix, field=Real):
         The name of the left null space.
     matrix : list of list or sympy.Matrix
         The matrix to take the left null space of.
-    field : {Real, Complex}
+    field : {R, C}
         The field of scalars.
 
     Returns

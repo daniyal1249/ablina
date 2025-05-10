@@ -1,51 +1,20 @@
 import inspect
-from numbers import Complex, Real
 
 import sympy as sp
 
+from .field import R, C
 
-def symbols(names, field=Complex, **kwargs):
+
+def symbols(names, field=C, **kwargs):
     """
-    Returns sympy symbols with the specified names and field (Real or Complex).
+    Returns sympy symbols with the specified names and field (``R`` or ``C``).
 
     Additional constraints can be specified as keyword args.
     """
-    if field is Real:
+    if field is R:
         return sp.symbols(names, real=True, **kwargs)
     else:
-        return sp.symbols(names, **kwargs)
-
-
-def is_real(expr):
-    """
-    Returns True if the expression is Real, None if its indeterminate, 
-    and False otherwise.
-    """
-    if hasattr(expr, 'is_real'):
-        return expr.is_real  # Sympy's is_real attribute
-    return isinstance(expr, Real)
-
-
-def is_complex(expr):
-    """
-    Returns True if the expression is Complex, None if its indeterminate, 
-    and False otherwise.
-    """
-    if hasattr(expr, 'is_complex'):
-        return expr.is_complex  # Sympy's is_complex attribute
-    return isinstance(expr, Complex)
-
-
-def in_field(field, *exprs):
-    """
-    Returns True if everything in `exprs` is in the field, otherwise False.
-    """
-    if field is Real:
-        if not all(is_real(expr) for expr in exprs):
-            return False
-    elif not all(is_complex(expr) for expr in exprs):
-        return False
-    return True
+        return sp.symbols(names, complex=True, **kwargs)
 
 
 def is_linear(expr, vars=None):

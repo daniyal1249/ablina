@@ -1,7 +1,6 @@
-from numbers import Complex, Real
-
 import sympy as sp
 
+from .field import R
 from .utils import is_invertible, of_arity
 from .vectorspace import VectorSpace
 
@@ -115,8 +114,7 @@ class SesquilinearForm:
     
     def __str__(self):
         vs = self.vectorspace
-        field = 'R' if vs.field is Real else 'C'
-        signature = f'{self.name} : {vs.name} x {vs.name} -> {field}'
+        signature = f'{self.name} : {vs.name} x {vs.name} -> {vs.field}'
 
         lines = [
             signature,
@@ -142,7 +140,7 @@ class SesquilinearForm:
         return self.mapping(vec1, vec2)
 
     def inertia(self):
-        if self.vectorspace.field is Real:
+        if self.vectorspace.field is R:
             if not self.is_symmetric():
                 raise FormError()
         elif not self.is_hermitian():
@@ -329,7 +327,7 @@ class InnerProduct(SesquilinearForm):
         """
         super().__init__(name, vectorspace, mapping, matrix)
 
-        if self.vectorspace.field is Real:
+        if self.vectorspace.field is R:
             if not self.is_symmetric():
                 raise InnerProductError('Real inner product must be symmetric.')
         elif not self.is_hermitian():
@@ -348,8 +346,7 @@ class InnerProduct(SesquilinearForm):
     
     def __str__(self):
         vs = self.vectorspace
-        field = 'R' if vs.field is Real else 'C'
-        signature = f'{self.name} : {vs.name} x {vs.name} -> {field}'
+        signature = f'{self.name} : {vs.name} x {vs.name} -> {vs.field}'
 
         lines = [
             signature,

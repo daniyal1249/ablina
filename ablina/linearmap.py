@@ -1,9 +1,8 @@
-from numbers import Real
-
 import sympy as sp
 
+from .field import R
 from . import utils as u
-from .vectorspace import VectorSpace
+from .vectorspace import VectorSpace, fn
 
 
 class LinearMapError(Exception):
@@ -94,7 +93,7 @@ class LinearMap:
     @property
     def field(self):
         """
-        {Real, Complex}: The field of the domain and codomain.
+        {R, C}: The field of the domain and codomain.
         """
         return self.domain.field
 
@@ -155,7 +154,7 @@ class LinearMap:
         lines = [
             signature,
             '-' * len(signature),
-            f'Field        {self.field.__name__}',
+            f'Field        {self.field}',
             f'Rank         {self.rank}',
             f'Nullity      {self.nullity}',
             f'Injective?   {self.is_injective()}',
@@ -191,7 +190,7 @@ class LinearMap:
         Examples
         --------
         
-        >>> R3 = fn('R3', Real, 3)
+        >>> R3 = fn('R3', R, 3)
         >>> def mapping1(vec): return [2*i for i in vec]
         >>> def mapping2(vec): return [3*i for i in vec]
         >>> map1 = LinearMap('map1', R3, R3, mapping1)
@@ -215,7 +214,7 @@ class LinearMap:
 
         Parameters
         ----------
-        scalar : Real or Complex
+        scalar : R or C
             The scalar to multiply with.
 
         Returns
@@ -226,14 +225,14 @@ class LinearMap:
         Examples
         --------
         
-        >>> R3 = fn('R3', Real, 3)
+        >>> R3 = fn('R3', R, 3)
         >>> def mapping(vec): return [2*i for i in vec]
         >>> map1 = LinearMap('map1', R3, R3, mapping)
         >>> map2 = 3 * map1
         >>> map2([1, 2, 3])
         [6, 12, 18]
         """
-        if not isinstance(scalar, self.field):
+        if scalar not in self.field:
             raise TypeError('Scalar must be an element of the vector space field.')
         
         name = f'{scalar} * {self.name}'
@@ -262,7 +261,7 @@ class LinearMap:
         Examples
         --------
         
-        >>> R3 = fn('R3', Real, 3)
+        >>> R3 = fn('R3', R, 3)
         >>> def mapping(vec): return [2*i for i in vec]
         >>> map1 = LinearMap('map1', R3, R3, mapping)
         >>> map1([1, 2, 3])
@@ -310,7 +309,7 @@ class LinearMap:
         Examples
         --------
         
-        >>> R3 = fn('R3', Real, 3)
+        >>> R3 = fn('R3', R, 3)
         >>> def mapping1(vec): return [2*i for i in vec]
         >>> def mapping2(vec): return [3*i for i in vec]
         >>> map1 = LinearMap('map1', R3, R3, mapping1)
@@ -469,7 +468,7 @@ class LinearOperator(LinearMap):
         --------
         LinearOperator.is_hermitian
         """
-        if self.domain.field is not Real:
+        if self.field is not R:
             raise LinearMapError()
         matrix, _ = self.change_of_basis(innerproduct.orthonormal_basis)
         return matrix.is_symmetric()
@@ -511,7 +510,7 @@ class LinearOperator(LinearMap):
         --------
         LinearOperator.is_unitary
         """
-        if self.domain.field is not Real:
+        if self.field is not R:
             raise LinearMapError()
         matrix, _ = self.change_of_basis(innerproduct.orthonormal_basis)
         return u.is_orthogonal(matrix)
@@ -577,7 +576,9 @@ class LinearFunctional(LinearMap):
         LinearMapError
             If neither the mapping nor the matrix is provided.
         """
-        super().__init__(name, vectorspace, ..., mapping, matrix)
+        field = vectorspace.field
+        codomain = fn(f'{field}', field, 1)
+        super().__init__(name, vectorspace, codomain, mapping, matrix)
 
     def __repr__(self):
         return (
@@ -608,7 +609,7 @@ class Isomorphism(LinearMap):
         lines = [
             signature,
             '-' * len(signature),
-            f'Field   {self.field.__name__}',
+            f'Field   {self.field}',
             f'Matrix  {self.matrix}'
             ]
         return '\n'.join(lines)
@@ -656,7 +657,7 @@ class IdentityMap(LinearOperator):
         lines = [
             signature,
             '-' * len(signature),
-            f'Field   {self.field.__name__}',
+            f'Field   {self.field}',
             f'Matrix  {self.matrix}'
             ]
         return '\n'.join(lines)

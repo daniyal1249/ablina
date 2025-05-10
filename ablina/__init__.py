@@ -6,11 +6,12 @@ __description__ = 'A Python package for abstract linear algebra'
 __url__ = 'https://github.com/daniyal1249/ablina'
 
 
-from numbers import Complex, Real
-
-from .form import InnerProduct, QuadraticForm, SesquilinearForm
-from .linearmap import LinearMap, Isomorphism, IdentityMap
-from .mathset import MathSet
+from .field import Field, R, C
+from .form import SesquilinearForm, InnerProduct, QuadraticForm
+from .linearmap import (
+    LinearMap, LinearOperator, LinearFunctional, Isomorphism, IdentityMap
+    )
+from .mathset import MathSet, negate
 from .vectorspace import (
     Fn, VectorSpace, AffineSpace, fn, matrix_space, poly_space, hom, 
     is_vectorspace, columnspace, rowspace, nullspace, left_nullspace, 
@@ -18,10 +19,11 @@ from .vectorspace import (
     )
 
 __all__ = [
-    'Complex', 'Real',
-    'InnerProduct', 'QuadraticForm', 'SesquilinearForm',
-    'LinearMap', 'Isomorphism', 'IdentityMap',
-    'MathSet',
+    'Field', 'R', 'C',
+    'SesquilinearForm', 'InnerProduct', 'QuadraticForm',
+    'LinearMap', 'LinearOperator', 'LinearFunctional', 'Isomorphism',
+    'IdentityMap',
+    'MathSet', 'negate',
     'Fn', 'VectorSpace', 'AffineSpace', 'fn', 'matrix_space', 'poly_space',
     'hom', 'is_vectorspace', 'columnspace', 'rowspace', 'nullspace',
     'left_nullspace', 'image', 'kernel'
