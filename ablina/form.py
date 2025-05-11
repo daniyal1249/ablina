@@ -64,7 +64,7 @@ class SesquilinearForm:
         if matrix is None:
             matrix = SesquilinearForm._to_matrix(vectorspace, mapping)
         else:
-            matrix = sp.Matrix(matrix)
+            matrix = SesquilinearForm._validate_matrix(vectorspace, matrix)
         
         self.name = name
         self._vectorspace = vectorspace
@@ -82,6 +82,15 @@ class SesquilinearForm:
         matrix = sp.Matrix(matrix)
         def to_coord(v): return sp.Matrix(vectorspace.to_coordinate(v))
         return lambda u, v: (to_coord(u).H @ matrix @ to_coord(v))[0]
+    
+    @staticmethod
+    def _validate_matrix(vectorspace, matrix):
+        matrix = sp.Matrix(matrix)
+        if not (matrix.is_square and matrix.rows == vectorspace.dim):
+            raise ValueError('Matrix has invalid shape.')
+        if not all(i in vectorspace.field for i in matrix):
+            raise ValueError('Matrix entries must be in the field.')
+        return matrix
 
     @property
     def vectorspace(self):

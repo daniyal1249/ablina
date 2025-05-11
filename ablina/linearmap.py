@@ -66,7 +66,7 @@ class LinearMap:
         if matrix is None:
             matrix = LinearMap._to_matrix(domain, codomain, mapping)
         else:
-            matrix = sp.Matrix(matrix)
+            matrix = LinearMap._validate_matrix(domain, codomain, matrix)
         
         self.name = name
         self._domain = domain
@@ -89,6 +89,15 @@ class LinearMap:
         def to_coord(vec): return sp.Matrix(domain.to_coordinate(vec))
         def from_coord(vec): return codomain.from_coordinate(vec.flat())
         return lambda vec: from_coord(matrix @ to_coord(vec))
+    
+    @staticmethod
+    def _validate_matrix(domain, codomain, matrix):
+        matrix = sp.Matrix(matrix)
+        if matrix.shape != (codomain.dim, domain.dim):
+            raise ValueError('Matrix has invalid shape.')
+        if not all(i in domain.field for i in matrix):
+            raise ValueError('Matrix entries must be in the field.')
+        return matrix
 
     @property
     def field(self):
@@ -587,6 +596,8 @@ class LinearFunctional(LinearMap):
             f'mapping={self.mapping.__name__}, '
             f'matrix={self.matrix})'
             )
+    
+
 
 
 class Isomorphism(LinearMap):
