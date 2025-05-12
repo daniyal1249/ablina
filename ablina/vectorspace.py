@@ -670,7 +670,7 @@ class VectorSpace:
         True
         """
         self._validate_type(vs2)
-        name = f'sum({self.name}, {vs2.name})'
+        name = f'{self.name} + {vs2.name}'
         fn = self.fn.sum(vs2.fn)
         return type(self)(name, fn=fn)
     
@@ -709,7 +709,7 @@ class VectorSpace:
         True
         """
         self._validate_type(vs2)
-        name = f'inter({self.name}, {vs2.name})'
+        name = f'{self.name} ∩ {vs2.name}'
         fn = self.fn.intersection(vs2.fn)
         return type(self)(name, fn=fn)
     

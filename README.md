@@ -31,7 +31,7 @@ and running the following in the cloned repo:
 
 ### Define a Vector Space
 
-To define subspaces of $\mathbb{R}^n$ or $\mathbb{C}^n$, use ``fn``
+To define a subspace of $\mathbb{R}^n$ or $\mathbb{C}^n$, use ``fn``
 
 ```python
 >>> V = fn('V', R, 2)
@@ -185,3 +185,55 @@ Check whether a vector space is a subspace of another
     False
 
 
+Take the sum of two vector spaces 
+
+
+```python
+>>> X = V.sum(U)
+>>> print(X)
+```
+
+    V + U (Subspace of R^2)
+    -----------------------
+    Field      R
+    Identity   [0, 0]
+    Basis      [[1, 0], [0, 1]]
+    Dimension  2
+    Vector     [c0, c1]
+
+
+Take the intersection of two vector spaces 
+
+
+```python
+>>> X = V.intersection(U)
+>>> print(X)
+```
+
+    V ∩ U (Subspace of R^2)
+    -----------------------
+    Field      R
+    Identity   [0, 0]
+    Basis      [[1, 2]]
+    Dimension  1
+    Vector     [c0, 2*c0]
+
+
+Take the span of a list of vectors 
+
+
+```python
+>>> S = V.span('S', [1, -1])
+>>> print(S)
+```
+
+    S (Subspace of R^2)
+    -------------------
+    Field      R
+    Identity   [0, 0]
+    Basis      [[1, -1]]
+    Dimension  1
+    Vector     [c0, -c0]
+
+
+### Define a Linear Map
