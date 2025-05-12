@@ -338,8 +338,7 @@ Compute the norm of a vector
 
 
 ```python
->>> x = dot.norm([1, 2, 3])
->>> print(x)
+>>> dot.norm([1, 2, 3])
 ```
 
     sqrt(14)
