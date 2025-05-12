@@ -596,8 +596,6 @@ class LinearFunctional(LinearMap):
             f'mapping={self.mapping.__name__}, '
             f'matrix={self.matrix})'
             )
-    
-
 
 
 class Isomorphism(LinearMap):
@@ -634,8 +632,9 @@ class Isomorphism(LinearMap):
         Isomorphism
             The inverse of `self`.
         """
+        name = f'{self.name}^-1'
         matrix = self.matrix.inv()
-        return Isomorphism(self.codomain, self.domain, matrix=matrix)
+        return Isomorphism(name, self.codomain, self.domain, matrix=matrix)
 
 
 class IdentityMap(LinearOperator):

@@ -2,7 +2,7 @@ import sympy as sp
 
 from .field import R
 from .utils import is_invertible, of_arity
-from .vectorspace import VectorSpace
+from .vectorspace import Fn, VectorSpace
 
 # Note that methods/properties such as is_positive_definite 
 # will return None if the matrix is symbolic
@@ -13,7 +13,7 @@ class FormError(Exception):
         super().__init__(msg)
 
 
-class InnerProductError(Exception):
+class InnerProductError(FormError):
     def __init__(self, msg=''):
         super().__init__(msg)
 
@@ -335,17 +335,19 @@ class InnerProduct(SesquilinearForm):
             If the form is not a valid inner product.
         """
         super().__init__(name, vectorspace, mapping, matrix)
+        vs = self.vectorspace
 
-        if self.vectorspace.field is R:
+        if vs.field is R:
             if not self.is_symmetric():
                 raise InnerProductError('Real inner product must be symmetric.')
         elif not self.is_hermitian():
             raise InnerProductError('Complex inner product must be hermitian.')
         if not self.is_positive_definite():
             raise InnerProductError('Inner product must be positive definite.')
-        
-        self._orthonormal_basis = self.gram_schmidt(*self.vectorspace.basis)
-        
+
+        self._orthonormal_basis = self.gram_schmidt(*vs.basis)
+        self._fn_orthonormal_basis = vs.fn.gram_schmidt(*vs.fn.basis)
+
     @property
     def orthonormal_basis(self):
         return self._orthonormal_basis
@@ -365,6 +367,18 @@ class InnerProduct(SesquilinearForm):
             ]
         return '\n'.join(lines)
     
+    def __push__(self, vector):
+        vs = self.vectorspace
+        coord_vec = vs.to_coordinate(vector, basis=self.orthonormal_basis)
+        vec = vs.fn.from_coordinate(coord_vec, basis=self._fn_orthonormal_basis)
+        return vec
+    
+    def __pull__(self, vector):
+        vs = self.vectorspace
+        coord_vec = vs.fn.to_coordinate(vector, basis=self._fn_orthonormal_basis)
+        vec = vs.from_coordinate(coord_vec, basis=self.orthonormal_basis)
+        return vec
+
     def norm(self, vector):
         """
         The norm, or magnitude, of a vector.
@@ -453,19 +467,46 @@ class InnerProduct(SesquilinearForm):
             orthonormal_vecs.append(unit_v)
         return orthonormal_vecs
     
-    def ortho_complement(self):
+    def ortho_complement(self, vs2):
         """
         The orthogonal complement of a vector space.
 
         Returns
         -------
         VectorSpace
-            The orthogonal complement of `self`.
+            The orthogonal complement of `vs2` in `self`.
         """
-        # fn = self.fn.ortho_complement()
-        # return type(self)(fn=fn)
+        vs = self.vectorspace
+        name = f'perp({vs2.name})'
+
+        fn_basis = [self.__push__(vec) for vec in vs2.basis]
+        fn = vs.fn.span(*fn_basis)
+        comp = vs.fn.ortho_complement(fn)
+        basis = [self.__pull__(vec) for vec in comp.basis]
+        return vs.span(name, *basis)
+
+
+        # vs = self.vectorspace
+        # vs_fn_basis = [self.__push__(vec) for vec in vs.basis]
+        # vs_fn = Fn(vs.field, vs.dim, rs_matrix=vs_fn_basis)
+        # vs2_fn_basis = [self.__push__(vec) for vec in vs2.basis]
+        # vs2_fn = Fn(vs.field, vs.dim, rs_matrix=vs2_fn_basis)
+
+        # fn_basis = sp.Matrix([self.__push__(vec) for vec in vs2.basis])
+        # fn = Fn(vs.field, vs.dim, rs_matrix=fn_basis)
+        # # fn = vs.fn.span(*fn_basis)
+        # comp = vs.fn.ortho_complement(fn)
+        # basis = [self.__pull__(vec) for vec in comp.basis]
+
+        # vs = self.vectorspace
+        # xs = [self.__push__(vec) for vec in vs2.basis]
+        # y = vs.fn.span(*xs)
+        # z = vs.fn.ortho_complement(y).basis
+        # lol = [self.__pull__(vec) for vec in z]
+        # return type(vs)().span('', *lol)
         raise NotImplementedError()
-    
+
+
     def ortho_projection(self, vs2):
         """
         The orthogonal projection of `self` onto `vs2`.

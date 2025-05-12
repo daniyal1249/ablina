@@ -206,6 +206,46 @@ class Fn:
             if not (vs2._ns_matrix @ vec).is_zero_matrix:
                 return False
         return True
+    
+    # Methods involving the dot product
+
+    def dot(self, vec1, vec2):
+        return sum(i * j for i, j in zip(vec1, vec2))
+    
+    def norm(self, vector):
+        return sp.sqrt(self.dot(vector, vector))
+    
+    def are_orthogonal(self, vec1, vec2):
+        return self.dot(vec1, vec2) == 0
+    
+    def are_orthonormal(self, *vectors):
+        # Improve efficiency
+        if not all(self.norm(vec) == 1 for vec in vectors):
+            return False
+        for vec1 in vectors:
+            for vec2 in vectors:
+                if not (vec1 is vec2 or self.are_orthogonal(vec1, vec2)):
+                    return False
+        return True
+    
+    def gram_schmidt(self, *vectors):
+        orthonormal_vecs = []
+        for v in vectors:
+            for q in orthonormal_vecs:
+                factor = self.dot(v, q)
+                proj = self.mul(factor, q)
+                v = self.add(v, self.additive_inv(proj))
+            unit_v = self.mul(1 / self.norm(v), v)
+            orthonormal_vecs.append(unit_v)
+        return orthonormal_vecs
+    
+    def ortho_complement(self, vs2):
+        constraints = [f'ortho_complement({', '.join(self.constraints)})']
+        comp = Fn(self.field, self.n, constraints, rs_matrix=vs2._ns_matrix)
+        return self.intersection(comp)
+    
+    def ortho_projection(self, vs2):
+        raise NotImplementedError()
 
 
 class VectorSpace:
