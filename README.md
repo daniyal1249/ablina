@@ -237,3 +237,221 @@ Take the span of a list of vectors
 
 
 ### Define a Linear Map
+
+```python
+>>> def mapping(vec):
+>>>     return [vec[0], vec[1], 0]
+>>>
+>>> T = LinearMap('T', domain=V, codomain=W, mapping=mapping)
+>>> print(T)
+```
+
+    T : V -> W
+    ----------
+    Field        R
+    Rank         2
+    Nullity      1
+    Injective?   False
+    Surjective?  True
+    Bijective?   False
+    Matrix       [[1, 0, 0], [0, 1, 0]]
+
+
+```python
+>>> T([0, 0, 0])
+```
+
+    [0, 0, 0]
+
+
+```python
+>>> T([1, 2, 3])
+```
+
+    [1, 2, 0]
+
+
+### Operations with Linear Maps
+
+Find the image of a linear map 
+
+
+```python
+>>> im = T.image()
+>>> print(im)
+```
+
+    im(T) (Subspace of R^3)
+    -----------------------
+    Field      R
+    Identity   [0, 0, 0]
+    Basis      [[1, 0, 0], [0, 1, 0]]
+    Dimension  2
+    Vector     [c0, c1, 0]
+
+
+Find the kernel of a linear map 
+
+
+```python
+>>> ker = T.kernel()
+>>> print(ker)
+```
+
+    ker(T) (Subspace of R^3)
+    ------------------------
+    Field      R
+    Identity   [0, 0, 0]
+    Basis      [[0, 0, 1]]
+    Dimension  1
+    Vector     [0, 0, c0]
+
+
+### Define an Inner Product
+
+Here we define the standard dot product 
+
+```python
+>>> def mapping(vec1, vec2):
+>>>     return sum(i * j for i, j in zip(vec1, vec2))
+>>>
+>>> dot = InnerProduct('dot', vectorspace=V, mapping=mapping)
+>>> print(dot)
+```
+
+    dot : V x V -> R
+    ----------------
+    Orthonormal Basis  [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+    Matrix             [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+
+
+```python
+>>> dot([1, 2, 3], [1, 2, 3])
+```
+
+    14
+
+
+### Operations with Inner Products
+
+Compute the norm of a vector 
+
+
+```python
+>>> x = dot.norm([1, 2, 3])
+>>> print(x)
+```
+
+    sqrt(14)
+
+
+Check whether two vectors are orthogonal 
+
+
+```python
+>>> dot.are_orthogonal([1, 2, 3], [4, 5, 6])
+```
+
+    False
+
+
+```python
+>>> dot.are_orthogonal([0, 0, 0], [1, 2, 3])
+```
+
+    True
+
+
+Check whether a list of vectors is orthonormal 
+
+
+```python
+>>> dot.are_orthonormal([1, 0, 0], [0, 1, 0], [0, 0, 1])
+```
+
+    True
+
+
+Take the orthogonal complement of a vector space 
+
+```python
+>>> X = dot.ortho_complement(U)
+>>> print(X)
+```
+
+    perp(U) (Subspace of R^3)
+    -------------------------
+    Field      R
+    Identity   [0, 0, 0]
+    Basis      [[1, 0, 0], [0, 1, -1/2]]
+    Dimension  2
+    Vector     [c0, c1, -c1/2]
+
+
+### Define a Linear Operator
+
+```python
+>>> def mapping(vec):
+>>>     return [vec[0], 2*vec[1], 3*vec[2]]
+>>>
+>>> T = LinearOperator('T', vectorspace=V, mapping=mapping)
+>>> print(T)
+```
+
+    T : V -> V
+    ----------
+    Field        R
+    Rank         3
+    Nullity      0
+    Injective?   True
+    Surjective?  True
+    Bijective?   True
+    Matrix       [[1, 0, 0], [0, 2, 0], [0, 0, 3]]
+
+
+```python
+>>> T([1, 1, 1])
+```
+
+    [1, 2, 3]
+
+
+### Operations with Linear Operators
+
+Given an inner product, check whether a linear operator is 
+
+
+```python
+>>> T.is_symmetric(dot)
+```
+
+    True
+
+
+```python
+>>> T.is_hermitian(dot)
+```
+
+    True
+
+
+```python
+>>> T.is_orthogonal(dot)
+```
+
+    False
+
+
+```python
+>>> T.is_unitary(dot)
+```
+
+    False
+
+
+```python
+>>> T.is_normal(dot)
+```
+
+    True
+
