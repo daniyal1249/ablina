@@ -2,7 +2,7 @@ import sympy as sp
 
 from .field import R
 from .utils import is_invertible, of_arity
-from .vectorspace import Fn, VectorSpace
+from .vectorspace import VectorSpace
 
 # Note that methods/properties such as is_positive_definite 
 # will return None if the matrix is symbolic
@@ -368,12 +368,18 @@ class InnerProduct(SesquilinearForm):
         return '\n'.join(lines)
     
     def __push__(self, vector):
+        """
+        pass
+        """
         vs = self.vectorspace
         coord_vec = vs.to_coordinate(vector, basis=self.orthonormal_basis)
         vec = vs.fn.from_coordinate(coord_vec, basis=self._fn_orthonormal_basis)
         return vec
     
     def __pull__(self, vector):
+        """
+        pass
+        """
         vs = self.vectorspace
         coord_vec = vs.fn.to_coordinate(vector, basis=self._fn_orthonormal_basis)
         vec = vs.from_coordinate(coord_vec, basis=self.orthonormal_basis)
@@ -477,8 +483,12 @@ class InnerProduct(SesquilinearForm):
             The orthogonal complement of `vs2` in `self`.
         """
         vs = self.vectorspace
-        name = f'perp({vs2.name})'
+        if not isinstance(vs2, VectorSpace):
+            raise TypeError()
+        if not vs2.is_subspace(vs):
+            raise ValueError()
 
+        name = f'perp({vs2.name})'
         fn_basis = [self.__push__(vec) for vec in vs2.basis]
         fn = vs.fn.span(*fn_basis)
         comp = vs.fn.ortho_complement(fn)
