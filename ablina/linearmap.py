@@ -154,7 +154,7 @@ class LinearMap:
             f'domain={self.domain.name}, '
             f'codomain={self.codomain.name}, '
             f'mapping={self.mapping.__name__}, '
-            f'matrix={self.matrix})'
+            f'matrix={self.matrix.tolist()})'
             )
     
     def __str__(self):
@@ -169,7 +169,7 @@ class LinearMap:
             f'Injective?   {self.is_injective()}',
             f'Surjective?  {self.is_surjective()}',
             f'Bijective?   {self.is_bijective()}',
-            f'Matrix       {self.matrix}'
+            f'Matrix       {self.matrix.tolist()}'
             ]
         return '\n'.join(lines)
 
@@ -349,9 +349,10 @@ class LinearMap:
         --------
         LinearMap.range
         """
-        basis = [vec.tolist() for vec in self.matrix.columnspace()]
-        basis = [self.domain.from_coordinate(vec) for vec in basis]
-        return self.domain.span(*basis)
+        name = f'im({self.name})'
+        basis = [vec.flat() for vec in self.matrix.columnspace()]
+        basis = [self.codomain.from_coordinate(vec) for vec in basis]
+        return self.codomain.span(name, *basis)
 
     def kernel(self):
         """
@@ -366,9 +367,10 @@ class LinearMap:
         --------
         LinearMap.nullspace
         """
-        basis = [vec.tolist() for vec in self.matrix.nullspace()]
+        name = f'ker({self.name})'
+        basis = [vec.flat() for vec in self.matrix.nullspace()]
         basis = [self.domain.from_coordinate(vec) for vec in basis]
-        return self.domain.span(*basis)
+        return self.domain.span(name, *basis)
     
     def adjoint(self):
         """
@@ -445,7 +447,7 @@ class LinearOperator(LinearMap):
             f'LinearOperator(name="{self.name}", '
             f'vectorspace={self.domain.name}, '
             f'mapping={self.mapping.__name__}, '
-            f'matrix={self.matrix})'
+            f'matrix={self.matrix.tolist()})'
             )
     
     def change_of_basis(self, basis):
@@ -594,7 +596,7 @@ class LinearFunctional(LinearMap):
             f'LinearFunctional(name="{self.name}", '
             f'vectorspace={self.domain.name}, '
             f'mapping={self.mapping.__name__}, '
-            f'matrix={self.matrix})'
+            f'matrix={self.matrix.tolist()})'
             )
 
 
@@ -619,7 +621,7 @@ class Isomorphism(LinearMap):
             signature,
             '-' * len(signature),
             f'Field   {self.field}',
-            f'Matrix  {self.matrix}'
+            f'Matrix  {self.matrix.tolist()}'
             ]
         return '\n'.join(lines)
 
@@ -668,6 +670,6 @@ class IdentityMap(LinearOperator):
             signature,
             '-' * len(signature),
             f'Field   {self.field}',
-            f'Matrix  {self.matrix}'
+            f'Matrix  {self.matrix.tolist()}'
             ]
         return '\n'.join(lines)

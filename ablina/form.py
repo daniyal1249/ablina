@@ -118,7 +118,7 @@ class SesquilinearForm:
             f'SesquilinearForm(name="{self.name}", '
             f'vectorspace={self.vectorspace.name}, '
             f'mapping={self.mapping.__name__}, '
-            f'matrix={self.matrix})'
+            f'matrix={self.matrix.tolist()})'
             )
     
     def __str__(self):
@@ -131,7 +131,7 @@ class SesquilinearForm:
             f'Symmetric?          {self.is_symmetric()}',
             f'Hermitian?          {self.is_hermitian()}',
             f'Positive Definite?  {self.is_positive_definite()}',
-            f'Matrix              {self.matrix}'
+            f'Matrix              {self.matrix.tolist()}'
             ]
         return '\n'.join(lines)
 
@@ -363,7 +363,7 @@ class InnerProduct(SesquilinearForm):
             signature,
             '-' * len(signature),
             f'Orthonormal Basis  {self.orthonormal_basis}',
-            f'Matrix             {self.matrix}'
+            f'Matrix             {self.matrix.tolist()}'
             ]
         return '\n'.join(lines)
     
@@ -497,7 +497,7 @@ class InnerProduct(SesquilinearForm):
 
     def ortho_projection(self, vs2):
         """
-        The orthogonal projection of `self` onto `vs2`.
+        The orthogonal projection of `vs2` onto `self`.
 
         Parameters
         ----------
