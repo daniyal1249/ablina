@@ -98,7 +98,7 @@ Check whether a vector is an element of a vector space
     False
 
 
-Generate a vector from a vector space 
+Generate a random vector from a vector space 
 
 
 ```python
@@ -123,6 +123,13 @@ Find the coordinate vector representation of a vector
 ```
 
     [2]
+
+
+```python
+>>> U.from_coordinate([2])
+```
+
+    [2, 4]
 
 
 ```python
