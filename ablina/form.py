@@ -485,28 +485,6 @@ class InnerProduct(SesquilinearForm):
         basis = [self.__pull__(vec) for vec in comp.basis]
         return vs.span(name, *basis)
 
-
-        # vs = self.vectorspace
-        # vs_fn_basis = [self.__push__(vec) for vec in vs.basis]
-        # vs_fn = Fn(vs.field, vs.dim, rs_matrix=vs_fn_basis)
-        # vs2_fn_basis = [self.__push__(vec) for vec in vs2.basis]
-        # vs2_fn = Fn(vs.field, vs.dim, rs_matrix=vs2_fn_basis)
-
-        # fn_basis = sp.Matrix([self.__push__(vec) for vec in vs2.basis])
-        # fn = Fn(vs.field, vs.dim, rs_matrix=fn_basis)
-        # # fn = vs.fn.span(*fn_basis)
-        # comp = vs.fn.ortho_complement(fn)
-        # basis = [self.__pull__(vec) for vec in comp.basis]
-
-        # vs = self.vectorspace
-        # xs = [self.__push__(vec) for vec in vs2.basis]
-        # y = vs.fn.span(*xs)
-        # z = vs.fn.ortho_complement(y).basis
-        # lol = [self.__pull__(vec) for vec in z]
-        # return type(vs)().span('', *lol)
-        raise NotImplementedError()
-
-
     def ortho_projection(self, vs2):
         """
         The orthogonal projection of `self` onto `vs2`.
