@@ -34,49 +34,49 @@ and running the following in the cloned repo:
 To define a subspace of $\mathbb{R}^n$ or $\mathbb{C}^n$, use ``fn``
 
 ```python
->>> V = fn('V', R, 2)
+>>> V = fn('V', R, 3)
 >>> print(V)
 ```
 
-    V (Subspace of R^2)
+    V (Subspace of R^3)
     -------------------
     Field      R
-    Identity   [0, 0]
-    Basis      [[1, 0], [0, 1]]
-    Dimension  2
-    Vector     [c0, c1]
+    Identity   [0, 0, 0]
+    Basis      [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+    Dimension  3
+    Vector     [c0, c1, c2]
 
 
 You can provide a list of constraints 
 
 ```python
->>> U = fn('U', R, 2, constraints=['2*v0 == v1'])
+>>> U = fn('U', R, 3, constraints=['v0 == 0', '2*v1 == v2'])
 >>> print(U)
 ```
 
-    U (Subspace of R^2)
+    U (Subspace of R^3)
     -------------------
     Field      R
-    Identity   [0, 0]
-    Basis      [[1, 2]]
+    Identity   [0, 0, 0]
+    Basis      [[0, 1, 2]]
     Dimension  1
-    Vector     [c0, 2*c0]
+    Vector     [0, c0, 2*c0]
 
 
 Or specify a basis 
 
 ```python
->>> W = fn('W', R, 2, basis=[[1, 2]])
+>>> W = fn('W', R, 3, basis=[[1, 0, 0], [0, 1, 0]])
 >>> print(W)
 ```
 
-    W (Subspace of R^2)
+    W (Subspace of R^3)
     -------------------
     Field      R
-    Identity   [0, 0]
-    Basis      [[1, 2]]
-    Dimension  1
-    Vector     [c0, 2*c0]
+    Identity   [0, 0, 0]
+    Basis      [[1, 0, 0], [0, 1, 0]]
+    Dimension  2
+    Vector     [c0, c1, 0]
 
 
 ### Operations Involving Vectors
@@ -85,14 +85,14 @@ Check whether a vector is an element of a vector space
 
 
 ```python
->>> [2, 4] in U
+>>> [1, 2, 0] in W
 ```
 
     True
 
 
 ```python
->>> [2, 3] in U
+>>> [1, 2, 1] in W
 ```
 
     False
@@ -102,55 +102,55 @@ Generate a random vector from a vector space
 
 
 ```python
->>> W.vector()
+>>> U.vector()
 ```
 
-    [-2, -4]
+    [0, 2, 4]
 
 
 ```python
->>> W.vector(arbitrary=True)
+>>> U.vector(arbitrary=True)
 ```
 
-    [c0, 2*c0]
+    [0, c0, 2*c0]
 
 
 Find the coordinate vector representation of a vector 
 
 
 ```python
->>> U.to_coordinate([2, 4])
+>>> W.to_coordinate([1, 2, 0])
 ```
 
-    [2]
+    [1, 2]
 
 
 ```python
->>> U.from_coordinate([2])
+>>> W.from_coordinate([1, 2])
 ```
 
-    [2, 4]
+    [1, 2, 0]
 
 
 ```python
->>> U.to_coordinate([2, 4], basis=[[4, 8]])
+>>> W.to_coordinate([1, 2, 0], basis=[[1, 1, 0], [1, -1, 0]])
 ```
 
-    [1/2]
+    [3/2, -1/2]
 
 
 Check whether a list of vectors is linearly independent 
 
 
 ```python
->>> V.are_independent([1, 2], [2, 3])
+>>> V.are_independent([1, 1, 0], [1, 0, 0])
 ```
 
     True
 
 
 ```python
->>> V.are_independent([1, 2], [2, 4])
+>>> V.are_independent([1, 2, 3], [2, 4, 6])
 ```
 
     False
@@ -162,17 +162,10 @@ Check for equality of two vector spaces
 
 
 ```python
->>> V == U
-```
-
-    False
-
-
-```python
 >>> U == W
 ```
 
-    True
+    False
 
 
 Check whether a vector space is a subspace of another 
@@ -196,51 +189,51 @@ Take the sum of two vector spaces
 
 
 ```python
->>> X = V.sum(U)
+>>> X = U.sum(W)
 >>> print(X)
 ```
 
-    V + U (Subspace of R^2)
+    U + W (Subspace of R^3)
     -----------------------
     Field      R
-    Identity   [0, 0]
-    Basis      [[1, 0], [0, 1]]
-    Dimension  2
-    Vector     [c0, c1]
+    Identity   [0, 0, 0]
+    Basis      [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+    Dimension  3
+    Vector     [c0, c1, c2]
 
 
 Take the intersection of two vector spaces 
 
 
 ```python
->>> X = V.intersection(U)
+>>> X = U.intersection(W)
 >>> print(X)
 ```
 
-    V ∩ U (Subspace of R^2)
+    U ∩ W (Subspace of R^3)
     -----------------------
     Field      R
-    Identity   [0, 0]
-    Basis      [[1, 2]]
-    Dimension  1
-    Vector     [c0, 2*c0]
+    Identity   [0, 0, 0]
+    Basis      []
+    Dimension  0
+    Vector     [0, 0, 0]
 
 
 Take the span of a list of vectors 
 
 
 ```python
->>> S = V.span('S', [1, -1])
+>>> S = V.span('S', [1, 2, 3], [4, 5, 6])
 >>> print(S)
 ```
 
-    S (Subspace of R^2)
+    S (Subspace of R^3)
     -------------------
     Field      R
-    Identity   [0, 0]
-    Basis      [[1, -1]]
-    Dimension  1
-    Vector     [c0, -c0]
+    Identity   [0, 0, 0]
+    Basis      [[1, 0, -1], [0, 1, 2]]
+    Dimension  2
+    Vector     [c0, c1, -c0 + 2*c1]
 
 
 ### Define a Linear Map
