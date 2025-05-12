@@ -31,7 +31,7 @@ and running the following in the cloned repo:
 
 ### Define a Vector Space
 
-To define a subspace of $\mathbb{R}^n$ or $\mathbb{C}^n$, use ``fn``
+To define a subspace of $ℝ^n$ or $ℂ^n$, use ``fn``
 
 ```python
 >>> V = fn('V', R, 3)
