@@ -79,7 +79,7 @@ Or specify a basis
     Vector     [c0, c1, 0]
 
 
-### Operations Involving Vectors
+### Operations with Vectors
 
 Check whether a vector is an element of a vector space 
 
@@ -418,7 +418,7 @@ Take the orthogonal complement of a vector space
 
 ### Operations with Linear Operators
 
-Given an inner product, check whether a linear operator is 
+Given an inner product, check whether a linear operator 
 
 
 ```python
