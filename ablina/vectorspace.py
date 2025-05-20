@@ -434,7 +434,7 @@ class VectorSpace:
         """
         if isinstance(other, VectorSpace):
             return self.sum(other)
-        if other not in type(self)(''):
+        if other not in self.ambient_space():
             raise TypeError()
         return self.coset(self.additive_inv(other))
     
@@ -653,6 +653,21 @@ class VectorSpace:
         return (sp.Matrix(basechange).T).inv()
 
     # Methods relating to vector spaces
+
+    def ambient_space(self):
+        """
+        The ambient space that `self` is a subspace of.
+
+        Note that this method is equivalent to ``cls(name=cls.name)`` 
+        where ``cls = type(self)``.
+
+        Returns
+        -------
+        VectorSpace
+            The ambient space of `self`.
+        """
+        cls = type(self)
+        return cls(name=cls.name)
 
     def sum(self, vs2):
         """
@@ -876,7 +891,7 @@ class VectorSpace:
         #     def __push__(self, coset): return
         #     def __pull__(self, vec): return
         # return quotient_space()
-        
+
         raise NotImplementedError()
 
     def _validate_type(self, vs2):
@@ -897,7 +912,7 @@ class AffineSpace:
         """
         if not isinstance(vectorspace, VectorSpace):
             raise TypeError()
-        if representative not in type(vectorspace)(''):
+        if representative not in vectorspace.ambient_space():
             raise TypeError()
         
         self.name = f'{vectorspace.name} + {representative}'
@@ -971,7 +986,7 @@ class AffineSpace:
             True if `point` is an element of `self`, otherwise False.
         """
         vs = self.vectorspace
-        if point not in type(vs)(''):
+        if point not in vs.ambient_space():
             return False
         
         vec1 = self.representative
@@ -999,7 +1014,7 @@ class AffineSpace:
         vs = self.vectorspace
         if isinstance(other, AffineSpace):
             return self.sum(other)
-        if other not in type(vs)(''):
+        if other not in vs.ambient_space():
             raise TypeError()
         
         repr = vs.add(self.representative, other)
@@ -1015,7 +1030,7 @@ class AffineSpace:
         vs = self.vectorspace
         if isinstance(other, AffineSpace):
             return self.sum(-other)
-        if other not in type(vs)(''):
+        if other not in vs.ambient_space():
             raise TypeError()
         
         repr = vs.add(self.representative, vs.additive_inv(other))
