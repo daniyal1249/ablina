@@ -68,27 +68,3 @@ def to_complement(matrix):
     if not ns_basis:
         return sp.zeros(0, matrix.cols)
     return rref([vec.T for vec in ns_basis], remove=True)
-
-
-# For testing
-def internal_isomorphism(field, n, add, mul):
-    return lambda x: x, lambda x: x
-
-
-def map_constraints(mapping, constraints):
-    """
-    pass
-
-    Parameters
-    ----------
-    mapping : callable
-        pass
-    constraints : list of str
-        pass
-
-    Returns
-    -------
-    list of str
-        pass
-    """
-    return constraints

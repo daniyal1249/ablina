@@ -208,7 +208,7 @@ class LinearMap:
         >>> map3([1, 2, 3])
         [5, 10, 15]
         """
-        # FIX: Add check to make sure the domains and codomains are equal
+        # FIX: Make sure the domains and codomains are equal
         name = f'{self.name} + {map2.name}'
         def mapping(vec):
             vec1 = self.mapping(vec)
@@ -219,12 +219,12 @@ class LinearMap:
     
     def __mul__(self, scalar):
         """
-        The product of a linear map and scalar.
+        The product of the linear map and a scalar.
 
         Parameters
         ----------
-        scalar : R or C
-            The scalar to multiply with.
+        scalar : object
+            The scalar to multiply by.
 
         Returns
         -------
@@ -296,6 +296,26 @@ class LinearMap:
         map_matrix = codomain_basechange @ self.matrix @ domain_basechange.inv()
         return map_matrix, domain_basechange, codomain_basechange
 
+    def inverse(self):
+        """
+        The inverse of the linear map.
+
+        Returns
+        -------
+        LinearMap
+            The inverse of `self`.
+
+        Raises
+        ------
+        LinearMapError
+            If `self` is not invertible.
+        """
+        if not self.is_bijective():
+            raise LinearMapError('Linear map is not invertible.')
+        name = f'{self.name}^-1'
+        matrix = self.matrix.inv()
+        return LinearMap(name, self.codomain, self.domain, matrix=matrix)
+
     def composition(self, map2):
         """
         The composition of two linear maps.
@@ -327,6 +347,8 @@ class LinearMap:
         >>> map3([1, 2, 3])
         [6, 12, 18]
         """
+        if not isinstance(map2, LinearMap):
+            raise TypeError()
         if self.domain != map2.codomain:
             raise LinearMapError('The linear maps are not compatible.')
         
@@ -457,6 +479,26 @@ class LinearOperator(LinearMap):
         basechange = self.domain.change_of_basis(basis)
         map_matrix = basechange @ self.matrix @ basechange.inv()
         return map_matrix, basechange
+    
+    def inverse(self):
+        """
+        The inverse of the linear operator.
+
+        Returns
+        -------
+        LinearOperator
+            The inverse of `self`.
+
+        Raises
+        ------
+        LinearMapError
+            If `self` is not invertible.
+        """
+        if not self.is_bijective():
+            raise LinearMapError('Linear map is not invertible.')
+        name = f'{self.name}^-1'
+        matrix = self.matrix.inv()
+        return LinearOperator(name, self.domain, matrix=matrix)
     
     def is_symmetric(self, innerproduct):
         """
@@ -624,10 +666,10 @@ class Isomorphism(LinearMap):
             f'Matrix  {self.matrix.tolist()}'
             ]
         return '\n'.join(lines)
-
+    
     def inverse(self):
         """
-        The inverse of the linear map.
+        The inverse of the isomorphism.
 
         Returns
         -------
@@ -673,3 +715,14 @@ class IdentityMap(LinearOperator):
             f'Matrix  {self.matrix.tolist()}'
             ]
         return '\n'.join(lines)
+    
+    def inverse(self):
+        """
+        The inverse of the identity map.
+
+        Returns
+        -------
+        IdentityMap
+            The inverse of `self`.
+        """
+        return self

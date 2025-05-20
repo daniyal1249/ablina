@@ -137,7 +137,7 @@ def is_associative(field, n, operation):
 # operation to be normal mul if both are scalars, and scalar mul otherwise
 
 
-def truth_eval(equation):
+def is_consistent(equation):
     """
     Check whether an equation is a tautology or contradiction.
 
@@ -165,7 +165,7 @@ def substitute_form(equation, f, form):
 def find_valid_params(equation, f, form, params):
     x = sp.symbols('x')
     subbed_eq = substitute_form(equation, f, form)
-    if truth_eval(subbed_eq):
+    if is_consistent(subbed_eq):
         return form(x)
     
     try:
@@ -227,11 +227,13 @@ def solve_func_eq(equation, f):
 def find_add_isomorphism(field, n, add):
     f = sp.Function('f')
     u, v = symbols((f'u:{n}', f'v:{n}'), field=field)
+    raise NotImplementedError()
 
 
 def find_mul_isomorphism(field, n, mul):
     f = sp.Function('f')
     u, v = symbols((f'u:{n}', f'v:{n}'), field=field)
+    raise NotImplementedError()
 
 
 def internal_isomorphism(field, n, add, mul):
@@ -257,26 +259,47 @@ def internal_isomorphism(field, n, add, mul):
     # Need to implement an intersection function
     # Return separate functions for each coordinate
 
-    f = sp.Function('f')
-    u, v = symbols((f'u:{n}', f'v:{n}'), field=field)
+    # f = sp.Function('f')
+    # u, v = symbols((f'u:{n}', f'v:{n}'), field=field)
 
-    init_set = False
-    for i in range(len(add)):
-        func_eq = sp.Eq(f(u[i]) + f(v[i]), f(add[i]))
-        if not init_set:
-            valid_funcs = solve_func_eq(func_eq, f)
-            init_set = True
-        else:
-            valid_funcs.intersection_update(solve_func_eq(func_eq, f))
-        if not valid_funcs:
-            return valid_funcs
+    # init_set = False
+    # for i in range(len(add)):
+    #     func_eq = sp.Eq(f(u[i]) + f(v[i]), f(add[i]))
+    #     if not init_set:
+    #         valid_funcs = solve_func_eq(func_eq, f)
+    #         init_set = True
+    #     else:
+    #         valid_funcs.intersection_update(solve_func_eq(func_eq, f))
+    #     if not valid_funcs:
+    #         return valid_funcs
     
-    for i in range(len(mul)):
-        func_eq = sp.Eq(f(u[i]) * f(v[i]), f(mul[i]))
-        valid_funcs.intersection_update(solve_func_eq(func_eq, f))
-        if not valid_funcs:
-            return valid_funcs
-    return valid_funcs
+    # for i in range(len(mul)):
+    #     func_eq = sp.Eq(f(u[i]) * f(v[i]), f(mul[i]))
+    #     valid_funcs.intersection_update(solve_func_eq(func_eq, f))
+    #     if not valid_funcs:
+    #         return valid_funcs
+    # return valid_funcs
+    
+    raise NotImplementedError()
+
+
+def map_constraints(mapping, constraints):
+    """
+    pass
+
+    Parameters
+    ----------
+    mapping : callable
+        pass
+    constraints : list of str
+        pass
+
+    Returns
+    -------
+    list of str
+        pass
+    """
+    raise NotImplementedError()
 
 
 # Need to account for nested functions using while loop

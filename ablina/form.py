@@ -137,7 +137,7 @@ class SesquilinearForm:
 
     def __eq__(self, form2):
         if not isinstance(form2, SesquilinearForm):
-            return NotImplemented  # FIX: check
+            return False
         return (
             self.vectorspace == form2.vectorspace 
             and self.matrix == form2.matrix
@@ -480,7 +480,7 @@ class InnerProduct(SesquilinearForm):
         Returns
         -------
         VectorSpace
-            The orthogonal complement of `vs2` in `self`.
+            The orthogonal complement of `vs2` in ``self.vectorspace``.
         """
         vs = self.vectorspace
         if not isinstance(vs2, VectorSpace):
@@ -508,15 +508,7 @@ class InnerProduct(SesquilinearForm):
         -------
         VectorSpace
             pass
-
-        Raises
-        ------
-        TypeError
-            If `self` and `vs2` do not share the same ambient space.
         """
-        # self._validate_type(vs2)
-        # fn = self.fn.ortho_projection(vs2.fn)
-        # return type(self)(fn=fn)
         raise NotImplementedError()
 
 

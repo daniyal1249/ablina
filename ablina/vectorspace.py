@@ -132,12 +132,6 @@ class Fn:
             return bool((self._ns_matrix @ vector).is_zero_matrix)
         except Exception:
             return False
-    
-    def __add__(self, vs2):
-        return self.sum(vs2)
-    
-    def __and__(self, vs2):
-        return self.intersection(vs2)
 
     # Methods relating to vectors
 
@@ -387,6 +381,11 @@ class VectorSpace:
             f'Vector     {self.vector(arbitrary=True)}'
             ]
         return '\n'.join(lines)
+    
+    def __eq__(self, vs2):
+        if self is vs2:
+            return True
+        return self.is_subspace(vs2) and vs2.is_subspace(self)
 
     def __contains__(self, vector):
         """
@@ -406,10 +405,17 @@ class VectorSpace:
             return False
         return self.__push__(vector) in self.fn
     
-    def __eq__(self, vs2):
-        if self is vs2:
-            return True
-        return self.is_subspace(vs2) and vs2.is_subspace(self)
+    def __pos__(self):
+        """
+        Return `self`.
+        """
+        return self
+    
+    def __neg__(self):
+        """
+        Return `self`.
+        """
+        return self
     
     def __add__(self, other):
         """
@@ -419,8 +425,21 @@ class VectorSpace:
             return self.sum(other)
         return self.coset(other)
     
-    def __radd__(self, other):
-        return self.coset(other)
+    def __radd__(self, vector):
+        return self.coset(vector)
+    
+    def __sub__(self, other):
+        """
+        pass
+        """
+        if isinstance(other, VectorSpace):
+            return self.sum(other)
+        if other not in type(self)(''):
+            raise TypeError()
+        return self.coset(self.additive_inv(other))
+    
+    def __rsub__(self, vector):
+        return self.coset(vector)
     
     def __truediv__(self, vs2):
         """
@@ -857,6 +876,7 @@ class VectorSpace:
         #     def __push__(self, coset): return
         #     def __pull__(self, vec): return
         # return quotient_space()
+        
         raise NotImplementedError()
 
     def _validate_type(self, vs2):
@@ -877,9 +897,10 @@ class AffineSpace:
         """
         if not isinstance(vectorspace, VectorSpace):
             raise TypeError()
-        if representative not in type(vectorspace)():
+        if representative not in type(vectorspace)(''):
             raise TypeError()
         
+        self.name = f'{vectorspace.name} + {representative}'
         self._vectorspace = vectorspace
         self._representative = representative
 
@@ -903,8 +924,7 @@ class AffineSpace:
         MathSet: The set containing the points in the affine space.
         """
         vs = self.vectorspace
-        name = f'{self.representative} + {self.name})'  # FIX: rework
-        return MathSet(name, vs.set.cls, lambda point: point in self)
+        return MathSet(self.name, vs.set.cls, lambda point: point in self)
     
     @property
     def dim(self):
@@ -912,6 +932,29 @@ class AffineSpace:
         int: The dimension of the affine space.
         """
         return self.vectorspace.dim
+    
+    def __repr__(self):
+        return (
+            f'AffineSpace(vectorspace={self.vectorspace.name}, '
+            f'representative={self.representative})'
+            )
+    
+    def __str__(self):
+        name = f'{self.name}'
+        lines = [
+            name,
+            '-' * len(name),
+            f'Vector Space    {self.vectorspace.name}',
+            f'Representative  {self.representative}',
+            f'Dimension       {self.dim}',
+            f'Point           {self.point(arbitrary=True)}'
+            ]
+        return '\n'.join(lines)
+    
+    def __eq__(self, as2):
+        if not isinstance(as2, AffineSpace):
+            return False
+        return self.representative in as2
 
     def __contains__(self, point):
         """
@@ -928,19 +971,111 @@ class AffineSpace:
             True if `point` is an element of `self`, otherwise False.
         """
         vs = self.vectorspace
-        if point not in type(vs)():
+        if point not in type(vs)(''):
             return False
         
         vec1 = self.representative
         vec2 = vs.additive_inv(point)
         return vs.add(vec1, vec2) in vs
+    
+    def __pos__(self):
+        """
+        Return `self`.
+        """
+        return self
+    
+    def __neg__(self):
+        """
+        pass
+        """
+        vs = self.vectorspace
+        repr = vs.additive_inv(self.representative)
+        return AffineSpace(vs, repr)
+    
+    def __add__(self, other):
+        """
+        pass
+        """
+        vs = self.vectorspace
+        if isinstance(other, AffineSpace):
+            return self.sum(other)
+        if other not in type(vs)(''):
+            raise TypeError()
+        
+        repr = vs.add(self.representative, other)
+        return AffineSpace(vs, repr)
 
-    def __eq__(self, as2):
-        if not isinstance(as2, AffineSpace):
-            return False
-        return self.representative in as2
+    def __radd__(self, vector):
+        return self.__add__(vector)
+    
+    def __sub__(self, other):
+        """
+        pass
+        """
+        vs = self.vectorspace
+        if isinstance(other, AffineSpace):
+            return self.sum(-other)
+        if other not in type(vs)(''):
+            raise TypeError()
+        
+        repr = vs.add(self.representative, vs.additive_inv(other))
+        return AffineSpace(vs, repr)
+    
+    def __rsub__(self, vector):
+        return (-self).__add__(vector)
 
-    def __add__(self, as2):
+    def __mul__(self, scalar):
+        """
+        pass
+        """
+        vs = self.vectorspace
+        if scalar not in vs.field:
+            raise TypeError('Scalar must be an element of the field.')
+        repr = vs.mul(scalar, self.representative)
+        return AffineSpace(vs, repr)
+
+    def __rmul__(self, scalar):
+        return self.__mul__(scalar)
+    
+    def point(self, std=1, arbitrary=False):
+        """
+        Return a point from the affine space.
+
+        Parameters
+        ----------
+        std : float
+            The standard deviation used to generate weights.
+        arbitrary : bool, default=False
+            Determines whether a random point or arbitrary point is returned.
+        
+        Returns
+        -------
+        object
+            A point in the affine space.
+        """
+        vs = self.vectorspace
+        vector = vs.vector(std, arbitrary)
+        point = vs.add(vector, self.representative)
+        return point
+    
+    def sum(self, as2):
+        """
+        The sum of two affine spaces.
+
+        Parameters
+        ----------
+        as2 : AffineSpace
+            The affine space being added.
+
+        Returns
+        -------
+        AffineSpace
+            The sum of `self` and `as2`.
+
+        See Also
+        --------
+        AffineSpace.intersection
+        """
         vs = self.vectorspace
         if not isinstance(as2, AffineSpace):
             raise TypeError()
@@ -950,15 +1085,25 @@ class AffineSpace:
         repr = vs.add(self.representative, as2.representative)
         return AffineSpace(vs, repr)
 
-    def __mul__(self, scalar):
-        vs = self.vectorspace
-        if scalar not in vs.field:
-            raise TypeError('Scalar must be an element of the field.')
-        repr = vs.mul(scalar, self.representative)
-        return AffineSpace(vs, repr)
+    def intersection(self, as2):
+        """
+        The intersection of two affine spaces.
 
-    def __rmul__(self, scalar):
-        return self.__mul__(scalar)
+        Parameters
+        ----------
+        as2 : AffineSpace
+            The affine space to take the intersection with.
+
+        Returns
+        -------
+        AffineSpace
+            The intersection of `self` and `as2`.
+
+        See Also
+        --------
+        AffineSpace.sum
+        """
+        raise NotImplementedError()
 
 
 def fn(name, field, n, constraints=None, basis=None, *, 

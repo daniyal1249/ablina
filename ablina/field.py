@@ -2,6 +2,9 @@ from sympy.sets.fancysets import Reals, Complexes
 
 
 class Field:
+    """
+    pass
+    """
     pass
 
 
