@@ -6,7 +6,7 @@
 
 ### Define a Vector Space
 
-To define a subspace of $ℝ^n$ or $ℂ^n$, use ``fn``
+To define a subspace of R^n or C^n, use ``fn``
 
 ```python
 >>> V = fn('V', R, 3)
