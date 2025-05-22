@@ -401,13 +401,13 @@ class InnerProduct(SesquilinearForm):
         """
         return sp.sqrt(self(vector, vector))
     
-    def are_orthogonal(self, vec1, vec2):
+    def is_orthogonal(self, *vectors):
         """
-        Check whether two vectors are orthogonal.
+        Check whether the vectors are pairwise orthogonal.
 
         Parameters
         ----------
-        vec1, vec2
+        *vectors
             The vectors in the vector space.
 
         Returns
@@ -415,9 +415,14 @@ class InnerProduct(SesquilinearForm):
         bool
             True if the vectors are orthogonal, otherwise False.
         """
-        return self(vec1, vec2) == 0  # FIX: maybe include tolerance
+        for i, vec1 in enumerate(vectors, 1):
+            for vec2 in vectors[i:]:
+                # FIX: consider tolerance
+                if self(vec1, vec2) != 0:
+                    return False
+        return True
     
-    def are_orthonormal(self, *vectors):
+    def is_orthonormal(self, *vectors):
         """
         Check whether the vectors are orthonormal.
 
@@ -431,14 +436,9 @@ class InnerProduct(SesquilinearForm):
         bool
             True if the vectors are orthonormal, otherwise False.
         """
-        # Improve efficiency
-        if not all(self.norm(vec) == 1 for vec in vectors):
+        if not self.is_orthogonal(*vectors):
             return False
-        for vec1 in vectors:
-            for vec2 in vectors:
-                if not (vec1 is vec2 or self.are_orthogonal(vec1, vec2)):
-                    return False
-        return True
+        return all(self.norm(vec).equals(1) for vec in vectors)
     
     def gram_schmidt(self, *vectors):
         """
@@ -460,7 +460,7 @@ class InnerProduct(SesquilinearForm):
             If the provided vectors are not linearly independent.
         """
         vs = self.vectorspace
-        if not vs.are_independent(*vectors):
+        if not vs.is_independent(*vectors):
             raise ValueError('Vectors must be linearly independent.')
         
         orthonormal_vecs = []

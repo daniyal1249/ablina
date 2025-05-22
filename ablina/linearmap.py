@@ -180,7 +180,7 @@ class LinearMap:
             return False
         basis1, basis2 = map2.domain.basis, map2.codomain.basis
         matrix, _, _ = LinearMap.change_of_basis(self, basis1, basis2)
-        return map2.matrix == matrix  # FIX: consider .equals()
+        return map2.matrix.equals(matrix)
     
     def __add__(self, map2):
         """
@@ -208,7 +208,7 @@ class LinearMap:
         >>> map3([1, 2, 3])
         [5, 10, 15]
         """
-        # FIX: Make sure the domains and codomains are equal
+        # FIX: make sure the domains and codomains are equal
         name = f'{self.name} + {map2.name}'
         def mapping(vec):
             vec1 = self.mapping(vec)

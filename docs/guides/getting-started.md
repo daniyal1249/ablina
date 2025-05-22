@@ -118,14 +118,14 @@ Check whether a list of vectors is linearly independent
 
 
 ```python
->>> V.are_independent([1, 1, 0], [1, 0, 0])
+>>> V.is_independent([1, 1, 0], [1, 0, 0])
 ```
 
     True
 
 
 ```python
->>> V.are_independent([1, 2, 3], [2, 4, 6])
+>>> V.is_independent([1, 2, 3], [2, 4, 6])
 ```
 
     False
@@ -319,18 +319,18 @@ Compute the norm of a vector
     sqrt(14)
 
 
-Check whether two vectors are orthogonal 
+Check whether a list of vectors is pairwise orthogonal
 
 
 ```python
->>> dot.are_orthogonal([1, 2, 3], [4, 5, 6])
+>>> dot.is_orthogonal([1, 2, 3], [4, 5, 6])
 ```
 
     False
 
 
 ```python
->>> dot.are_orthogonal([0, 0, 0], [1, 2, 3])
+>>> dot.is_orthogonal([0, 0, 0], [1, 2, 3])
 ```
 
     True
@@ -340,7 +340,7 @@ Check whether a list of vectors is orthonormal
 
 
 ```python
->>> dot.are_orthonormal([1, 0, 0], [0, 1, 0], [0, 0, 1])
+>>> dot.is_orthonormal([1, 0, 0], [0, 1, 0], [0, 0, 1])
 ```
 
     True

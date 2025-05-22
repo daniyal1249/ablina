@@ -168,19 +168,19 @@ class Fn:
             raise ValueError('Invalid coordinate vector.') from e
         return vec.flat() if vec else self.additive_id
     
-    def are_independent(self, *vectors):
+    def is_independent(self, *vectors):
         matrix = sp.Matrix(vectors)
         return matrix.rank() == matrix.rows
     
     def is_basis(self, *vectors):
-        return self.are_independent(*vectors) and len(vectors) == self.dim
+        return self.is_independent(*vectors) and len(vectors) == self.dim
     
     # Methods relating to vector spaces
 
     def sum(self, vs2):
         rs_matrix = sp.Matrix.vstack(self._rs_matrix, vs2._rs_matrix)
         rs_matrix = u.rref(rs_matrix, remove=True)
-        constraints = self.constraints  # Rework
+        constraints = self.constraints  # FIX: rework
         return Fn(self.field, self.n, constraints, rs_matrix=rs_matrix)
     
     def intersection(self, vs2):
@@ -209,18 +209,18 @@ class Fn:
     def norm(self, vector):
         return sp.sqrt(self.dot(vector, vector))
     
-    def are_orthogonal(self, vec1, vec2):
-        return self.dot(vec1, vec2) == 0
-    
-    def are_orthonormal(self, *vectors):
-        # Improve efficiency
-        if not all(self.norm(vec) == 1 for vec in vectors):
-            return False
-        for vec1 in vectors:
-            for vec2 in vectors:
-                if not (vec1 is vec2 or self.are_orthogonal(vec1, vec2)):
+    def is_orthogonal(self, *vectors):
+        for i, vec1 in enumerate(vectors, 1):
+            for vec2 in vectors[i:]:
+                # FIX: consider tolerance
+                if self.dot(vec1, vec2) != 0:
                     return False
         return True
+
+    def is_orthonormal(self, *vectors):
+        if not self.is_orthogonal(*vectors):
+            return False
+        return all(self.norm(vec).equals(1) for vec in vectors)
     
     def gram_schmidt(self, *vectors):
         orthonormal_vecs = []
@@ -277,7 +277,7 @@ class VectorSpace:
         self.fn = Fn(self.fn.field, self.fn.n, constraints)
 
         if basis is not None:
-            if not self.are_independent(*basis):
+            if not self.is_independent(*basis):
                 raise ValueError('Basis vectors must be linearly independent.')
             self.fn = self.fn.span(basis=[self.__push__(vec) for vec in basis])
 
@@ -589,7 +589,7 @@ class VectorSpace:
         fn_vec = self.fn.from_coordinate(vector, basis)
         return self.__pull__(fn_vec)
     
-    def are_independent(self, *vectors):
+    def is_independent(self, *vectors):
         """
         Check whether the given vectors are linearly independent.
 
@@ -610,19 +610,19 @@ class VectorSpace:
         --------
 
         >>> V = fn('V', R, 3)
-        >>> V.are_independent([1, 0, 0], [0, 1, 0])
+        >>> V.is_independent([1, 0, 0], [0, 1, 0])
         True
-        >>> V.are_independent([1, 2, 3], [2, 4, 6])
+        >>> V.is_independent([1, 2, 3], [2, 4, 6])
         False
-        >>> V.are_independent([0, 0, 0])
+        >>> V.is_independent([0, 0, 0])
         False
-        >>> V.are_independent()
+        >>> V.is_independent()
         True
         """
         if not all(vec in self for vec in vectors):
             raise TypeError('Vectors must be elements of the vector space.')
         fn_vecs = [self.__push__(vec) for vec in vectors]
-        return self.fn.are_independent(*fn_vecs)
+        return self.fn.is_independent(*fn_vecs)
     
     def is_basis(self, *vectors):
         """
