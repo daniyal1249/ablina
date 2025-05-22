@@ -116,11 +116,11 @@ class Fn:
     
     def __repr__(self):
         return (
-            f'Fn(field={self.field}, '
-            f'n={self.n}, '
-            f'constraints={self.constraints}, '
-            f'ns_matrix={self._ns_matrix}, '
-            f'rs_matrix={self._rs_matrix})'
+            f'Fn(field={self.field!r}, '
+            f'n={self.n!r}, '
+            f'constraints={self.constraints!r}, '
+            f'ns_matrix={self._ns_matrix!r}, '
+            f'rs_matrix={self._rs_matrix!r})'
             )
     
     def __contains__(self, vector):
@@ -251,13 +251,8 @@ class VectorSpace:
         super().__init_subclass__(**kwargs)
         cls._validate_subclass_contract()
         add, mul, additive_inv = cls._init_operations()
-        
-        cls.name = cls.__name__
-        if name is not None:
-            if not isinstance(name, str):
-                raise TypeError('Name must be a string.')
-            cls.name = name
 
+        cls.name = cls.__name__ if name is None else name
         cls._add = staticmethod(add)
         cls._mul = staticmethod(mul)
         cls._additive_inv = staticmethod(additive_inv)
@@ -266,8 +261,6 @@ class VectorSpace:
         """
         pass
         """
-        if not isinstance(name, str):
-            raise TypeError('Name must be a string.')
         self.name = name
         self.set = MathSet(name, self.set.cls, lambda vec: vec in self)
 
@@ -367,20 +360,10 @@ class VectorSpace:
         return self.fn.dim
     
     def __repr__(self):
-        return f'{type(self).__name__}(name="{self.name}", basis={self.basis})'
+        return f'{type(self).__name__}(name={self.name!r}, basis={self.basis!r})'
     
     def __str__(self):
-        name = f'{self.name} (Subspace of {type(self).name})'
-        lines = [
-            name,
-            '-' * len(name),
-            f'Field      {self.field}',
-            f'Identity   {self.additive_id}',
-            f'Basis      {self.basis}',
-            f'Dimension  {self.dim}',
-            f'Vector     {self.vector(arbitrary=True)}'
-            ]
-        return '\n'.join(lines)
+        return self.name
     
     def __eq__(self, vs2):
         if self is vs2:
@@ -452,6 +435,19 @@ class VectorSpace:
         Same as ``VectorSpace.intersection``.
         """
         return self.intersection(vs2)
+
+    def info(self):
+        name = f'{self} (Subspace of {type(self).name})'
+        lines = [
+            name,
+            '-' * len(name),
+            f'Field      {self.field}',
+            f'Identity   {self.additive_id}',
+            f'Basis      [{', '.join(map(str, self.basis))}]',
+            f'Dimension  {self.dim}',
+            f'Vector     {self.vector(arbitrary=True)}'
+            ]
+        return '\n'.join(lines)
 
     # Methods relating to vectors
 
@@ -704,7 +700,7 @@ class VectorSpace:
         True
         """
         self._validate_type(vs2)
-        name = f'{self.name} + {vs2.name}'
+        name = f'{self} + {vs2}'
         fn = self.fn.sum(vs2.fn)
         return type(self)(name, fn=fn)
     
@@ -743,7 +739,7 @@ class VectorSpace:
         True
         """
         self._validate_type(vs2)
-        name = f'{self.name} ∩ {vs2.name}'
+        name = f'{self} ∩ {vs2}'
         fn = self.fn.intersection(vs2.fn)
         return type(self)(name, fn=fn)
     
@@ -875,24 +871,26 @@ class VectorSpace:
         --------
         VectorSpace.coset
         """
-        # if not isinstance(vs2, VectorSpace):
-        #     raise TypeError()
-        # if not vs2.is_subspace(self):
-        #     raise TypeError()
+        if not isinstance(vs2, VectorSpace):
+            raise TypeError()
+        if not vs2.is_subspace(self):
+            raise TypeError()
         
-        # name = f''
+        vs = self.ambient_space()
+        cls_name = f'{vs} / {vs2}'
 
-        # def in_quotient_space(coset):
-        #     return
+        def in_quotient_space(coset):
+            return coset.vectorspace == vs2
 
-        # class quotient_space(VectorSpace, name=name):
-        #     set = MathSet(name, AffineSpace, in_quotient_space)
-        #     fn = Fn(self.field, None, add=self.fn.add, mul=self.fn.mul)
-        #     def __push__(self, coset): return
-        #     def __pull__(self, vec): return
-        # return quotient_space()
+        class quotient_space(VectorSpace, name=cls_name):
+            set = MathSet(cls_name, AffineSpace, in_quotient_space)
+            fn = vs.fn.ortho_complement(vs2.fn)
+            def __push__(coset): return self.__push__(coset.representative)
+            def __pull__(vec): return vs2.coset(self.__pull__(vec))
 
-        raise NotImplementedError()
+        name = f'{self} / {vs2}'
+        fn = self.fn.ortho_complement(vs2.fn)
+        return quotient_space(name, fn=fn)
 
     def _validate_type(self, vs2):
         if not isinstance(vs2, VectorSpace):
@@ -915,7 +913,7 @@ class AffineSpace:
         if representative not in vectorspace.ambient_space():
             raise TypeError()
         
-        self.name = f'{vectorspace.name} + {representative}'
+        self.name = f'{vectorspace} + {representative}'
         self._vectorspace = vectorspace
         self._representative = representative
 
@@ -950,21 +948,12 @@ class AffineSpace:
     
     def __repr__(self):
         return (
-            f'AffineSpace(vectorspace={self.vectorspace.name}, '
-            f'representative={self.representative})'
+            f'AffineSpace(vectorspace={self.vectorspace!r}, '
+            f'representative={self.representative!r})'
             )
     
     def __str__(self):
-        name = f'{self.name}'
-        lines = [
-            name,
-            '-' * len(name),
-            f'Vector Space    {self.vectorspace.name}',
-            f'Representative  {self.representative}',
-            f'Dimension       {self.dim}',
-            f'Point           {self.point(arbitrary=True)}'
-            ]
-        return '\n'.join(lines)
+        return self.name
     
     def __eq__(self, as2):
         if not isinstance(as2, AffineSpace):
@@ -1051,6 +1040,18 @@ class AffineSpace:
 
     def __rmul__(self, scalar):
         return self.__mul__(scalar)
+    
+    def info(self):
+        name = self.name
+        lines = [
+            name,
+            '-' * len(name),
+            f'Vector Space    {self.vectorspace}',
+            f'Representative  {self.representative}',
+            f'Dimension       {self.dim}',
+            f'Point           {self.point(arbitrary=True)}'
+            ]
+        return '\n'.join(lines)
     
     def point(self, std=1, arbitrary=False):
         """
@@ -1198,7 +1199,7 @@ def hom(vs1, vs2):
         raise TypeError()
     if vs1.field is not vs2.field:
         raise TypeError()
-    name = f'hom({vs1.name}, {vs2.name})'
+    name = f'hom({vs1}, {vs2})'
     return matrix_space(name, vs1.field, (vs2.dim, vs1.dim))
 
 

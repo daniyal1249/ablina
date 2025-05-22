@@ -50,8 +50,6 @@ class SesquilinearForm:
         FormError
             If neither the mapping nor the matrix is provided.
         """
-        if not isinstance(name, str):
-            raise TypeError('Name must be a string.')
         if not isinstance(vectorspace, VectorSpace):
             raise TypeError('vectorspace must be of type VectorSpace.')
         if mapping is None and matrix is None:
@@ -115,25 +113,14 @@ class SesquilinearForm:
     
     def __repr__(self):
         return (
-            f'SesquilinearForm(name="{self.name}", '
-            f'vectorspace={self.vectorspace.name}, '
-            f'mapping={self.mapping.__name__}, '
-            f'matrix={self.matrix.tolist()})'
+            f'SesquilinearForm(name={self.name!r}, '
+            f'vectorspace={self.vectorspace!r}, '
+            f'mapping={self.mapping!r}, '
+            f'matrix={self.matrix!r})'
             )
     
     def __str__(self):
-        vs = self.vectorspace
-        signature = f'{self.name} : {vs.name} x {vs.name} -> {vs.field}'
-
-        lines = [
-            signature,
-            '-' * len(signature),
-            f'Symmetric?          {self.is_symmetric()}',
-            f'Hermitian?          {self.is_hermitian()}',
-            f'Positive Definite?  {self.is_positive_definite()}',
-            f'Matrix              {self.matrix.tolist()}'
-            ]
-        return '\n'.join(lines)
+        return self.name
 
     def __eq__(self, form2):
         if not isinstance(form2, SesquilinearForm):
@@ -147,6 +134,20 @@ class SesquilinearForm:
         if not (vec1 in self.vectorspace and vec2 in self.vectorspace):
             raise TypeError(f'Vectors must be elements of the vector space.')
         return self.mapping(vec1, vec2)
+    
+    def info(self):
+        vs = self.vectorspace
+        signature = f'{self} : {vs} x {vs} -> {vs.field}'
+
+        lines = [
+            signature,
+            '-' * len(signature),
+            f'Symmetric?          {self.is_symmetric()}',
+            f'Hermitian?          {self.is_hermitian()}',
+            f'Positive Definite?  {self.is_positive_definite()}',
+            f'Matrix              {self.matrix.tolist()}'
+            ]
+        return '\n'.join(lines)
 
     def inertia(self):
         if self.vectorspace.field is R:
@@ -355,18 +356,6 @@ class InnerProduct(SesquilinearForm):
     def __repr__(self):
         return super().__repr__().replace('SesquilinearForm', 'InnerProduct')
     
-    def __str__(self):
-        vs = self.vectorspace
-        signature = f'{self.name} : {vs.name} x {vs.name} -> {vs.field}'
-
-        lines = [
-            signature,
-            '-' * len(signature),
-            f'Orthonormal Basis  {self.orthonormal_basis}',
-            f'Matrix             {self.matrix.tolist()}'
-            ]
-        return '\n'.join(lines)
-    
     def __push__(self, vector):
         """
         pass
@@ -384,6 +373,18 @@ class InnerProduct(SesquilinearForm):
         coord_vec = vs.fn.to_coordinate(vector, basis=self._fn_orthonormal_basis)
         vec = vs.from_coordinate(coord_vec, basis=self.orthonormal_basis)
         return vec
+    
+    def info(self):
+        vs = self.vectorspace
+        signature = f'{self} : {vs} x {vs} -> {vs.field}'
+
+        lines = [
+            signature,
+            '-' * len(signature),
+            f'Orthonormal Basis  [{', '.join(map(str, self.orthonormal_basis))}]',
+            f'Matrix             {self.matrix.tolist()}'
+            ]
+        return '\n'.join(lines)
 
     def norm(self, vector):
         """
@@ -488,7 +489,7 @@ class InnerProduct(SesquilinearForm):
         if not vs2.is_subspace(vs):
             raise ValueError()
 
-        name = f'perp({vs2.name})'
+        name = f'perp({vs2})'
         fn_basis = [self.__push__(vec) for vec in vs2.basis]
         fn = vs.fn.span(*fn_basis)
         comp = vs.fn.ortho_complement(fn)

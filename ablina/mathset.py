@@ -24,8 +24,6 @@ class MathSet:
         MathSet
             pass
         """
-        if not isinstance(name, str):
-            raise TypeError('Name must be a string.')
         if not isinstance(cls, type):
             raise TypeError('cls must be a class.')
         
@@ -56,13 +54,13 @@ class MathSet:
     
     def __repr__(self):
         return (
-            f'MathSet("{self.name}", '
-            f'{self.cls.__name__}, '
-            f'{[pred.__name__ for pred in self.predicates]})'
+            f'MathSet({self.name!r}, '
+            f'{self.cls!r}, '
+            f'{self.predicates!r})'
             )
     
     def __str__(self):
-        return self.__repr__()
+        return self.name
     
     def __eq__(self, set2):
         if not isinstance(set2, MathSet):
@@ -147,7 +145,7 @@ class MathSet:
         >>> None in set2
         False
         """
-        name = f'comp({self.name})'
+        name = f'comp({self})'
         def complement_pred(obj):
             return not all(pred(obj) for pred in self.predicates)
         return MathSet(name, self.cls, complement_pred)
@@ -189,7 +187,7 @@ class MathSet:
         True
         """
         self._validate_type(set2)
-        name = f'inter({self.name}, {set2.name})'
+        name = f'inter({self}, {set2})'
         return MathSet(name, self.cls, self.predicates + set2.predicates)
 
     def union(self, set2):
@@ -229,7 +227,7 @@ class MathSet:
         True
         """
         self._validate_type(set2)
-        name = f'union({self.name}, {set2.name})'
+        name = f'union({self}, {set2})'
         def union_pred(obj):
             return (
                 all(pred(obj) for pred in self.predicates) 

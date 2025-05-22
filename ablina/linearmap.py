@@ -46,8 +46,6 @@ class LinearMap:
         LinearMapError
             If the field of the domain and codomain are not the same.
         """
-        if not isinstance(name, str):
-            raise TypeError('Name must be a string.')
         if not isinstance(domain, VectorSpace):
             raise TypeError('Domain must be a VectorSpace.')
         if not isinstance(codomain, VectorSpace):
@@ -150,28 +148,15 @@ class LinearMap:
     
     def __repr__(self):
         return (
-            f'LinearMap(name="{self.name}", '
-            f'domain={self.domain.name}, '
-            f'codomain={self.codomain.name}, '
-            f'mapping={self.mapping.__name__}, '
-            f'matrix={self.matrix.tolist()})'
+            f'LinearMap(name={self.name!r}, '
+            f'domain={self.domain!r}, '
+            f'codomain={self.codomain!r}, '
+            f'mapping={self.mapping!r}, '
+            f'matrix={self.matrix!r})'
             )
     
     def __str__(self):
-        signature = f'{self.name} : {self.domain.name} -> {self.codomain.name}'
-
-        lines = [
-            signature,
-            '-' * len(signature),
-            f'Field        {self.field}',
-            f'Rank         {self.rank}',
-            f'Nullity      {self.nullity}',
-            f'Injective?   {self.is_injective()}',
-            f'Surjective?  {self.is_surjective()}',
-            f'Bijective?   {self.is_bijective()}',
-            f'Matrix       {self.matrix.tolist()}'
-            ]
-        return '\n'.join(lines)
+        return self.name
 
     def __eq__(self, map2):
         if not isinstance(map2, LinearMap):
@@ -209,7 +194,7 @@ class LinearMap:
         [5, 10, 15]
         """
         # FIX: make sure the domains and codomains are equal
-        name = f'{self.name} + {map2.name}'
+        name = f'{self} + {map2}'
         def mapping(vec):
             vec1 = self.mapping(vec)
             vec2 = map2.mapping(vec)
@@ -244,7 +229,7 @@ class LinearMap:
         if scalar not in self.field:
             raise TypeError('Scalar must be an element of the vector space field.')
         
-        name = f'{scalar} * {self.name}'
+        name = f'{scalar} * {self}'
         def mapping(vec):
             return self.codomain.mul(scalar, self.mapping(vec))
         matrix = self.matrix * scalar
@@ -280,6 +265,22 @@ class LinearMap:
             raise TypeError(f'{vec} is not an element of the domain.')
         return self.mapping(vec)
     
+    def info(self):
+        signature = f'{self} : {self.domain} -> {self.codomain}'
+
+        lines = [
+            signature,
+            '-' * len(signature),
+            f'Field        {self.field}',
+            f'Rank         {self.rank}',
+            f'Nullity      {self.nullity}',
+            f'Injective?   {self.is_injective()}',
+            f'Surjective?  {self.is_surjective()}',
+            f'Bijective?   {self.is_bijective()}',
+            f'Matrix       {self.matrix.tolist()}'
+            ]
+        return '\n'.join(lines)
+    
     def change_of_basis(self, domain_basis=None, codomain_basis=None):
         """
         pass
@@ -312,7 +313,7 @@ class LinearMap:
         """
         if not self.is_bijective():
             raise LinearMapError('Linear map is not invertible.')
-        name = f'{self.name}^-1'
+        name = f'{self}^-1'
         matrix = self.matrix.inv()
         return LinearMap(name, self.codomain, self.domain, matrix=matrix)
 
@@ -352,7 +353,7 @@ class LinearMap:
         if self.domain != map2.codomain:
             raise LinearMapError('The linear maps are not compatible.')
         
-        name = f'{self.name} o {map2.name}'
+        name = f'{self} o {map2}'
         def mapping(vec):
             return self.mapping(map2.mapping(vec))
         matrix = self.matrix @ map2.matrix
@@ -371,7 +372,7 @@ class LinearMap:
         --------
         LinearMap.range
         """
-        name = f'im({self.name})'
+        name = f'im({self})'
         basis = [vec.flat() for vec in self.matrix.columnspace()]
         basis = [self.codomain.from_coordinate(vec) for vec in basis]
         return self.codomain.span(name, *basis)
@@ -389,7 +390,7 @@ class LinearMap:
         --------
         LinearMap.nullspace
         """
-        name = f'ker({self.name})'
+        name = f'ker({self})'
         basis = [vec.flat() for vec in self.matrix.nullspace()]
         basis = [self.domain.from_coordinate(vec) for vec in basis]
         return self.domain.span(name, *basis)
@@ -466,10 +467,10 @@ class LinearOperator(LinearMap):
 
     def __repr__(self):
         return (
-            f'LinearOperator(name="{self.name}", '
-            f'vectorspace={self.domain.name}, '
-            f'mapping={self.mapping.__name__}, '
-            f'matrix={self.matrix.tolist()})'
+            f'LinearOperator(name={self.name!r}, '
+            f'vectorspace={self.domain!r}, '
+            f'mapping={self.mapping!r}, '
+            f'matrix={self.matrix!r})'
             )
     
     def change_of_basis(self, basis):
@@ -496,7 +497,7 @@ class LinearOperator(LinearMap):
         """
         if not self.is_bijective():
             raise LinearMapError('Linear map is not invertible.')
-        name = f'{self.name}^-1'
+        name = f'{self}^-1'
         matrix = self.matrix.inv()
         return LinearOperator(name, self.domain, matrix=matrix)
     
@@ -630,15 +631,15 @@ class LinearFunctional(LinearMap):
             If neither the mapping nor the matrix is provided.
         """
         field = vectorspace.field
-        codomain = fn(f'{field}', field, 1)
+        codomain = fn(str(field), field, 1)
         super().__init__(name, vectorspace, codomain, mapping, matrix)
 
     def __repr__(self):
         return (
-            f'LinearFunctional(name="{self.name}", '
-            f'vectorspace={self.domain.name}, '
-            f'mapping={self.mapping.__name__}, '
-            f'matrix={self.matrix.tolist()})'
+            f'LinearFunctional(name={self.name!r}, '
+            f'vectorspace={self.domain!r}, '
+            f'mapping={self.mapping!r}, '
+            f'matrix={self.matrix!r})'
             )
 
 
@@ -656,8 +657,8 @@ class Isomorphism(LinearMap):
     def __repr__(self):
         return super().__repr__().replace('LinearMap', 'Isomorphism')
     
-    def __str__(self):
-        signature = f'{self.name} : {self.domain.name} -> {self.codomain.name}'
+    def info(self):
+        signature = f'{self} : {self.domain} -> {self.codomain}'
 
         lines = [
             signature,
@@ -676,7 +677,7 @@ class Isomorphism(LinearMap):
         Isomorphism
             The inverse of `self`.
         """
-        name = f'{self.name}^-1'
+        name = f'{self}^-1'
         matrix = self.matrix.inv()
         return Isomorphism(name, self.codomain, self.domain, matrix=matrix)
 
@@ -703,10 +704,10 @@ class IdentityMap(LinearOperator):
         super().__init__('Id', vectorspace, lambda vec: vec)
 
     def __repr__(self):
-        return f'IdentityMap(vectorspace={self.domain.name})'
+        return f'IdentityMap(vectorspace={self.domain!r})'
     
-    def __str__(self):
-        signature = f'{self.name} : {self.domain.name} -> {self.codomain.name}'
+    def info(self):
+        signature = f'{self} : {self.domain} -> {self.codomain}'
 
         lines = [
             signature,

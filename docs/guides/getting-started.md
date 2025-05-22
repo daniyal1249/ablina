@@ -10,7 +10,7 @@ To define a subspace of R^n or C^n, use ``fn``
 
 ```python
 >>> V = fn('V', R, 3)
->>> print(V)
+>>> print(V.info())
 ```
 
     V (Subspace of R^3)
@@ -26,7 +26,7 @@ You can provide a list of constraints
 
 ```python
 >>> U = fn('U', R, 3, constraints=['v0 == 0', '2*v1 == v2'])
->>> print(U)
+>>> print(U.info())
 ```
 
     U (Subspace of R^3)
@@ -42,7 +42,7 @@ Or specify a basis
 
 ```python
 >>> W = fn('W', R, 3, basis=[[1, 0, 0], [0, 1, 0]])
->>> print(W)
+>>> print(W.info())
 ```
 
     W (Subspace of R^3)
@@ -165,7 +165,7 @@ Take the sum of two vector spaces
 
 ```python
 >>> X = U.sum(W)
->>> print(X)
+>>> print(X.info())
 ```
 
     U + W (Subspace of R^3)
@@ -182,7 +182,7 @@ Take the intersection of two vector spaces
 
 ```python
 >>> X = U.intersection(W)
->>> print(X)
+>>> print(X.info())
 ```
 
     U ∩ W (Subspace of R^3)
@@ -199,7 +199,7 @@ Take the span of a list of vectors
 
 ```python
 >>> S = V.span('S', [1, 2, 3], [4, 5, 6])
->>> print(S)
+>>> print(S.info())
 ```
 
     S (Subspace of R^3)
@@ -218,7 +218,7 @@ Take the span of a list of vectors
 >>>     return [vec[0], vec[1], 0]
 >>>
 >>> T = LinearMap('T', domain=V, codomain=W, mapping=mapping)
->>> print(T)
+>>> print(T.info())
 ```
 
     T : V -> W
@@ -253,7 +253,7 @@ Find the image of a linear map
 
 ```python
 >>> im = T.image()
->>> print(im)
+>>> print(im.info())
 ```
 
     im(T) (Subspace of R^3)
@@ -270,7 +270,7 @@ Find the kernel of a linear map
 
 ```python
 >>> ker = T.kernel()
->>> print(ker)
+>>> print(ker.info())
 ```
 
     ker(T) (Subspace of R^3)
@@ -291,7 +291,7 @@ Here we define the standard dot product
 >>>     return sum(i * j for i, j in zip(vec1, vec2))
 >>>
 >>> dot = InnerProduct('dot', vectorspace=V, mapping=mapping)
->>> print(dot)
+>>> print(dot.info())
 ```
 
     dot : V x V -> R
@@ -350,7 +350,7 @@ Take the orthogonal complement of a vector space
 
 ```python
 >>> X = dot.ortho_complement(U)
->>> print(X)
+>>> print(X.info())
 ```
 
     perp(U) (Subspace of R^3)
@@ -369,7 +369,7 @@ Take the orthogonal complement of a vector space
 >>>     return [vec[0], 2*vec[1], 3*vec[2]]
 >>>
 >>> T = LinearOperator('T', vectorspace=V, mapping=mapping)
->>> print(T)
+>>> print(T.info())
 ```
 
     T : V -> V
