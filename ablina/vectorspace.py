@@ -142,7 +142,7 @@ class Fn:
         else:
             weights = [round(gauss(0, std)) for _ in range(size)]
         vec = sp.Matrix([weights]) @ self._rs_matrix
-        return vec.flat()  # Return list
+        return vec.flat()
 
     def to_coordinate(self, vector, basis=None):
         if basis is None:
@@ -195,9 +195,9 @@ class Fn:
         return Fn(self.field, self.n, constraints, rs_matrix=vectors)
 
     def is_subspace(self, vs2):
-        for i in range(self.dim):
-            vec = self._rs_matrix.row(i).T
-            if not (vs2._ns_matrix @ vec).is_zero_matrix:
+        for i in range(vs2.dim):
+            vec = vs2._rs_matrix.row(i).T
+            if not (self._ns_matrix @ vec).is_zero_matrix:
                 return False
         return True
     
@@ -233,13 +233,16 @@ class Fn:
             orthonormal_vecs.append(unit_v)
         return orthonormal_vecs
     
-    def ortho_complement(self, vs2):
-        constraints = [f'ortho_complement({', '.join(self.constraints)})']
-        comp = Fn(self.field, self.n, constraints, rs_matrix=vs2._ns_matrix)
-        return self.intersection(comp)
+    def ortho_projection(self, vector, subspace):
+        vector = sp.Matrix(vector)
+        matrix = subspace._rs_matrix.T
+        proj = matrix @ (matrix.T @ matrix).inv() @ matrix.T @ vector
+        return proj.flat()
     
-    def ortho_projection(self, vs2):
-        raise NotImplementedError()
+    def ortho_complement(self, subspace):
+        constraints = [f'ortho_complement({', '.join(self.constraints)})']
+        comp = Fn(self.field, self.n, constraints, rs_matrix=subspace._ns_matrix)
+        return self.intersection(comp)
 
 
 class VectorSpace:
@@ -793,7 +796,7 @@ class VectorSpace:
     
     def is_subspace(self, vs2):
         """
-        Check whether `self` is a linear subspace of `vs2`.
+        Check whether `vs2` is a linear subspace of `self`.
 
         Parameters
         ----------
@@ -803,7 +806,7 @@ class VectorSpace:
         Returns
         -------
         bool
-            True if `self` is a subspace of `vs2`, otherwise False.
+            True if `vs2` is a subspace of `self`, otherwise False.
 
         Examples
         --------
@@ -811,11 +814,11 @@ class VectorSpace:
         >>> V = fn('V', R, 3)
         >>> U = fn('U', R, 3, constraints=['v0 == v1'])
         >>> W = fn('W', R, 3, constraints=['v1 == v2'])
-        >>> U.is_subspace(V)
+        >>> V.is_subspace(U)
         True
-        >>> W.is_subspace(V)
+        >>> V.is_subspace(W)
         True
-        >>> U.is_subspace(W)
+        >>> W.is_subspace(U)
         False
         >>> V.is_subspace(V)
         True
@@ -848,55 +851,56 @@ class VectorSpace:
         """
         return AffineSpace(self, representative)
     
-    def quotient(self, vs2):
+    def quotient(self, subspace):
         """
         The quotient of two vector spaces.
 
         Parameters
         ----------
-        vs2 : VectorSpace
+        subspace : VectorSpace
             The vector space to divide by.
 
         Returns
         -------
         VectorSpace
-            The quotient of `self` by `vs2`.
+            The quotient of `self` by `subspace`.
 
         Raises
         ------
         TypeError
-            If `vs2` is not a subspace of `self`.
+            If `subspace` is not a subspace of `self`.
 
         See Also
         --------
         VectorSpace.coset
         """
-        if not isinstance(vs2, VectorSpace):
-            raise TypeError()
-        if not vs2.is_subspace(self):
+        if not self.is_subspace(subspace):
             raise TypeError()
         
         vs = self.ambient_space()
-        cls_name = f'{vs} / {vs2}'
+        cls_name = f'{vs} / {subspace}'
 
         def in_quotient_space(coset):
-            return coset.vectorspace == vs2
+            return coset.vectorspace == subspace  # FIX: check
 
         class quotient_space(VectorSpace, name=cls_name):
             set = MathSet(cls_name, AffineSpace, in_quotient_space)
-            fn = vs.fn.ortho_complement(vs2.fn)
-            def __push__(coset): return self.__push__(coset.representative)
-            def __pull__(vec): return vs2.coset(self.__pull__(vec))
+            fn = vs.fn.ortho_complement(subspace.fn)
+            def __push__(coset):
+                fn_vec = vs.__push__(coset.representative)
+                return vs.fn.ortho_projection(fn_vec, fn)
+            def __pull__(vec):
+                return subspace.coset(vs.__pull__(vec))
 
-        name = f'{self} / {vs2}'
-        fn = self.fn.ortho_complement(vs2.fn)
+        name = f'{self} / {subspace}'
+        fn = self.fn.ortho_complement(subspace.fn)
         return quotient_space(name, fn=fn)
 
     def _validate_type(self, vs2):
         if not isinstance(vs2, VectorSpace):
             raise TypeError(f'Expected a VectorSpace, got {type(vs2).__name__} instead.')
         if type(self).name != type(vs2).name:
-            raise TypeError(f'Vector spaces must be subspaces of the same ambient space.')
+            raise TypeError('Vector spaces must be subspaces of the same ambient space.')
 
 
 class AffineSpace:
