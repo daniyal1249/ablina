@@ -275,7 +275,7 @@ class LinearMap:
         """
         if obj in self.domain:
             return self.mapping(obj)
-        return self.image(self.restriction(obj))
+        return self.restriction(obj).image()
     
     def info(self):
         signature = f'{self} : {self.domain} -> {self.codomain}'
