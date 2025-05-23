@@ -181,6 +181,11 @@ class LinearMap:
         LinearMap
             The sum of `self` and `map2`.
 
+        Raises
+        ------
+        LinearMapError
+            If the domains and codomains of `self` and `map2` are not equal.
+
         Examples
         --------
         
@@ -193,7 +198,9 @@ class LinearMap:
         >>> map3([1, 2, 3])
         [5, 10, 15]
         """
-        # FIX: make sure the domains and codomains are equal
+        if not (self.domain == map2.domain and self.codomain == map2.codomain):
+            raise LinearMapError('The linear maps are not compatible.')
+        
         name = f'{self} + {map2}'
         def mapping(vec):
             vec1 = self.mapping(vec)
@@ -216,6 +223,11 @@ class LinearMap:
         LinearMap
             The product of `self` and `scalar`.
 
+        Raises
+        ------
+        TypeError
+            If `scalar` is not an element of the field.
+
         Examples
         --------
         
@@ -227,7 +239,7 @@ class LinearMap:
         [6, 12, 18]
         """
         if scalar not in self.field:
-            raise TypeError('Scalar must be an element of the vector space field.')
+            raise TypeError('Scalar must be an element of the field.')
         
         name = f'{scalar} * {self}'
         def mapping(vec):
@@ -238,19 +250,19 @@ class LinearMap:
     def __rmul__(self, scalar):
         return self.__mul__(scalar)
     
-    def __call__(self, vec):
+    def __call__(self, obj):
         """
-        Apply the linear map to a vector.
+        Apply the linear map to a vector or subspace.
 
         Parameters
         ----------
-        vec : object
-            The vector to map.
+        obj : object
+            The vector or subspace to map.
 
         Returns
         -------
         object
-            The vector that `vec` maps to.
+            The vector or subspace that `obj` maps to.
 
         Examples
         --------
@@ -261,9 +273,9 @@ class LinearMap:
         >>> map1([1, 2, 3])
         [2, 4, 6]
         """
-        if vec not in self.domain:
-            raise TypeError(f'{vec} is not an element of the domain.')
-        return self.mapping(vec)
+        if obj in self.domain:
+            return self.mapping(obj)
+        return self.image(self.restriction(obj))
     
     def info(self):
         signature = f'{self} : {self.domain} -> {self.codomain}'
@@ -296,6 +308,15 @@ class LinearMap:
 
         map_matrix = codomain_basechange @ self.matrix @ domain_basechange.inv()
         return map_matrix, domain_basechange, codomain_basechange
+    
+    def restriction(self, subspace):
+        """
+        pass
+        """
+        if not self.domain.is_subspace(subspace):
+            raise TypeError()
+        name = f'{self} | {subspace}'
+        return LinearMap(name, subspace, self.codomain, self.mapping)
 
     def inverse(self):
         """
@@ -473,6 +494,14 @@ class LinearOperator(LinearMap):
             f'matrix={self.matrix!r})'
             )
     
+    def __pow__(self, exp):
+        """
+        pass
+        """
+        name = f'{self}^{exp}'
+        matrix = self.matrix ** exp
+        return LinearOperator(name, self.domain, matrix=matrix)
+    
     def change_of_basis(self, basis):
         """
         pass
@@ -641,6 +670,15 @@ class LinearFunctional(LinearMap):
             f'mapping={self.mapping!r}, '
             f'matrix={self.matrix!r})'
             )
+    
+    def restriction(self, subspace):
+        """
+        pass
+        """
+        if not self.domain.is_subspace(subspace):
+            raise TypeError()
+        name = f'{self} | {subspace}'
+        return LinearFunctional(name, subspace, self.mapping)
 
 
 class Isomorphism(LinearMap):
