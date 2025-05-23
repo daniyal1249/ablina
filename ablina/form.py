@@ -473,44 +473,57 @@ class InnerProduct(SesquilinearForm):
             unit_v = vs.mul(1 / self.norm(v), v)
             orthonormal_vecs.append(unit_v)
         return orthonormal_vecs
-    
-    def ortho_complement(self, vs2):
+
+    def ortho_projection(self, vector, subspace):
+        """
+        The orthogonal projection of a vector.
+
+        Parameters
+        ----------
+        vector : object
+            The vector to project.
+        subspace : VectorSpace
+            The subspace to project onto.
+
+        Returns
+        -------
+        object
+            The orthogonal projection of `vector` onto `subspace`.
+        """
+        vs = self.vectorspace
+        if vector not in vs:
+            raise TypeError()
+        if not vs.is_subspace(subspace):
+            raise TypeError()
+        
+        fn_vec = self.__push__(vector)
+        proj = vs.fn.ortho_projection(fn_vec, subspace.fn)
+        return self.__pull__(proj)
+
+    def ortho_complement(self, subspace):
         """
         The orthogonal complement of a vector space.
+
+        Parameters
+        ----------
+        subspace : VectorSpace
+            The subspace to take the orthogonal complement of.
 
         Returns
         -------
         VectorSpace
-            The orthogonal complement of `vs2` in ``self.vectorspace``.
+            The orthogonal complement of `subspace` in ``self.vectorspace``.
         """
         vs = self.vectorspace
-        if not isinstance(vs2, VectorSpace):
+        if not vs.is_subspace(subspace):
             raise TypeError()
-        if not vs2.is_subspace(vs):
-            raise ValueError()
 
-        name = f'perp({vs2})'
-        fn_basis = [self.__push__(vec) for vec in vs2.basis]
+        name = f'perp({subspace})'
+        fn_basis = [self.__push__(vec) for vec in subspace.basis]
         fn = vs.fn.span(*fn_basis)
         comp = vs.fn.ortho_complement(fn)
         basis = [self.__pull__(vec) for vec in comp.basis]
         return vs.span(name, *basis)
-
-    def ortho_projection(self, vs2):
-        """
-        The orthogonal projection of `vs2` onto `self`.
-
-        Parameters
-        ----------
-        vs2 : VectorSpace
-            pass
-
-        Returns
-        -------
-        VectorSpace
-            pass
-        """
-        raise NotImplementedError()
 
 
 class QuadraticForm:
