@@ -172,14 +172,14 @@ Check whether a vector space is a subspace of another
 
 
 ```python
->>> U.is_subspace(V)
+>>> V.is_subspace(U)
 ```
 
     True
 
 
 ```python
->>> V.is_subspace(U)
+>>> U.is_subspace(V)
 ```
 
     False

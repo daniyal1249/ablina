@@ -1178,20 +1178,23 @@ def poly_space(name, field, max_degree, constraints=None, basis=None):
     pass
     """
     cls_name = f'P({field}, {max_degree})'
+    x = sp.symbols('x')
 
     def in_poly_space(poly):
-        return sp.degree(poly) <= max_degree
+        try: return sp.degree(sp.Poly(poly, x)) <= max_degree
+        except Exception: return False
 
     class poly_space(VectorSpace, name=cls_name):
-        set = MathSet(cls_name, sp.Poly, in_poly_space)
+        set = MathSet(cls_name, object, in_poly_space)
         fn = Fn(field, max_degree + 1)
         def __push__(poly):
+            poly = sp.Poly(poly, x)
             coeffs = poly.all_coeffs()[::-1]  # Ascending order
             degree_diff = max_degree - len(coeffs) + 1
             return coeffs + ([0] * degree_diff)
         def __pull__(vec):
-            x = sp.symbols('x')
-            return sp.Poly.from_list(vec[::-1], x)
+            poly = sp.Poly.from_list(vec[::-1], x)
+            return poly.as_expr()
     return poly_space(name, constraints, basis)
 
 
@@ -1203,6 +1206,7 @@ def hom(vs1, vs2):
         raise TypeError()
     if vs1.field is not vs2.field:
         raise TypeError()
+    
     name = f'hom({vs1}, {vs2})'
     return matrix_space(name, vs1.field, (vs2.dim, vs1.dim))
 
