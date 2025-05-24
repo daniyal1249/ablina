@@ -190,9 +190,9 @@ class Fn:
         return Fn(self.field, self.n, constraints, ns_matrix=ns_matrix)
     
     def span(self, *vectors, basis=None):
-        vectors = u.rref(vectors, remove=True) if basis is None else basis
+        matrix = u.rref(vectors, remove=True) if basis is None else basis
         constraints = [f'span({', '.join(map(str, vectors))})']
-        return Fn(self.field, self.n, constraints, rs_matrix=vectors)
+        return Fn(self.field, self.n, constraints, rs_matrix=matrix)
 
     def is_subspace(self, vs2):
         for i in range(vs2.dim):

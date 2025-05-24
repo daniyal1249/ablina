@@ -530,6 +530,14 @@ class LinearOperator(LinearMap):
         matrix = self.matrix.inv()
         return LinearOperator(name, self.domain, matrix=matrix)
     
+    def is_invariant_subspace(self, subspace):
+        """
+        pass
+        """
+        if not self.domain.is_subspace(subspace):
+            raise TypeError()
+        return subspace.is_subspace(self(subspace))
+    
     def is_symmetric(self, innerproduct):
         """
         Check whether the linear operator is symmetric.
