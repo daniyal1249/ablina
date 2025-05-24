@@ -1160,16 +1160,21 @@ def matrix_space(name, field, shape, constraints=None, basis=None):
     """
     pass
     """
-    cls_name = f'M({field}, {shape})'
+    cls_name = f'{field}^({shape[0]} x {shape[1]})'
 
     def in_matrix_space(mat):
-        return mat.shape == shape
+        try: return sp.Matrix(mat).shape == shape
+        except Exception: return False
 
     class matrix_space(VectorSpace, name=cls_name):
-        set = MathSet(cls_name, sp.Matrix, in_matrix_space)
+        set = MathSet(cls_name, object, in_matrix_space)
         fn = Fn(field, sp.prod(shape))
-        def __push__(mat): return mat.flat()
-        def __pull__(vec): return sp.Matrix(*shape, vec)
+        def __push__(mat):
+            mat = sp.Matrix(mat)
+            return mat.flat()
+        def __pull__(vec):
+            mat = sp.Matrix(*shape, vec)
+            return mat.tolist()
     return matrix_space(name, constraints, basis)
 
 
@@ -1177,10 +1182,11 @@ def poly_space(name, field, max_degree, constraints=None, basis=None):
     """
     pass
     """
-    cls_name = f'P({field}, {max_degree})'
+    cls_name = f'P_{max_degree}({field})'
     x = sp.symbols('x')
 
     def in_poly_space(poly):
+        # FIX: check
         try: return sp.degree(sp.Poly(poly, x)) <= max_degree
         except Exception: return False
 
@@ -1193,7 +1199,7 @@ def poly_space(name, field, max_degree, constraints=None, basis=None):
             degree_diff = max_degree - len(coeffs) + 1
             return coeffs + ([0] * degree_diff)
         def __pull__(vec):
-            poly = sp.Poly.from_list(vec[::-1], x)
+            poly = sp.Poly(vec[::-1], x)
             return poly.as_expr()
     return poly_space(name, constraints, basis)
 
