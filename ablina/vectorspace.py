@@ -888,10 +888,11 @@ class VectorSpace:
     
     def _validate_coordinate(self, vector):
         try:
-            if not sp.Matrix(vector).shape == (self.dim, 1):
-                raise ValueError('Coordinate vector has invalid length.')
+            vector = sp.Matrix(vector)
         except Exception as e:
             raise TypeError('Invalid coordinate vector.') from e
+        if vector.shape != (self.dim, 1):
+            raise ValueError('Coordinate vector has invalid length.')
         if not all(i in self.field for i in vector):
             raise ValueError('Coordinates must be elements of the field.')
 
