@@ -40,7 +40,6 @@ class Fn:
 
         self._field = field
         self._n = n
-        self._constraints = constraints
 
         self._add = add
         self._mul = mul
@@ -87,10 +86,6 @@ class Fn:
         return self._n
     
     @property
-    def constraints(self):
-        return self._constraints
-    
-    @property
     def add(self):
         return self._add
     
@@ -118,7 +113,6 @@ class Fn:
         return (
             f'Fn(field={self.field!r}, '
             f'n={self.n!r}, '
-            f'constraints={self.constraints!r}, '
             f'ns_matrix={self._ns_matrix!r}, '
             f'rs_matrix={self._rs_matrix!r})'
             )
@@ -144,29 +138,19 @@ class Fn:
         vec = sp.Matrix([weights]) @ self._rs_matrix
         return vec.flat()
 
-    def to_coordinate(self, vector, basis=None):
-        if basis is None:
-            basis = self.basis
-        elif not self.is_basis(*basis):
-            raise ValueError('Provided vectors do not form a basis.')
+    def to_coordinate(self, vector, basis):
         if not basis:
             return []
-        
         matrix, vec = sp.Matrix(basis).T, sp.Matrix(vector)
         coord_vec = matrix.solve_least_squares(vec)
         return coord_vec.flat()
 
-    def from_coordinate(self, vector, basis=None):  # FIX: check field
-        if basis is None:
-            basis = self.basis
-        elif not self.is_basis(*basis):
-            raise ValueError('Provided vectors do not form a basis.')
-        try:
-            matrix, coord_vec = sp.Matrix(basis).T, sp.Matrix(vector)
-            vec = matrix @ coord_vec
-        except Exception as e:
-            raise ValueError('Invalid coordinate vector.') from e
-        return vec.flat() if vec else self.additive_id
+    def from_coordinate(self, vector, basis):
+        if not basis:
+            return self.additive_id
+        matrix, coord_vec = sp.Matrix(basis).T, sp.Matrix(vector)
+        vec = matrix @ coord_vec
+        return vec.flat()
     
     def is_independent(self, *vectors):
         matrix = sp.Matrix(vectors)
@@ -180,19 +164,16 @@ class Fn:
     def sum(self, vs2):
         rs_matrix = sp.Matrix.vstack(self._rs_matrix, vs2._rs_matrix)
         rs_matrix = u.rref(rs_matrix, remove=True)
-        constraints = self.constraints  # FIX: rework
-        return Fn(self.field, self.n, constraints, rs_matrix=rs_matrix)
+        return Fn(self.field, self.n, rs_matrix=rs_matrix)
     
     def intersection(self, vs2):
         ns_matrix = sp.Matrix.vstack(self._ns_matrix, vs2._ns_matrix)
         ns_matrix = u.rref(ns_matrix, remove=True)
-        constraints = self.constraints + vs2.constraints
-        return Fn(self.field, self.n, constraints, ns_matrix=ns_matrix)
+        return Fn(self.field, self.n, ns_matrix=ns_matrix)
     
     def span(self, *vectors, basis=None):
-        matrix = u.rref(vectors, remove=True) if basis is None else basis
-        constraints = [f'span({', '.join(map(str, vectors))})']
-        return Fn(self.field, self.n, constraints, rs_matrix=matrix)
+        rs_matrix = u.rref(vectors, remove=True) if basis is None else basis
+        return Fn(self.field, self.n, rs_matrix=rs_matrix)
 
     def is_subspace(self, vs2):
         for i in range(vs2.dim):
@@ -204,16 +185,15 @@ class Fn:
     # Methods involving the dot product
 
     def dot(self, vec1, vec2):
-        return sum(i * j for i, j in zip(vec1, vec2))
-    
+        return sp.Matrix(vec1).dot(sp.Matrix(vec2))
+
     def norm(self, vector):
-        return sp.sqrt(self.dot(vector, vector))
+        return sp.Matrix(vector).norm()
     
     def is_orthogonal(self, *vectors):
         for i, vec1 in enumerate(vectors, 1):
             for vec2 in vectors[i:]:
-                # FIX: consider tolerance
-                if self.dot(vec1, vec2) != 0:
+                if not self.dot(vec1, vec2).equals(0):
                     return False
         return True
 
@@ -235,13 +215,12 @@ class Fn:
     
     def ortho_projection(self, vector, subspace):
         vector = sp.Matrix(vector)
-        matrix = subspace._rs_matrix.T
-        proj = matrix @ (matrix.T @ matrix).inv() @ matrix.T @ vector
+        mat = subspace._rs_matrix.T
+        proj = mat @ (mat.T @ mat).inv() @ mat.T @ vector
         return proj.flat()
     
     def ortho_complement(self, subspace):
-        constraints = [f'ortho_complement({', '.join(self.constraints)})']
-        comp = Fn(self.field, self.n, constraints, rs_matrix=subspace._ns_matrix)
+        comp = Fn(self.field, self.n, rs_matrix=subspace._ns_matrix)
         return self.intersection(comp)
 
 
@@ -529,13 +508,15 @@ class VectorSpace:
         """
         if vector not in self:
             raise TypeError('Vector must be an element of the vector space.')
-        if basis is not None:
-            if not all(vec in self for vec in basis):
-                raise TypeError('Basis vectors must be elements of the vector space.')
-            basis = [self.__push__(vec) for vec in basis]
+        if basis is None:
+            fn_basis = self.fn.basis
+        elif not self.is_basis(*basis):
+            raise ValueError('Provided vectors do not form a basis.')
+        else:
+            fn_basis = [self.__push__(vec) for vec in basis]
 
         fn_vec = self.__push__(vector)
-        return self.fn.to_coordinate(fn_vec, basis)
+        return self.fn.to_coordinate(fn_vec, fn_basis)
     
     def from_coordinate(self, vector, basis=None):
         """
@@ -562,7 +543,7 @@ class VectorSpace:
         Raises
         ------
         ValueError
-            If `vector` has invalid length.
+            If `vector` is not a valid coordinate vector.
 
         See Also
         --------
@@ -580,12 +561,15 @@ class VectorSpace:
         >>> V.from_coordinate([1, 1], basis=new_basis)
         [2, 1, 2]
         """
-        if basis is not None:
-            if not all(vec in self for vec in basis):
-                raise TypeError('Basis vectors must be elements of the vector space.')
-            basis = [self.__push__(vec) for vec in basis]
+        self._validate_coordinate(vector)
+        if basis is None:
+            fn_basis = self.fn.basis
+        elif not self.is_basis(*basis):
+            raise ValueError('Provided vectors do not form a basis.')
+        else:
+            fn_basis = [self.__push__(vec) for vec in basis]
         
-        fn_vec = self.fn.from_coordinate(vector, basis)
+        fn_vec = self.fn.from_coordinate(vector, fn_basis)
         return self.__pull__(fn_vec)
     
     def is_independent(self, *vectors):
@@ -901,6 +885,15 @@ class VectorSpace:
             raise TypeError(f'Expected a VectorSpace, got {type(vs2).__name__} instead.')
         if type(self).name != type(vs2).name:
             raise TypeError('Vector spaces must be subspaces of the same ambient space.')
+    
+    def _validate_coordinate(self, vector):
+        try:
+            if not sp.Matrix(vector).shape == (self.dim, 1):
+                raise ValueError('Coordinate vector has invalid length.')
+        except Exception as e:
+            raise TypeError('Invalid coordinate vector.') from e
+        if not all(i in self.field for i in vector):
+            raise ValueError('Coordinates must be elements of the field.')
 
 
 class AffineSpace:
@@ -1186,7 +1179,7 @@ def poly_space(name, field, max_degree, constraints=None, basis=None):
     x = sp.symbols('x')
 
     def in_poly_space(poly):
-        # FIX: check
+        # FIX: check (list)
         try: return sp.degree(sp.Poly(poly, x)) <= max_degree
         except Exception: return False
 
@@ -1284,11 +1277,10 @@ def columnspace(name, matrix, field=R):
     >>> U.basis
     [[1, 0], [0, 1]]
     """
-    constraints = [f'col({matrix})']
     matrix = sp.Matrix(matrix).T
     matrix = u.rref(matrix, remove=True)
     n = matrix.rows
-    return fn(name, field, n, constraints, rs_matrix=matrix)
+    return fn(name, field, n, rs_matrix=matrix)
 
 
 def rowspace(name, matrix, field=R):
@@ -1321,10 +1313,9 @@ def rowspace(name, matrix, field=R):
     >>> V.basis
     [[1, 0], [0, 1]]
     """
-    constraints = [f'row({matrix})']
     matrix = u.rref(matrix, remove=True)
     n = matrix.cols
-    return fn(name, field, n, constraints, rs_matrix=matrix)
+    return fn(name, field, n, rs_matrix=matrix)
 
 
 def nullspace(name, matrix, field=R):
@@ -1360,10 +1351,9 @@ def nullspace(name, matrix, field=R):
     >>> U.basis
     []
     """
-    constraints = [f'null({matrix})']
     matrix = u.rref(matrix, remove=True)
     n = matrix.cols
-    return fn(name, field, n, constraints, ns_matrix=matrix)
+    return fn(name, field, n, ns_matrix=matrix)
 
 
 def left_nullspace(name, matrix, field=R):

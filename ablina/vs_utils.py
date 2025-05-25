@@ -4,11 +4,7 @@ from .parser import ConstraintError, split_constraint, sympify
 from .utils import rref
 
 
-# To test associativity of multiplication (2 scalars one vector), define
-# operation to be normal mul if both are scalars, and scalar mul otherwise
-
-
-def to_ns_matrix(n, lin_constraints):
+def to_ns_matrix(n, constraints):
     """
     Return the matrix representation of the given linear constraints.
 
@@ -16,16 +12,16 @@ def to_ns_matrix(n, lin_constraints):
     ----------
     n : int
         pass
-    lin_constraints : list of str
+    constraints : list of str
         The list of constraints.
 
     Returns
     -------
     ns_matrix : sympy.Matrix
-        A sympy matrix with the linear constraints as rows.
+        A matrix with the linear constraints as rows.
     """
     exprs = set()
-    for constraint in lin_constraints:
+    for constraint in constraints:
         exprs.update(split_constraint(constraint))
 
     matrix = []
