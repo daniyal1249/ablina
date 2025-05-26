@@ -55,7 +55,7 @@ class SesquilinearForm:
             raise TypeError('vectorspace must be of type VectorSpace.')
         
         matrix = SesquilinearForm._to_matrix(vectorspace, mapping, matrix)
-        mapping = SesquilinearForm._to_mapping(vectorspace, matrix)
+        mapping = SesquilinearForm._to_mapping(vectorspace, mapping, matrix)
         
         self.name = name
         self._vectorspace = vectorspace
@@ -65,8 +65,7 @@ class SesquilinearForm:
     @staticmethod
     def _to_matrix(vectorspace, mapping, matrix):
         if matrix is not None:
-            mat = SesquilinearForm._validate_matrix(vectorspace, matrix)
-            return mat
+            return SesquilinearForm._validate_matrix(vectorspace, matrix)
         if mapping is None:
             raise FormError('Either a matrix or mapping must be provided.')
         if not of_arity(mapping, 2):
@@ -77,7 +76,9 @@ class SesquilinearForm:
         return M(n, n, lambda i, j: mapping(basis[i], basis[j]))
 
     @staticmethod
-    def _to_mapping(vectorspace, matrix):
+    def _to_mapping(vectorspace, mapping, matrix):
+        if mapping is not None:
+            return mapping
         to_coord = vectorspace.to_coordinate
         return lambda u, v: (to_coord(u).H @ matrix @ to_coord(v))[0]
     
@@ -115,6 +116,7 @@ class SesquilinearForm:
         return (
             f'SesquilinearForm(name={self.name!r}, '
             f'vectorspace={self.vectorspace!r}, '
+            f'mapping={self.mapping!r}, '
             f'matrix={self.matrix!r})'
             )
     
@@ -130,6 +132,9 @@ class SesquilinearForm:
             )
     
     def __call__(self, vec1, vec2):
+        vs = self.vectorspace
+        if not (vec1 in vs and vec2 in vs):
+            raise TypeError('Vectors must be elements of the vector space.')
         return self.mapping(vec1, vec2)
     
     def info(self):
@@ -418,7 +423,7 @@ class InnerProduct(SesquilinearForm):
                 if not sp.Integer(0).equals(self(vec1, vec2)):
                     return False
         return True
-    
+
     def is_orthonormal(self, *vectors):
         """
         Check whether the vectors are orthonormal.

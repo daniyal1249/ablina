@@ -55,7 +55,7 @@ class LinearMap:
                 )
         
         matrix = LinearMap._to_matrix(domain, codomain, mapping, matrix)
-        mapping = LinearMap._to_mapping(domain, codomain, matrix)
+        mapping = LinearMap._to_mapping(domain, codomain, mapping, matrix)
         
         self.name = name
         self._domain = domain
@@ -66,8 +66,7 @@ class LinearMap:
     @staticmethod
     def _to_matrix(domain, codomain, mapping, matrix):
         if matrix is not None:
-            mat = LinearMap._validate_matrix(domain, codomain, matrix)
-            return mat
+            return LinearMap._validate_matrix(domain, codomain, matrix)
         if mapping is None:
             raise LinearMapError('Either a matrix or mapping must be provided.')
         if not u.of_arity(mapping, 1):
@@ -81,7 +80,9 @@ class LinearMap:
         return M.hstack(*mat)
 
     @staticmethod
-    def _to_mapping(domain, codomain, matrix):
+    def _to_mapping(domain, codomain, mapping, matrix):
+        if mapping is not None:
+            return mapping
         to_coord = domain.to_coordinate
         from_coord = codomain.from_coordinate
         return lambda vec: from_coord(matrix @ to_coord(vec))
@@ -149,6 +150,7 @@ class LinearMap:
             f'LinearMap(name={self.name!r}, '
             f'domain={self.domain!r}, '
             f'codomain={self.codomain!r}, '
+            f'mapping={self.mapping!r}, '
             f'matrix={self.matrix!r})'
             )
     
@@ -195,9 +197,14 @@ class LinearMap:
         """
         if not (self.domain == map2.domain and self.codomain == map2.codomain):
             raise LinearMapError('The linear maps are not compatible.')
+        
         name = f'{self} + {map2}'
+        def mapping(vec):
+            vec1 = self.mapping(vec)
+            vec2 = map2.mapping(vec)
+            return self.codomain.add(vec1, vec2)
         mat = self.matrix + map2.matrix
-        return LinearMap(name, self.domain, self.codomain, matrix=mat)
+        return LinearMap(name, self.domain, self.codomain, mapping, mat)
     
     def __mul__(self, scalar):
         """
@@ -229,9 +236,12 @@ class LinearMap:
         """
         if scalar not in self.field:
             raise TypeError('Scalar must be an element of the field.')
+        
         name = f'{scalar} * {self}'
+        def mapping(vec):
+            return self.codomain.mul(scalar, self.mapping(vec))
         mat = scalar * self.matrix
-        return LinearMap(name, self.domain, self.codomain, matrix=mat)
+        return LinearMap(name, self.domain, self.codomain, mapping, mat)
     
     def __rmul__(self, scalar):
         return self.__mul__(scalar)
@@ -358,8 +368,10 @@ class LinearMap:
             raise LinearMapError('The linear maps are not compatible.')
         
         name = f'{self} ∘ {map2}'
+        def mapping(vec):
+            return self.mapping(map2.mapping(vec))
         mat = self.matrix @ map2.matrix
-        return LinearMap(name, map2.domain, self.codomain, matrix=mat)
+        return LinearMap(name, map2.domain, self.codomain, mapping, mat)
     
     def image(self):
         """
@@ -471,6 +483,7 @@ class LinearOperator(LinearMap):
         return (
             f'LinearOperator(name={self.name!r}, '
             f'vectorspace={self.domain!r}, '
+            f'mapping={self.mapping!r}, '
             f'matrix={self.matrix!r})'
             )
     
@@ -655,6 +668,7 @@ class LinearFunctional(LinearMap):
         return (
             f'LinearFunctional(name={self.name!r}, '
             f'vectorspace={self.domain!r}, '
+            f'mapping={self.mapping!r}, '
             f'matrix={self.matrix!r})'
             )
     
@@ -726,8 +740,7 @@ class IdentityMap(LinearOperator):
         IdentityMap
             pass
         """
-        mat = M.eye(vectorspace.dim)
-        super().__init__('Id', vectorspace, matrix=mat)
+        super().__init__('Id', vectorspace, lambda vec: vec)
 
     def __repr__(self):
         return f'IdentityMap(vectorspace={self.domain!r})'
