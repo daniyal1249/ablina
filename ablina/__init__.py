@@ -11,7 +11,8 @@ from .form import SesquilinearForm, InnerProduct, QuadraticForm
 from .linearmap import (
     LinearMap, LinearOperator, LinearFunctional, Isomorphism, IdentityMap
     )
-from .mathset import MathSet, negate
+from .mathset import Set, negate
+from .matrix import Matrix, M
 from .vectorspace import (
     Fn, VectorSpace, AffineSpace, fn, matrix_space, poly_space, hom, 
     is_vectorspace, columnspace, rowspace, nullspace, left_nullspace, 
@@ -23,7 +24,8 @@ __all__ = [
     'SesquilinearForm', 'InnerProduct', 'QuadraticForm',
     'LinearMap', 'LinearOperator', 'LinearFunctional', 'Isomorphism',
     'IdentityMap',
-    'MathSet', 'negate',
+    'Set', 'negate',
+    'Matrix', 'M',
     'Fn', 'VectorSpace', 'AffineSpace', 'fn', 'matrix_space', 'poly_space',
     'hom', 'is_vectorspace', 'columnspace', 'rowspace', 'nullspace',
     'left_nullspace', 'image', 'kernel'

@@ -66,7 +66,7 @@ You can provide a list of constraints
 Or specify a basis 
 
 ```python
->>> W = fn('W', R, 3, basis=[[1, 0, 0], [0, 1, 0]])
+>>> W = fn('W', R, 3, basis=[M[1, 0, 0], M[0, 1, 0]])
 >>> print(W.info())
 ```
 
@@ -85,14 +85,14 @@ Check whether a vector is an element of a vector space
 
 
 ```python
->>> [1, 2, 0] in W
+>>> M[1, 2, 0] in W
 ```
 
     True
 
 
 ```python
->>> [1, 2, 1] in W
+>>> M[1, 2, 1] in W
 ```
 
     False
@@ -119,21 +119,21 @@ Find the coordinate vector representation of a vector
 
 
 ```python
->>> W.to_coordinate([1, 2, 0])
+>>> W.to_coordinate(M[1, 2, 0])
 ```
 
     [1, 2]
 
 
 ```python
->>> W.from_coordinate([1, 2])
+>>> W.from_coordinate(M[1, 2])
 ```
 
     [1, 2, 0]
 
 
 ```python
->>> W.to_coordinate([1, 2, 0], basis=[[1, 1, 0], [1, -1, 0]])
+>>> W.to_coordinate(M[1, 2, 0], basis=[M[1, 1, 0], M[1, -1, 0]])
 ```
 
     [3/2, -1/2]
@@ -143,14 +143,14 @@ Check whether a list of vectors is linearly independent
 
 
 ```python
->>> V.is_independent([1, 1, 0], [1, 0, 0])
+>>> V.is_independent(M[1, 1, 0], M[1, 0, 0])
 ```
 
     True
 
 
 ```python
->>> V.is_independent([1, 2, 3], [2, 4, 6])
+>>> V.is_independent(M[1, 2, 3], M[2, 4, 6])
 ```
 
     False
@@ -223,7 +223,7 @@ Take the span of a list of vectors
 
 
 ```python
->>> S = V.span('S', [1, 2, 3], [4, 5, 6])
+>>> S = V.span('S', M[1, 2, 3], M[4, 5, 6])
 >>> print(S.info())
 ```
 
@@ -240,14 +240,14 @@ Take the span of a list of vectors
 
 ```python
 >>> def mapping(vec):
->>>     return [vec[0], vec[1], 0]
+>>>     return M[vec[0], vec[1], 0]
 >>>
 >>> T = LinearMap('T', domain=V, codomain=W, mapping=mapping)
 >>> print(T.info())
 ```
 
-    T : V -> W
-    ----------
+    T : V → W
+    ---------
     Field        R
     Rank         2
     Nullity      1
@@ -258,14 +258,14 @@ Take the span of a list of vectors
 
 
 ```python
->>> T([0, 0, 0])
+>>> T(M[0, 0, 0])
 ```
 
     [0, 0, 0]
 
 
 ```python
->>> T([1, 2, 3])
+>>> T(M[1, 2, 3])
 ```
 
     [1, 2, 0]
@@ -319,14 +319,14 @@ Here we define the standard dot product
 >>> print(dot.info())
 ```
 
-    dot : V x V -> R
-    ----------------
+    dot : V × V → R
+    ---------------
     Orthonormal Basis  [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
     Matrix             [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 
 
 ```python
->>> dot([1, 2, 3], [1, 2, 3])
+>>> dot(M[1, 2, 3], M[1, 2, 3])
 ```
 
     14
@@ -338,7 +338,7 @@ Compute the norm of a vector
 
 
 ```python
->>> dot.norm([1, 2, 3])
+>>> dot.norm(M[1, 2, 3])
 ```
 
     sqrt(14)
@@ -348,14 +348,14 @@ Check whether a list of vectors is pairwise orthogonal
 
 
 ```python
->>> dot.is_orthogonal([1, 2, 3], [4, 5, 6])
+>>> dot.is_orthogonal(M[1, 2, 3], M[4, 5, 6])
 ```
 
     False
 
 
 ```python
->>> dot.is_orthogonal([0, 0, 0], [1, 2, 3])
+>>> dot.is_orthogonal(M[0, 0, 0], M[1, 2, 3])
 ```
 
     True
@@ -365,7 +365,7 @@ Check whether a list of vectors is orthonormal
 
 
 ```python
->>> dot.is_orthonormal([1, 0, 0], [0, 1, 0], [0, 0, 1])
+>>> dot.is_orthonormal(M[1, 0, 0], M[0, 1, 0], M[0, 0, 1])
 ```
 
     True
@@ -391,14 +391,14 @@ Take the orthogonal complement of a vector space
 
 ```python
 >>> def mapping(vec):
->>>     return [vec[0], 2*vec[1], 3*vec[2]]
+>>>     return M[vec[0], 2*vec[1], 3*vec[2]]
 >>>
 >>> T = LinearOperator('T', vectorspace=V, mapping=mapping)
 >>> print(T.info())
 ```
 
-    T : V -> V
-    ----------
+    T : V → V
+    ---------
     Field        R
     Rank         3
     Nullity      0
@@ -409,7 +409,7 @@ Take the orthogonal complement of a vector space
 
 
 ```python
->>> T([1, 1, 1])
+>>> T(M[1, 1, 1])
 ```
 
     [1, 2, 3]

@@ -1,4 +1,4 @@
-import sympy as sp
+from sympy import sympify as _sympify
 
 
 class ParsingError(Exception):
@@ -24,18 +24,16 @@ def sympify(expr, allowed_vars=None):
 
     Returns
     -------
-    sympy.Basic
+    Any
         pass
 
     Raises
     ------
-    sympy.SympifyError
-        pass
     ParsingError
         If `expr` contains variables not in `allowed_vars`.
     """
     # Filter unrecognized characters for safety (consider regex)
-    expr = sp.sympify(expr, rational=True)  # evaluate flag
+    expr = _sympify(expr, rational=True)  # evaluate flag
     if allowed_vars is not None:
         if not all(var in allowed_vars for var in expr.free_symbols):
             invalid_vars = expr.free_symbols - set(allowed_vars)

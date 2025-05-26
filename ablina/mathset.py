@@ -1,7 +1,7 @@
 from .utils import of_arity
 
 
-class MathSet:
+class Set:
     """
     pass
     """
@@ -21,7 +21,7 @@ class MathSet:
 
         Returns
         -------
-        MathSet
+        Set
             pass
         """
         if not isinstance(cls, type):
@@ -54,7 +54,7 @@ class MathSet:
     
     def __repr__(self):
         return (
-            f'MathSet({self.name!r}, '
+            f'Set({self.name!r}, '
             f'{self.cls!r}, '
             f'{self.predicates!r})'
             )
@@ -63,7 +63,7 @@ class MathSet:
         return self.name
     
     def __eq__(self, set2):
-        if not isinstance(set2, MathSet):
+        if not isinstance(set2, Set):
             return False
         return self.name == set2.name
     
@@ -93,25 +93,25 @@ class MathSet:
     
     def __neg__(self):
         """
-        Same as ``MathSet.complement``.
+        Same as ``Set.complement``.
         """
         return self.complement()
     
     def __and__(self, set2):
         """
-        Same as ``MathSet.intersection``.
+        Same as ``Set.intersection``.
         """
         return self.intersection(set2)
     
     def __or__(self, set2):
         """
-        Same as ``MathSet.union``.
+        Same as ``Set.union``.
         """
         return self.union(set2)
     
     def __sub__(self, set2):
         """
-        Same as ``MathSet.difference``.
+        Same as ``Set.difference``.
         """
         return self.difference(set2)
 
@@ -126,29 +126,29 @@ class MathSet:
 
         Returns
         -------
-        MathSet
+        Set
             The complement of `self`.
 
         Examples
         --------
 
-        >>> set1 = MathSet('set1', list, lambda x: len(x) == 3)
-        >>> set2 = set1.complement()
-        >>> [1, 2, 3] in set1
+        >>> A = Set('A', list, lambda x: len(x) == 3)
+        >>> B = A.complement()
+        >>> [1, 2, 3] in A
         True
-        >>> [1, 2, 3] in set2
+        >>> [1, 2, 3] in B
         False
-        >>> [1, 2] in set2
+        >>> [1, 2] in B
         True
-        >>> (1, 2) in set2
+        >>> (1, 2) in B
         False
-        >>> None in set2
+        >>> None in B
         False
         """
-        name = f'comp({self})'
+        name = f'{self}^C'
         def complement_pred(obj):
             return not all(pred(obj) for pred in self.predicates)
-        return MathSet(name, self.cls, complement_pred)
+        return Set(name, self.cls, complement_pred)
     
     def intersection(self, set2):
         """
@@ -160,12 +160,12 @@ class MathSet:
 
         Parameters
         ----------
-        set2 : MathSet
+        set2 : Set
             The set to take the intersection with.
 
         Returns
         -------
-        MathSet
+        Set
             The intersection of `self` and `set2`.
 
         Raises
@@ -176,19 +176,19 @@ class MathSet:
         Examples
         --------
 
-        >>> set1 = MathSet('set1', list, lambda x: len(x) == 3)
-        >>> set2 = MathSet('set2', list, lambda x: 1 in x)
-        >>> set3 = set1.intersection(set2)
-        >>> [2, 3, 4] in set3
+        >>> A = Set('A', list, lambda x: len(x) == 3)
+        >>> B = Set('B', list, lambda x: 1 in x)
+        >>> C = A.intersection(B)
+        >>> [2, 3, 4] in C
         False
-        >>> [1, 2] in set3
+        >>> [1, 2] in C
         False
-        >>> [1, 2, 3] in set3
+        >>> [1, 2, 3] in C
         True
         """
         self._validate_type(set2)
-        name = f'inter({self}, {set2})'
-        return MathSet(name, self.cls, self.predicates + set2.predicates)
+        name = f'{self} ∩ {set2}'
+        return Set(name, self.cls, self.predicates + set2.predicates)
 
     def union(self, set2):
         """
@@ -200,12 +200,12 @@ class MathSet:
 
         Parameters
         ----------
-        set2 : MathSet
+        set2 : Set
             The set to take the union with.
 
         Returns
         -------
-        MathSet
+        Set
             The union of `self` and `set2`.
 
         Raises
@@ -216,24 +216,24 @@ class MathSet:
         Examples
         --------
 
-        >>> set1 = MathSet('set1', list, lambda x: len(x) == 3)
-        >>> set2 = MathSet('set2', list, lambda x: 1 in x)
-        >>> set3 = set1.union(set2)
-        >>> [2, 3, 4] in set3
+        >>> A = Set('A', list, lambda x: len(x) == 3)
+        >>> B = Set('B', list, lambda x: 1 in x)
+        >>> C = A.union(B)
+        >>> [2, 3, 4] in C
         True
-        >>> [1, 2] in set3
+        >>> [1, 2] in C
         True
-        >>> [1, 2, 3] in set3
+        >>> [1, 2, 3] in C
         True
         """
         self._validate_type(set2)
-        name = f'union({self}, {set2})'
+        name = f'{self} ∪ {set2}'
         def union_pred(obj):
             return (
                 all(pred(obj) for pred in self.predicates) 
                 or all(pred(obj) for pred in set2.predicates)
                 )
-        return MathSet(name, self.cls, union_pred)
+        return Set(name, self.cls, union_pred)
 
     def difference(self, set2):
         """
@@ -243,12 +243,12 @@ class MathSet:
 
         Parameters
         ----------
-        set2 : MathSet
+        set2 : Set
             The set to be subtracted from `self`.
 
         Returns
         -------
-        MathSet
+        Set
             The set difference `self` - `set2`.
 
         Raises
@@ -259,39 +259,39 @@ class MathSet:
         Examples
         --------
 
-        >>> set1 = MathSet('set1', list, lambda x: len(x) == 3)
-        >>> set2 = MathSet('set2', list, lambda x: 1 in x)
-        >>> set3 = set1.difference(set2)
-        >>> [2, 3, 4] in set3
+        >>> A = Set('A', list, lambda x: len(x) == 3)
+        >>> B = Set('B', list, lambda x: 1 in x)
+        >>> C = A.difference(B)
+        >>> [2, 3, 4] in C
         True
-        >>> [1, 2] in set3
+        >>> [1, 2] in C
         False
-        >>> [1, 2, 3] in set3
+        >>> [1, 2, 3] in C
         False
         """
         return self.intersection(set2.complement())
     
     def is_subset(self, set2):
         """
-        Check whether `self` is a subset of `set2`.
+        Check whether `set2` is a subset of `self`.
 
         Note that this method is NOT equivalent to the mathematical notion 
         of subset. Due to programmatic limitations, this method instead 
-        checks whether every predicate object in `set2` is also in `self`. 
-        If so, it returns True, and `self` is a subset of `set2` in the 
+        checks whether every predicate object in `self` is also in `set2`. 
+        If so, it returns True, and `set2` is a subset of `self` in the 
         mathematical sense. Otherwise, it returns False, and nothing can 
         be said about the relationship between `self` and `set2`. The 
         examples below illustrate this.
 
         Parameters
         ----------
-        set2 : MathSet
-            The set to compare `self` with.
+        set2 : Set
+            The set to check.
 
         Returns
         -------
         bool
-            True if every predicate in `set2` is also in `self`, 
+            True if every predicate in `self` is also in `set2`, 
             otherwise False.
 
         Raises
@@ -304,28 +304,28 @@ class MathSet:
 
         >>> def pred1(x): return len(x) == 3
         >>> def pred2(x): return 1 in x
-        >>> set1 = MathSet('set1', list, pred1)
-        >>> set2 = MathSet('set2', list, pred1, pred2)
-        >>> set3 = MathSet('set3', list, pred1, lambda x: 1 in x)
-        >>> set2.is_subset(set1)
+        >>> A = Set('A', list, pred1)
+        >>> B = Set('B', list, pred1, pred2)
+        >>> C = Set('C', list, pred1, lambda x: 1 in x)
+        >>> A.is_subset(B)
         True
-        >>> set1.is_subset(set2)
+        >>> B.is_subset(A)
         False
-        >>> set3.is_subset(set1)
+        >>> A.is_subset(C)
         True
-        >>> set1.is_subset(set3)
+        >>> C.is_subset(A)
         False
-        >>> set3.is_subset(set2)
+        >>> B.is_subset(C)
         False
-        >>> set2.is_subset(set3)
+        >>> C.is_subset(B)
         False
         """
         self._validate_type(set2)
-        return all(pred in self.predicates for pred in set2.predicates)
+        return all(pred in set2.predicates for pred in self.predicates)
 
     def _validate_type(self, set2):
-        if not isinstance(set2, MathSet):
-            raise TypeError(f'Expected a MathSet, got {type(set2).__name__} instead.')
+        if not isinstance(set2, Set):
+            raise TypeError(f'Expected a Set, got {type(set2).__name__} instead.')
         if self.cls is not set2.cls:
             raise ValueError('The cls attribute of both sets must be the same.')
 
@@ -347,8 +347,8 @@ def remove_duplicates(seq):
     Examples
     --------
 
-    >>> lst = [1, 2, 2, 3, 4, 3]
-    >>> remove_duplicates(lst)
+    >>> x = [1, 2, 2, 3, 4, 3]
+    >>> remove_duplicates(x)
     [1, 2, 3, 4]
     """
     elems = set()
@@ -373,7 +373,7 @@ def negate(pred):
     --------
 
     >>> def pred1(x): return len(x) == 3
-    >>> pred2 = negate(pred)
+    >>> pred2 = negate(pred1)
     >>> pred1([1, 2, 3])
     True
     >>> pred2([1, 2, 3])

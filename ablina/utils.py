@@ -2,19 +2,21 @@ import inspect
 
 import sympy as sp
 
-from .field import R, C
+from .field import R
+from .matrix import M
 
 
-def symbols(names, field=C, **kwargs):
+def symbols(names, field=None, **kwargs):
     """
     Returns sympy symbols with the specified names and field (``R`` or ``C``).
 
     Additional constraints can be specified as keyword args.
     """
+    if field is None:
+        return sp.symbols(names, **kwargs)
     if field is R:
         return sp.symbols(names, real=True, **kwargs)
-    else:
-        return sp.symbols(names, complex=True, **kwargs)
+    return sp.symbols(names, complex=True, **kwargs)
 
 
 def is_linear(expr, vars=None):
@@ -45,16 +47,14 @@ def is_empty(matrix):
     """
     Returns True if the matrix contains no elements, otherwise False.
     """
-    matrix = sp.Matrix(matrix)
-    return matrix.cols == 0 or matrix.rows == 0
+    return matrix.rows == 0 or matrix.cols == 0
 
 
 def is_invertible(matrix):
     """
     Returns True if the matrix is invertible, otherwise False.
     """
-    matrix = sp.Matrix(matrix)
-    return matrix.is_square and matrix.det() != 0
+    return matrix.is_square and not matrix.det().equals(0)
 
 
 def is_orthogonal(matrix):
@@ -69,10 +69,9 @@ def is_unitary(matrix):
     """
     Returns True if the matrix is unitary, otherwise False.
     """
-    matrix = sp.Matrix(matrix)
     if not matrix.is_square:
         return False
-    identity = sp.eye(matrix.rows)
+    identity = M.eye(matrix.rows)
     return (matrix.H @ matrix).equals(identity)
 
 
@@ -80,7 +79,6 @@ def is_normal(matrix):
     """
     Returns True if the matrix is normal, otherwise False.
     """
-    matrix = sp.Matrix(matrix)
     if not matrix.is_square:
         return False
     adjoint = matrix.H
@@ -93,16 +91,15 @@ def rref(matrix, remove=False):
 
     If `remove` is True, all zero rows are removed.
     """
-    matrix = sp.Matrix(matrix)
     rref, _ = matrix.rref()
     if not remove:
-        return rref
+        return M(rref)
     
     for i in range(rref.rows - 1, -1, -1):
         if any(rref.row(i)):
             break
         rref.row_del(i)
-    return rref
+    return M(rref)
 
 
 def of_arity(func, arity):

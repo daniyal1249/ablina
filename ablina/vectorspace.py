@@ -3,7 +3,8 @@ from random import gauss
 import sympy as sp
 
 from .field import R, C
-from .mathset import MathSet
+from .mathset import Set
+from .matrix import M
 from .parser import split_constraint, sympify
 from . import utils as u
 from . import vs_utils as vsu
@@ -50,21 +51,18 @@ class Fn:
 
     @staticmethod
     def _init_operations():
-        def add(vec1, vec2):
-            return [i + j for i, j in zip(vec1, vec2)]
-        def mul(scalar, vec):
-            return [scalar * i for i in vec]
-        def additive_inv(vec):
-            return [-i for i in vec]
+        def add(vec1, vec2): return vec1 + vec2
+        def mul(scalar, vec): return scalar * vec
+        def additive_inv(vec): return -vec
         return add, mul, additive_inv
 
     @staticmethod
     def _init_matrices(n, constraints, ns, rs):
-        if ns is not None:
-            ns = sp.zeros(0, n) if u.is_empty(ns) else sp.Matrix(ns)
-        if rs is not None:
-            rs = sp.zeros(0, n) if u.is_empty(rs) else sp.Matrix(rs)
-        
+        if ns is not None and u.is_empty(ns):
+            ns = M.zeros(0, n)
+        if rs is not None and u.is_empty(rs):
+            rs = M.zeros(0, n)
+
         # Initialize ns_matrix
         if ns is None:
             if rs is None:
@@ -99,11 +97,11 @@ class Fn:
     
     @property
     def additive_id(self):
-        return [0] * self.n
+        return M.zeros(self.n, 1)
     
     @property
     def basis(self):
-        return self._rs_matrix.tolist()
+        return [M(vec) for vec in self._rs_matrix.tolist()]
     
     @property
     def dim(self):
@@ -122,7 +120,6 @@ class Fn:
             return False
         try:
             # Check if vector satisfies vector space constraints
-            vector = sp.Matrix(vector)
             return bool((self._ns_matrix @ vector).is_zero_matrix)
         except Exception:
             return False
@@ -135,26 +132,24 @@ class Fn:
             weights = list(u.symbols(f'c:{size}', field=self.field))
         else:
             weights = [round(gauss(0, std)) for _ in range(size)]
-        vec = sp.Matrix([weights]) @ self._rs_matrix
-        return vec.flat()
+        vec = M([weights]) @ self._rs_matrix
+        return vec.T
 
     def to_coordinate(self, vector, basis):
         if not basis:
-            return []
-        matrix, vec = sp.Matrix(basis).T, sp.Matrix(vector)
-        coord_vec = matrix.solve_least_squares(vec)
-        return coord_vec.flat()
+            return M()
+        mat = M.hstack(*basis)
+        return mat.solve_least_squares(vector)
 
     def from_coordinate(self, vector, basis):
         if not basis:
             return self.additive_id
-        matrix, coord_vec = sp.Matrix(basis).T, sp.Matrix(vector)
-        vec = matrix @ coord_vec
-        return vec.flat()
+        mat = M.hstack(*basis)
+        return mat @ vector
     
     def is_independent(self, *vectors):
-        matrix = sp.Matrix(vectors)
-        return matrix.rank() == matrix.rows
+        mat = M.hstack(*vectors)
+        return mat.rank() == len(vectors)
     
     def is_basis(self, *vectors):
         return self.is_independent(*vectors) and len(vectors) == self.dim
@@ -162,33 +157,33 @@ class Fn:
     # Methods relating to vector spaces
 
     def sum(self, vs2):
-        rs_matrix = sp.Matrix.vstack(self._rs_matrix, vs2._rs_matrix)
-        rs_matrix = u.rref(rs_matrix, remove=True)
-        return Fn(self.field, self.n, rs_matrix=rs_matrix)
+        rs = M.vstack(self._rs_matrix, vs2._rs_matrix)
+        rs = u.rref(rs, remove=True)
+        return Fn(self.field, self.n, rs_matrix=rs)
     
     def intersection(self, vs2):
-        ns_matrix = sp.Matrix.vstack(self._ns_matrix, vs2._ns_matrix)
-        ns_matrix = u.rref(ns_matrix, remove=True)
-        return Fn(self.field, self.n, ns_matrix=ns_matrix)
+        ns = M.vstack(self._ns_matrix, vs2._ns_matrix)
+        ns = u.rref(ns, remove=True)
+        return Fn(self.field, self.n, ns_matrix=ns)
     
     def span(self, *vectors, basis=None):
-        rs_matrix = u.rref(vectors, remove=True) if basis is None else basis
-        return Fn(self.field, self.n, rs_matrix=rs_matrix)
+        if basis is None:
+            rs = M.hstack(*vectors).T
+            rs = u.rref(rs, remove=True)
+        else:
+            rs = M.hstack(*basis).T
+        return Fn(self.field, self.n, rs_matrix=rs)
 
     def is_subspace(self, vs2):
-        for i in range(vs2.dim):
-            vec = vs2._rs_matrix.row(i).T
-            if not (self._ns_matrix @ vec).is_zero_matrix:
-                return False
-        return True
+        return all(vec in self for vec in vs2.basis)
     
     # Methods involving the dot product
 
     def dot(self, vec1, vec2):
-        return sp.Matrix(vec1).dot(sp.Matrix(vec2))
+        return vec1.dot(vec2)
 
     def norm(self, vector):
-        return sp.Matrix(vector).norm()
+        return sp.sqrt(self.dot(vector, vector))
     
     def is_orthogonal(self, *vectors):
         for i, vec1 in enumerate(vectors, 1):
@@ -214,10 +209,8 @@ class Fn:
         return orthonormal_vecs
     
     def ortho_projection(self, vector, subspace):
-        vector = sp.Matrix(vector)
         mat = subspace._rs_matrix.T
-        proj = mat @ (mat.T @ mat).inv() @ mat.T @ vector
-        return proj.flat()
+        return mat @ (mat.T @ mat).inv() @ mat.T @ vector
     
     def ortho_complement(self, subspace):
         comp = Fn(self.field, self.n, rs_matrix=subspace._ns_matrix)
@@ -244,7 +237,7 @@ class VectorSpace:
         pass
         """
         self.name = name
-        self.set = MathSet(name, self.set.cls, lambda vec: vec in self)
+        self.set = Set(name, self.set.cls, lambda vec: vec in self)
 
         if fn is not None:
             self.fn = fn
@@ -268,8 +261,8 @@ class VectorSpace:
             if not callable(getattr(cls, method, None)):
                 raise TypeError(f'{cls.__name__} must define the method "{method}".')
         
-        if not isinstance(cls.set, MathSet):
-            raise TypeError(f'{cls.__name__}.set must be a MathSet.')
+        if not isinstance(cls.set, Set):
+            raise TypeError(f'{cls.__name__}.set must be a Set.')
         if not isinstance(cls.fn, Fn):
             raise TypeError(f'{cls.__name__}.fn must be of type Fn.')
         
@@ -484,7 +477,7 @@ class VectorSpace:
 
         Returns
         -------
-        list
+        Matrix
             The coordinate vector representation of `vector`.
 
         Raises
@@ -503,7 +496,7 @@ class VectorSpace:
         >>> V = fn('V', R, 3, constraints=['v0 == 2*v1'])
         >>> V.basis
         [[1, 1/2, 0], [0, 0, 1]]
-        >>> V.to_coordinate([2, 1, 2])
+        >>> V.to_coordinate(M[2, 1, 2])
         [2, 0]
         """
         if vector not in self:
@@ -530,7 +523,7 @@ class VectorSpace:
 
         Parameters
         ----------
-        vector : list
+        vector : Matrix
             The coordinate vector to convert.
         basis : list, optional
             A basis of the vector space.
@@ -555,10 +548,10 @@ class VectorSpace:
         >>> V = fn('V', R, 3, constraints=['v0 == 2*v1'])
         >>> V.basis
         [[1, 1/2, 0], [0, 0, 1]]
-        >>> V.from_coordinate([1, 1])
+        >>> V.from_coordinate(M[1, 1])
         [1, 1/2, 1]
-        >>> new_basis = [[2, 1, 1], [0, 0, 1]]
-        >>> V.from_coordinate([1, 1], basis=new_basis)
+        >>> new_basis = [M[2, 1, 1], M[0, 0, 1]]
+        >>> V.from_coordinate(M[1, 1], basis=new_basis)
         [2, 1, 2]
         """
         self._validate_coordinate(vector)
@@ -593,11 +586,11 @@ class VectorSpace:
         --------
 
         >>> V = fn('V', R, 3)
-        >>> V.is_independent([1, 0, 0], [0, 1, 0])
+        >>> V.is_independent(M[1, 0, 0], M[0, 1, 0])
         True
-        >>> V.is_independent([1, 2, 3], [2, 4, 6])
+        >>> V.is_independent(M[1, 2, 3], M[2, 4, 6])
         False
-        >>> V.is_independent([0, 0, 0])
+        >>> V.is_independent(M[0, 0, 0])
         False
         >>> V.is_independent()
         True
@@ -633,7 +626,8 @@ class VectorSpace:
         if not self.is_basis(*basis):
             raise ValueError('Provided vectors do not form a basis.')
         basechange = [self.to_coordinate(vec) for vec in basis]
-        return (sp.Matrix(basechange).T).inv()
+        basechange = M.hstack(*basechange)
+        return basechange.inv()
 
     # Methods relating to vector spaces
 
@@ -762,9 +756,9 @@ class VectorSpace:
         --------
 
         >>> V = fn('V', R, 3)
-        >>> V.span('span1', [1, 2, 3], [4, 5, 6]).basis
+        >>> V.span('span1', M[1, 2, 3], M[4, 5, 6]).basis
         [[1, 0, -1], [0, 1, 2]]
-        >>> V.span('span2', basis=[[1, 2, 3], [4, 5, 6]]).basis
+        >>> V.span('span2', basis=[M[1, 2, 3], M[4, 5, 6]]).basis
         [[1, 2, 3], [4, 5, 6]]
         >>> V.span('span3').basis
         []
@@ -868,7 +862,7 @@ class VectorSpace:
             return coset.vectorspace == subspace  # FIX: check
 
         class quotient_space(VectorSpace, name=cls_name):
-            set = MathSet(cls_name, AffineSpace, in_quotient_space)
+            set = Set(cls_name, AffineSpace, in_quotient_space)
             fn = vs.fn.ortho_complement(subspace.fn)
             def __push__(coset):
                 fn_vec = vs.__push__(coset.representative)
@@ -887,12 +881,10 @@ class VectorSpace:
             raise TypeError('Vector spaces must be subspaces of the same ambient space.')
     
     def _validate_coordinate(self, vector):
-        try:
-            vector = sp.Matrix(vector)
-        except Exception as e:
-            raise TypeError('Invalid coordinate vector.') from e
+        if not isinstance(vector, M):
+            raise TypeError('Coordinate vector must be a Matrix.')
         if vector.shape != (self.dim, 1):
-            raise ValueError('Coordinate vector has invalid length.')
+            raise ValueError('Coordinate vector has invalid shape.')
         if not all(i in self.field for i in vector):
             raise ValueError('Coordinates must be elements of the field.')
 
@@ -932,10 +924,10 @@ class AffineSpace:
     @property
     def set(self):
         """
-        MathSet: The set containing the points in the affine space.
+        Set: The set containing the points in the affine space.
         """
         vs = self.vectorspace
-        return MathSet(self.name, vs.set.cls, lambda point: point in self)
+        return Set(self.name, vs.set.cls, lambda point: point in self)
     
     @property
     def dim(self):
@@ -1128,18 +1120,14 @@ def fn(name, field, n, constraints=None, basis=None, *,
     if n == 1:
         cls_name = f'{field}'
         class fn(VectorSpace, name=cls_name):
-            set = MathSet(cls_name, object)
+            set = Set(cls_name, object)
             fn = Fn(field, 1)
-            def __push__(vec): return [vec]
+            def __push__(vec): return M[vec]
             def __pull__(vec): return vec[0]
     else:
-        def in_fn(vec):
-            try: return sp.Matrix(vec).shape == (n, 1)
-            except Exception: return False
-
         cls_name = f'{field}^{n}'
         class fn(VectorSpace, name=cls_name):
-            set = MathSet(cls_name, object, in_fn)
+            set = Set(cls_name, M, lambda vec: vec.shape == (n, 1))
             fn = Fn(field, n)
             def __push__(vec): return vec
             def __pull__(vec): return vec
@@ -1154,21 +1142,13 @@ def matrix_space(name, field, shape, constraints=None, basis=None):
     """
     pass
     """
-    cls_name = f'{field}^({shape[0]} x {shape[1]})'
-
-    def in_matrix_space(mat):
-        try: return sp.Matrix(mat).shape == shape
-        except Exception: return False
+    cls_name = f'{field}^({shape[0]} × {shape[1]})'
 
     class matrix_space(VectorSpace, name=cls_name):
-        set = MathSet(cls_name, object, in_matrix_space)
+        set = Set(cls_name, M, lambda mat: mat.shape == shape)
         fn = Fn(field, sp.prod(shape))
-        def __push__(mat):
-            mat = sp.Matrix(mat)
-            return mat.flat()
-        def __pull__(vec):
-            mat = sp.Matrix(*shape, vec)
-            return mat.tolist()
+        def __push__(mat): return M(mat.flat())
+        def __pull__(vec): return M(*shape, vec)
     return matrix_space(name, constraints, basis)
 
 
@@ -1177,7 +1157,7 @@ def poly_space(name, field, max_degree, constraints=None, basis=None):
     pass
     """
     cls_name = f'P_{max_degree}({field})'
-    x = sp.symbols('x')
+    x = u.symbols('x')
 
     def in_poly_space(poly):
         # FIX: check (list)
@@ -1185,13 +1165,13 @@ def poly_space(name, field, max_degree, constraints=None, basis=None):
         except Exception: return False
 
     class poly_space(VectorSpace, name=cls_name):
-        set = MathSet(cls_name, object, in_poly_space)
+        set = Set(cls_name, object, in_poly_space)
         fn = Fn(field, max_degree + 1)
         def __push__(poly):
             poly = sp.Poly(poly, x)
             coeffs = poly.all_coeffs()[::-1]  # Ascending order
             degree_diff = max_degree - len(coeffs) + 1
-            return coeffs + ([0] * degree_diff)
+            return M(coeffs + [0] * degree_diff)
         def __pull__(vec):
             poly = sp.Poly(vec[::-1], x)
             return poly.as_expr()
@@ -1232,7 +1212,7 @@ def is_vectorspace(n, constraints):
     for constraint in constraints:
         exprs.update(split_constraint(constraint))
     
-    allowed_vars = sp.symbols(f'v:{n}')
+    allowed_vars = u.symbols(f'v:{n}')
     for expr in exprs:
         expr = sympify(expr, allowed_vars)
         if not u.is_linear(expr):
@@ -1245,45 +1225,6 @@ def is_vectorspace(n, constraints):
     return True
 
 
-def columnspace(name, matrix, field=R):
-    """
-    Return the column space, or image, of a matrix.
-
-    Parameters
-    ----------
-    name : str
-        The name of the column space.
-    matrix : list of list or sympy.Matrix
-        The matrix to take the column space of.
-    field : {R, C}
-        The field of scalars.
-
-    Returns
-    -------
-    VectorSpace
-        The column space of `matrix`.
-
-    See Also
-    --------
-    image, rowspace
-
-    Examples
-    --------
-
-    >>> matrix = [[1, 2], [3, 4]]
-    >>> V = columnspace('V', matrix)
-    >>> V.basis
-    [[1, 0], [0, 1]]
-    >>> U = image('U', matrix)
-    >>> U.basis
-    [[1, 0], [0, 1]]
-    """
-    matrix = sp.Matrix(matrix).T
-    matrix = u.rref(matrix, remove=True)
-    n = matrix.rows
-    return fn(name, field, n, rs_matrix=matrix)
-
-
 def rowspace(name, matrix, field=R):
     """
     Return the row space of a matrix.
@@ -1292,7 +1233,7 @@ def rowspace(name, matrix, field=R):
     ----------
     name : str
         The name of the row space.
-    matrix : list of list or sympy.Matrix
+    matrix : Matrix
         The matrix to take the row space of.
     field : {R, C}
         The field of scalars.
@@ -1309,14 +1250,50 @@ def rowspace(name, matrix, field=R):
     Examples
     --------
 
-    >>> matrix = [[1, 2], [3, 4]]
+    >>> matrix = M[[1, 2], [3, 4]]
     >>> V = rowspace('V', matrix)
     >>> V.basis
     [[1, 0], [0, 1]]
     """
-    matrix = u.rref(matrix, remove=True)
     n = matrix.cols
-    return fn(name, field, n, rs_matrix=matrix)
+    rs = u.rref(matrix, remove=True)
+    return fn(name, field, n, rs_matrix=rs)
+
+
+def columnspace(name, matrix, field=R):
+    """
+    Return the column space, or image, of a matrix.
+
+    Parameters
+    ----------
+    name : str
+        The name of the column space.
+    matrix : Matrix
+        The matrix to take the column space of.
+    field : {R, C}
+        The field of scalars.
+
+    Returns
+    -------
+    VectorSpace
+        The column space of `matrix`.
+
+    See Also
+    --------
+    image, rowspace
+
+    Examples
+    --------
+
+    >>> matrix = M[[1, 2], [3, 4]]
+    >>> V = columnspace('V', matrix)
+    >>> V.basis
+    [[1, 0], [0, 1]]
+    >>> U = image('U', matrix)
+    >>> U.basis
+    [[1, 0], [0, 1]]
+    """
+    return rowspace(name, matrix.T, field)
 
 
 def nullspace(name, matrix, field=R):
@@ -1327,7 +1304,7 @@ def nullspace(name, matrix, field=R):
     ----------
     name : str
         The name of the null space.
-    matrix : list of list or sympy.Matrix
+    matrix : Matrix
         The matrix to take the null space of.
     field : {R, C}
         The field of scalars.
@@ -1344,7 +1321,7 @@ def nullspace(name, matrix, field=R):
     Examples
     --------
 
-    >>> matrix = [[1, 2], [3, 4]]
+    >>> matrix = M[[1, 2], [3, 4]]
     >>> V = nullspace('V', matrix)
     >>> V.basis
     []
@@ -1352,9 +1329,9 @@ def nullspace(name, matrix, field=R):
     >>> U.basis
     []
     """
-    matrix = u.rref(matrix, remove=True)
     n = matrix.cols
-    return fn(name, field, n, ns_matrix=matrix)
+    ns = u.rref(matrix, remove=True)
+    return fn(name, field, n, ns_matrix=ns)
 
 
 def left_nullspace(name, matrix, field=R):
@@ -1365,7 +1342,7 @@ def left_nullspace(name, matrix, field=R):
     ----------
     name : str
         The name of the left null space.
-    matrix : list of list or sympy.Matrix
+    matrix : Matrix
         The matrix to take the left null space of.
     field : {R, C}
         The field of scalars.
@@ -1382,18 +1359,15 @@ def left_nullspace(name, matrix, field=R):
     Examples
     --------
 
-    >>> matrix = [[1, 2], [3, 4]]
+    >>> matrix = M[[1, 2], [3, 4]]
     >>> V = left_nullspace('V', matrix)
     >>> V.basis
     []
-    >>> matrix = sympy.Matrix([[1, 2], [3, 4]])
-    >>> U = left_nullspace('U', matrix)
-    >>> W = nullspace('W', matrix.T)
-    >>> U == W
-    True
+    >>> U = nullspace('U', matrix.T)
+    >>> U.basis
+    []
     """
-    matrix = sp.Matrix(matrix).T
-    return nullspace(name, matrix, field)
+    return nullspace(name, matrix.T, field)
 
 
 # Aliases

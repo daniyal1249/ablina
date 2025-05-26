@@ -1,6 +1,7 @@
 import sympy as sp
 
 from .field import R
+from .matrix import M
 from .utils import is_invertible, of_arity
 from .vectorspace import VectorSpace
 
@@ -36,7 +37,7 @@ class SesquilinearForm:
         mapping : callable, optional
             A function that takes two vectors in the vector space and 
             returns a scalar in the field.
-        matrix : list of list or sympy.Matrix, optional
+        matrix : Matrix, optional
             The matrix representation of the form with respect to the 
             basis of the vector space.
 
@@ -58,7 +59,7 @@ class SesquilinearForm:
         if mapping is None:
             mapping = SesquilinearForm._from_matrix(vectorspace, matrix)
         elif not of_arity(mapping, 2):
-            raise TypeError('Mapping must be a function of arity 2.')
+            raise TypeError('Mapping must be a callable of arity 2.')
         if matrix is None:
             matrix = SesquilinearForm._to_matrix(vectorspace, mapping)
         else:
@@ -73,22 +74,22 @@ class SesquilinearForm:
     def _to_matrix(vectorspace, mapping):
         basis = vectorspace.basis
         n = len(basis)
-        return sp.Matrix(n, n, lambda i, j: mapping(basis[i], basis[j]))
+        return M(n, n, lambda i, j: mapping(basis[i], basis[j]))
 
     @staticmethod
-    def _from_matrix(vectorspace, matrix):
-        matrix = sp.Matrix(matrix)
-        def to_coord(v): return sp.Matrix(vectorspace.to_coordinate(v))
-        return lambda u, v: (to_coord(u).H @ matrix @ to_coord(v))[0]
+    def _from_matrix(vectorspace, mat):
+        to_coord = vectorspace.to_coordinate
+        return lambda u, v: (to_coord(u).H @ mat @ to_coord(v))[0]
     
     @staticmethod
-    def _validate_matrix(vectorspace, matrix):
-        matrix = sp.Matrix(matrix)
-        if not (matrix.is_square and matrix.rows == vectorspace.dim):
+    def _validate_matrix(vectorspace, mat):
+        if not isinstance(mat, M):
+            raise TypeError('Matrix must be of type Matrix.')
+        if not (mat.is_square and mat.rows == vectorspace.dim):
             raise ValueError('Matrix has invalid shape.')
-        if not all(i in vectorspace.field for i in matrix):
-            raise ValueError('Matrix entries must be in the field.')
-        return matrix
+        if not all(i in vectorspace.field for i in mat):
+            raise ValueError('Matrix entries must be elements of the field.')
+        return mat
 
     @property
     def vectorspace(self):
@@ -107,7 +108,7 @@ class SesquilinearForm:
     @property
     def matrix(self):
         """
-        sympy.Matrix: The matrix representation of the form.
+        Matrix: The matrix representation of the form.
         """
         return self._matrix
     
@@ -137,7 +138,7 @@ class SesquilinearForm:
     
     def info(self):
         vs = self.vectorspace
-        signature = f'{self} : {vs} x {vs} -> {vs.field}'
+        signature = f'{self} : {vs} × {vs} → {vs.field}'
 
         lines = [
             signature,
@@ -145,7 +146,7 @@ class SesquilinearForm:
             f'Symmetric?          {self.is_symmetric()}',
             f'Hermitian?          {self.is_hermitian()}',
             f'Positive Definite?  {self.is_positive_definite()}',
-            f'Matrix              {self.matrix.tolist()}'
+            f'Matrix              {self.matrix}'
             ]
         return '\n'.join(lines)
 
@@ -319,7 +320,7 @@ class InnerProduct(SesquilinearForm):
         mapping : callable, optional
             A function that takes two vectors in the vector space and 
             returns a scalar in the field.
-        matrix : list of list or sympy.Matrix, optional
+        matrix : Matrix, optional
             The matrix representation of the inner product with respect 
             to the basis of the vector space.
 
@@ -376,13 +377,13 @@ class InnerProduct(SesquilinearForm):
     
     def info(self):
         vs = self.vectorspace
-        signature = f'{self} : {vs} x {vs} -> {vs.field}'
+        signature = f'{self} : {vs} × {vs} → {vs.field}'
 
         lines = [
             signature,
             '-' * len(signature),
             f'Orthonormal Basis  [{', '.join(map(str, self.orthonormal_basis))}]',
-            f'Matrix             {self.matrix.tolist()}'
+            f'Matrix             {self.matrix}'
             ]
         return '\n'.join(lines)
 
@@ -418,8 +419,7 @@ class InnerProduct(SesquilinearForm):
         """
         for i, vec1 in enumerate(vectors, 1):
             for vec2 in vectors[i:]:
-                # FIX: consider tolerance
-                if self(vec1, vec2) != 0:
+                if not sp.Integer(0).equals(self(vec1, vec2)):
                     return False
         return True
     

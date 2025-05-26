@@ -1,4 +1,4 @@
-from sympy.sets.fancysets import Reals, Complexes
+from sympy.sets.fancysets import Reals as _R, Complexes as _C
 
 
 class Field:
@@ -8,7 +8,7 @@ class Field:
     pass
 
 
-class Real(Field, Reals):
+class Reals(Field, _R):
     """
     pass
     """
@@ -26,7 +26,7 @@ class Real(Field, Reals):
             return False
 
 
-class Complex(Field, Complexes):
+class Complexes(Field, _C):
     """
     pass
     """
@@ -44,5 +44,5 @@ class Complex(Field, Complexes):
             return False
 
 
-R = Real()
-C = Complex()
+R = Reals()
+C = Complexes()

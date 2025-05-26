@@ -1,7 +1,6 @@
-import sympy as sp
-
+from .matrix import M
 from .parser import ConstraintError, split_constraint, sympify
-from .utils import rref
+from .utils import rref, symbols
 
 
 def to_ns_matrix(n, constraints):
@@ -17,15 +16,15 @@ def to_ns_matrix(n, constraints):
 
     Returns
     -------
-    ns_matrix : sympy.Matrix
+    Matrix
         A matrix with the linear constraints as rows.
     """
     exprs = set()
     for constraint in constraints:
         exprs.update(split_constraint(constraint))
 
-    matrix = []
-    allowed_vars = sp.symbols(f'v:{n}')
+    mat = []
+    allowed_vars = symbols(f'v:{n}')
     for expr in exprs:
         row = [0] * n
         try:
@@ -37,10 +36,11 @@ def to_ns_matrix(n, constraints):
             var_idx = int(var.name.lstrip('v'))
             var_coeff = expr.coeff(var, 1)
             row[var_idx] = var_coeff
-        matrix.append(row)
+        mat.append(row)
     
-    ns_matrix = rref(matrix, remove=True) if matrix else sp.zeros(0, n)
-    return ns_matrix
+    if mat:
+        return rref(M(mat), remove=True)
+    return M.zeros(0, n)
 
 
 def to_complement(matrix):
@@ -49,18 +49,19 @@ def to_complement(matrix):
 
     Parameters
     ----------
-    matrix : sympy.Matrix
+    matrix : Matrix
         pass
 
     Returns
     -------
-    sympy.Matrix
+    Matrix
         pass
     """
     if matrix.rows == 0:
-        return sp.eye(matrix.cols)
+        return M.eye(matrix.cols)
     
-    ns_basis = matrix.nullspace()
-    if not ns_basis:
-        return sp.zeros(0, matrix.cols)
-    return rref([vec.T for vec in ns_basis], remove=True)
+    basis = matrix.nullspace()
+    if not basis:
+        return M.zeros(0, matrix.cols)
+    mat = M.hstack(*basis).T
+    return rref(mat, remove=True)
