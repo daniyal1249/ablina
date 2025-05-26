@@ -58,10 +58,10 @@ class Fn:
 
     @staticmethod
     def _init_matrices(n, constraints, ns, rs):
-        if ns is not None and u.is_empty(ns):
-            ns = M.zeros(0, n)
-        if rs is not None and u.is_empty(rs):
-            rs = M.zeros(0, n)
+        if ns is not None:
+            ns = M.zeros(0, n) if u.is_empty(ns) else M(ns)
+        if rs is not None:
+            rs = M.zeros(0, n) if u.is_empty(rs) else M(rs)
 
         # Initialize ns_matrix
         if ns is None:
@@ -116,13 +116,13 @@ class Fn:
             )
     
     def __contains__(self, vector):
+        if not (isinstance(vector, M) and vector.shape == (self.n, 1)):
+            return False
         if not all(i in self.field for i in vector):
             return False
-        try:
-            # Check if vector satisfies vector space constraints
-            return bool((self._ns_matrix @ vector).is_zero_matrix)
-        except Exception:
-            return False
+        # Check if vector satisfies vector space constraints
+        prod = self._ns_matrix @ vector
+        return bool(prod.is_zero_matrix)
 
     # Methods relating to vectors
 
@@ -141,11 +141,11 @@ class Fn:
         mat = M.hstack(*basis)
         return mat.solve_least_squares(vector)
 
-    def from_coordinate(self, vector, basis):
+    def from_coordinate(self, coord_vec, basis):
         if not basis:
             return self.additive_id
         mat = M.hstack(*basis)
-        return mat @ vector
+        return mat @ coord_vec
     
     def is_independent(self, *vectors):
         mat = M.hstack(*vectors)
@@ -180,7 +180,7 @@ class Fn:
     # Methods involving the dot product
 
     def dot(self, vec1, vec2):
-        return vec1.dot(vec2)
+        return M.dot(vec1, vec2)
 
     def norm(self, vector):
         return sp.sqrt(self.dot(vector, vector))
@@ -496,7 +496,7 @@ class VectorSpace:
         >>> V = fn('V', R, 3, constraints=['v0 == 2*v1'])
         >>> V.basis
         [[1, 1/2, 0], [0, 0, 1]]
-        >>> V.to_coordinate(M[2, 1, 2])
+        >>> V.to_coordinate([2, 1, 2])
         [2, 0]
         """
         if vector not in self:
@@ -511,19 +511,19 @@ class VectorSpace:
         fn_vec = self.__push__(vector)
         return self.fn.to_coordinate(fn_vec, fn_basis)
     
-    def from_coordinate(self, vector, basis=None):
+    def from_coordinate(self, coord_vec, basis=None):
         """
         Convert a coordinate vector to the vector it represents.
 
         Returns a linear combination of the basis vectors whose weights 
-        are given by the coordinates of `vector`. If `basis` is None, then 
-        ``self.basis`` is used. The length of `vector` must be equal to 
-        the number of vectors in the basis, or equivalently the dimension 
-        of the vector space.
+        are given by the coordinates of `coord_vec`. If `basis` is None, 
+        then ``self.basis`` is used. The length of `coord_vec` must be 
+        equal to the number of vectors in the basis, or equivalently the 
+        dimension of the vector space.
 
         Parameters
         ----------
-        vector : Matrix
+        coord_vec : Matrix
             The coordinate vector to convert.
         basis : list, optional
             A basis of the vector space.
@@ -531,12 +531,12 @@ class VectorSpace:
         Returns
         -------
         object
-            The vector represented by `vector`.
+            The vector represented by `coord_vec`.
 
         Raises
         ------
         ValueError
-            If `vector` is not a valid coordinate vector.
+            If `coord_vec` is not a valid coordinate vector.
 
         See Also
         --------
@@ -548,13 +548,13 @@ class VectorSpace:
         >>> V = fn('V', R, 3, constraints=['v0 == 2*v1'])
         >>> V.basis
         [[1, 1/2, 0], [0, 0, 1]]
-        >>> V.from_coordinate(M[1, 1])
+        >>> V.from_coordinate([1, 1])
         [1, 1/2, 1]
-        >>> new_basis = [M[2, 1, 1], M[0, 0, 1]]
-        >>> V.from_coordinate(M[1, 1], basis=new_basis)
+        >>> new_basis = [[2, 1, 1], [0, 0, 1]]
+        >>> V.from_coordinate([1, 1], basis=new_basis)
         [2, 1, 2]
         """
-        self._validate_coordinate(vector)
+        vec = self._validate_coordinate(coord_vec)
         if basis is None:
             fn_basis = self.fn.basis
         elif not self.is_basis(*basis):
@@ -562,7 +562,7 @@ class VectorSpace:
         else:
             fn_basis = [self.__push__(vec) for vec in basis]
         
-        fn_vec = self.fn.from_coordinate(vector, fn_basis)
+        fn_vec = self.fn.from_coordinate(vec, fn_basis)
         return self.__pull__(fn_vec)
     
     def is_independent(self, *vectors):
@@ -586,11 +586,11 @@ class VectorSpace:
         --------
 
         >>> V = fn('V', R, 3)
-        >>> V.is_independent(M[1, 0, 0], M[0, 1, 0])
+        >>> V.is_independent([1, 0, 0], [0, 1, 0])
         True
-        >>> V.is_independent(M[1, 2, 3], M[2, 4, 6])
+        >>> V.is_independent([1, 2, 3], [2, 4, 6])
         False
-        >>> V.is_independent(M[0, 0, 0])
+        >>> V.is_independent([0, 0, 0])
         False
         >>> V.is_independent()
         True
@@ -756,9 +756,9 @@ class VectorSpace:
         --------
 
         >>> V = fn('V', R, 3)
-        >>> V.span('span1', M[1, 2, 3], M[4, 5, 6]).basis
+        >>> V.span('span1', [1, 2, 3], [4, 5, 6]).basis
         [[1, 0, -1], [0, 1, 2]]
-        >>> V.span('span2', basis=[M[1, 2, 3], M[4, 5, 6]]).basis
+        >>> V.span('span2', basis=[[1, 2, 3], [4, 5, 6]]).basis
         [[1, 2, 3], [4, 5, 6]]
         >>> V.span('span3').basis
         []
@@ -880,13 +880,13 @@ class VectorSpace:
         if type(self).name != type(vs2).name:
             raise TypeError('Vector spaces must be subspaces of the same ambient space.')
     
-    def _validate_coordinate(self, vector):
-        if not isinstance(vector, M):
-            raise TypeError('Coordinate vector must be a Matrix.')
-        if vector.shape != (self.dim, 1):
+    def _validate_coordinate(self, coord_vec):
+        vec = M(coord_vec)
+        if vec.shape != (self.dim, 1):
             raise ValueError('Coordinate vector has invalid shape.')
-        if not all(i in self.field for i in vector):
+        if not all(i in self.field for i in vec):
             raise ValueError('Coordinates must be elements of the field.')
+        return vec
 
 
 class AffineSpace:
@@ -1083,11 +1083,7 @@ class AffineSpace:
         AffineSpace.intersection
         """
         vs = self.vectorspace
-        if not isinstance(as2, AffineSpace):
-            raise TypeError()
-        if vs != as2.vectorspace:
-            raise TypeError('Affine spaces must be cosets of the same vector space.')
-        
+        self._validate_type(as2)
         repr = vs.add(self.representative, as2.representative)
         return AffineSpace(vs, repr)
 
@@ -1110,6 +1106,12 @@ class AffineSpace:
         AffineSpace.sum
         """
         raise NotImplementedError()
+    
+    def _validate_type(self, as2):
+        if not isinstance(as2, AffineSpace):
+            raise TypeError(f'Expected an AffineSpace, got {type(as2).__name__} instead.')
+        if self.vectorspace != as2.vectorspace:
+            raise TypeError('Affine spaces must be cosets of the same vector space.')
 
 
 def fn(name, field, n, constraints=None, basis=None, *, 
@@ -1125,11 +1127,15 @@ def fn(name, field, n, constraints=None, basis=None, *,
             def __push__(vec): return M[vec]
             def __pull__(vec): return vec[0]
     else:
+        def in_fn(vec):
+            try: return M(vec).shape == (n, 1)
+            except Exception: return False
+
         cls_name = f'{field}^{n}'
         class fn(VectorSpace, name=cls_name):
-            set = Set(cls_name, M, lambda vec: vec.shape == (n, 1))
+            set = Set(cls_name, object, in_fn)
             fn = Fn(field, n)
-            def __push__(vec): return vec
+            def __push__(vec): return M(vec)
             def __pull__(vec): return vec
 
     if not (ns_matrix is None and rs_matrix is None):
@@ -1143,12 +1149,17 @@ def matrix_space(name, field, shape, constraints=None, basis=None):
     pass
     """
     cls_name = f'{field}^({shape[0]} × {shape[1]})'
+    n = sp.prod(shape)
+
+    def in_matrix_space(mat):
+        try: return M(mat).shape == shape
+        except Exception: return False
 
     class matrix_space(VectorSpace, name=cls_name):
-        set = Set(cls_name, M, lambda mat: mat.shape == shape)
-        fn = Fn(field, sp.prod(shape))
-        def __push__(mat): return M(mat.flat())
-        def __pull__(vec): return M(*shape, vec)
+        set = Set(cls_name, object, in_matrix_space)
+        fn = Fn(field, n)
+        def __push__(mat): return M(mat).reshape(n, 1)
+        def __pull__(vec): return vec.reshape(*shape)
     return matrix_space(name, constraints, basis)
 
 
@@ -1250,13 +1261,14 @@ def rowspace(name, matrix, field=R):
     Examples
     --------
 
-    >>> matrix = M[[1, 2], [3, 4]]
+    >>> matrix = [[1, 2], [3, 4]]
     >>> V = rowspace('V', matrix)
     >>> V.basis
     [[1, 0], [0, 1]]
     """
-    n = matrix.cols
-    rs = u.rref(matrix, remove=True)
+    mat = M(matrix)
+    n = mat.cols
+    rs = u.rref(mat, remove=True)
     return fn(name, field, n, rs_matrix=rs)
 
 
@@ -1285,7 +1297,7 @@ def columnspace(name, matrix, field=R):
     Examples
     --------
 
-    >>> matrix = M[[1, 2], [3, 4]]
+    >>> matrix = [[1, 2], [3, 4]]
     >>> V = columnspace('V', matrix)
     >>> V.basis
     [[1, 0], [0, 1]]
@@ -1293,7 +1305,8 @@ def columnspace(name, matrix, field=R):
     >>> U.basis
     [[1, 0], [0, 1]]
     """
-    return rowspace(name, matrix.T, field)
+    mat = M(matrix).T
+    return rowspace(name, mat, field)
 
 
 def nullspace(name, matrix, field=R):
@@ -1321,7 +1334,7 @@ def nullspace(name, matrix, field=R):
     Examples
     --------
 
-    >>> matrix = M[[1, 2], [3, 4]]
+    >>> matrix = [[1, 2], [3, 4]]
     >>> V = nullspace('V', matrix)
     >>> V.basis
     []
@@ -1329,8 +1342,9 @@ def nullspace(name, matrix, field=R):
     >>> U.basis
     []
     """
-    n = matrix.cols
-    ns = u.rref(matrix, remove=True)
+    mat = M(matrix)
+    n = mat.cols
+    ns = u.rref(mat, remove=True)
     return fn(name, field, n, ns_matrix=ns)
 
 
@@ -1359,7 +1373,7 @@ def left_nullspace(name, matrix, field=R):
     Examples
     --------
 
-    >>> matrix = M[[1, 2], [3, 4]]
+    >>> matrix = [[1, 2], [3, 4]]
     >>> V = left_nullspace('V', matrix)
     >>> V.basis
     []
@@ -1367,7 +1381,8 @@ def left_nullspace(name, matrix, field=R):
     >>> U.basis
     []
     """
-    return nullspace(name, matrix.T, field)
+    mat = M(matrix).T
+    return nullspace(name, mat, field)
 
 
 # Aliases

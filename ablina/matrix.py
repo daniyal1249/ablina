@@ -6,6 +6,11 @@ class Matrix(_M):
     pass
     """
 
+    def __new__(cls, *args, **kwargs):
+        if len(args) == 1 and isinstance(args[0], cls):
+            return args[0]
+        return super().__new__(cls, *args, **kwargs)
+
     def __class_getitem__(cls, mat):
         if isinstance(mat, tuple):
             return cls(mat)

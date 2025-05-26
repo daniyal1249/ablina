@@ -38,9 +38,7 @@ def to_ns_matrix(n, constraints):
             row[var_idx] = var_coeff
         mat.append(row)
     
-    if mat:
-        return rref(M(mat), remove=True)
-    return M.zeros(0, n)
+    return rref(mat, remove=True) if mat else M.zeros(0, n)
 
 
 def to_complement(matrix):
@@ -57,11 +55,12 @@ def to_complement(matrix):
     Matrix
         pass
     """
-    if matrix.rows == 0:
-        return M.eye(matrix.cols)
+    mat = M(matrix)
+    if mat.rows == 0:
+        return M.eye(mat.cols)
     
-    basis = matrix.nullspace()
+    basis = mat.nullspace()
     if not basis:
-        return M.zeros(0, matrix.cols)
-    mat = M.hstack(*basis).T
-    return rref(mat, remove=True)
+        return M.zeros(0, mat.cols)
+    comp = M.hstack(*basis).T
+    return rref(comp, remove=True)

@@ -53,17 +53,9 @@ class SesquilinearForm:
         """
         if not isinstance(vectorspace, VectorSpace):
             raise TypeError('vectorspace must be of type VectorSpace.')
-        if mapping is None and matrix is None:
-            raise FormError('Either a matrix or mapping must be provided.')
         
-        if mapping is None:
-            mapping = SesquilinearForm._from_matrix(vectorspace, matrix)
-        elif not of_arity(mapping, 2):
-            raise TypeError('Mapping must be a callable of arity 2.')
-        if matrix is None:
-            matrix = SesquilinearForm._to_matrix(vectorspace, mapping)
-        else:
-            matrix = SesquilinearForm._validate_matrix(vectorspace, matrix)
+        matrix = SesquilinearForm._to_matrix(vectorspace, mapping, matrix)
+        mapping = SesquilinearForm._to_mapping(vectorspace, matrix)
         
         self.name = name
         self._vectorspace = vectorspace
@@ -71,20 +63,27 @@ class SesquilinearForm:
         self._matrix = matrix
 
     @staticmethod
-    def _to_matrix(vectorspace, mapping):
+    def _to_matrix(vectorspace, mapping, matrix):
+        if matrix is not None:
+            mat = SesquilinearForm._validate_matrix(vectorspace, matrix)
+            return mat
+        if mapping is None:
+            raise FormError('Either a matrix or mapping must be provided.')
+        if not of_arity(mapping, 2):
+            raise TypeError('Mapping must be a callable of arity 2.')
+        
         basis = vectorspace.basis
         n = len(basis)
         return M(n, n, lambda i, j: mapping(basis[i], basis[j]))
 
     @staticmethod
-    def _from_matrix(vectorspace, mat):
+    def _to_mapping(vectorspace, matrix):
         to_coord = vectorspace.to_coordinate
-        return lambda u, v: (to_coord(u).H @ mat @ to_coord(v))[0]
+        return lambda u, v: (to_coord(u).H @ matrix @ to_coord(v))[0]
     
     @staticmethod
-    def _validate_matrix(vectorspace, mat):
-        if not isinstance(mat, M):
-            raise TypeError('Matrix must be of type Matrix.')
+    def _validate_matrix(vectorspace, matrix):
+        mat = M(matrix)
         if not (mat.is_square and mat.rows == vectorspace.dim):
             raise ValueError('Matrix has invalid shape.')
         if not all(i in vectorspace.field for i in mat):
@@ -116,7 +115,6 @@ class SesquilinearForm:
         return (
             f'SesquilinearForm(name={self.name!r}, '
             f'vectorspace={self.vectorspace!r}, '
-            f'mapping={self.mapping!r}, '
             f'matrix={self.matrix!r})'
             )
     
@@ -132,8 +130,6 @@ class SesquilinearForm:
             )
     
     def __call__(self, vec1, vec2):
-        if not (vec1 in self.vectorspace and vec2 in self.vectorspace):
-            raise TypeError(f'Vectors must be elements of the vector space.')
         return self.mapping(vec1, vec2)
     
     def info(self):

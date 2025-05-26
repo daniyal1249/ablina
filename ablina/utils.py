@@ -47,14 +47,16 @@ def is_empty(matrix):
     """
     Returns True if the matrix contains no elements, otherwise False.
     """
-    return matrix.rows == 0 or matrix.cols == 0
+    mat = M(matrix)
+    return mat.rows == 0 or mat.cols == 0
 
 
 def is_invertible(matrix):
     """
     Returns True if the matrix is invertible, otherwise False.
     """
-    return matrix.is_square and not matrix.det().equals(0)
+    mat = M(matrix)
+    return mat.is_square and not mat.det().equals(0)
 
 
 def is_orthogonal(matrix):
@@ -69,20 +71,22 @@ def is_unitary(matrix):
     """
     Returns True if the matrix is unitary, otherwise False.
     """
-    if not matrix.is_square:
+    mat = M(matrix)
+    if not mat.is_square:
         return False
-    identity = M.eye(matrix.rows)
-    return (matrix.H @ matrix).equals(identity)
+    identity = M.eye(mat.rows)
+    return (mat @ mat.H).equals(identity)
 
 
 def is_normal(matrix):
     """
     Returns True if the matrix is normal, otherwise False.
     """
-    if not matrix.is_square:
+    mat = M(matrix)
+    if not mat.is_square:
         return False
-    adjoint = matrix.H
-    return (matrix @ adjoint).equals(adjoint @ matrix)
+    adjoint = mat.H
+    return (mat @ adjoint).equals(adjoint @ mat)
 
 
 def rref(matrix, remove=False):
@@ -91,7 +95,8 @@ def rref(matrix, remove=False):
 
     If `remove` is True, all zero rows are removed.
     """
-    rref, _ = matrix.rref()
+    mat = M(matrix)
+    rref, _ = mat.rref()
     if not remove:
         return M(rref)
     
