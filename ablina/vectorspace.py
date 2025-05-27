@@ -1233,8 +1233,8 @@ def is_vectorspace(n, constraints):
             return False
         
         # Check for nonzero constant terms
-        const, _ = expr.as_coeff_add()
-        if const != 0:
+        const, _ = expr.as_coeff_add(*allowed_vars)
+        if not const.equals(0):
             return False
     return True
 
