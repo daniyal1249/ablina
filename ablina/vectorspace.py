@@ -124,6 +124,10 @@ class Fn:
         prod = self._ns_matrix @ vector
         return bool(prod.is_zero_matrix)
 
+    def add_constraints(self, constraints):
+        constraints_fn = Fn(self.field, self.n, constraints)
+        return self.intersection(constraints_fn)
+
     # Methods relating to vectors
 
     def vector(self, std=1, arbitrary=False):
@@ -244,9 +248,8 @@ class VectorSpace:
             return
         
         if constraints is not None:
-            constraints_fn = Fn(self.fn.field, self.fn.n, constraints)
-            self.fn = self.fn.intersection(constraints_fn)
-
+            self.fn = self.fn.add_constraints(constraints)
+        
         if basis is not None:
             if not self.is_independent(*basis):
                 raise ValueError('Basis vectors must be linearly independent.')
