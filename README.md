@@ -219,6 +219,23 @@ Take the intersection of two vector spaces
     Vector     [0, 0, 0]
 
 
+Take the quotient of two vector spaces 
+
+
+```python
+>>> X = V.quotient(U)
+>>> print(X.info())
+```
+
+    V / U (Subspace of R^3 / U)
+    ---------------------------
+    Field      R
+    Identity   U + [0, 0, 0]
+    Basis      [U + [1, 0, 0], U + [0, 1, -1/2]]
+    Dimension  2
+    Vector     U + [c0, c1, -c1/2]
+
+
 Take the span of a list of vectors 
 
 

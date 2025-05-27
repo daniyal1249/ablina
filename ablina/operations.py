@@ -1,5 +1,4 @@
-import sympy as sp
-
+from .parser import sympify
 from .utils import of_arity, symbols
 
 
@@ -49,7 +48,7 @@ class VectorAdd(Operation):
         u, v = list(u), list(v)
         try:
             for lhs, rhs in zip(self.func(u, v), add2.func(u, v)):
-                if not sp.sympify(lhs).equals(sp.sympify(rhs)):
+                if not sympify(lhs).equals(sympify(rhs)):
                     return False
             return True
         except Exception:
@@ -78,7 +77,7 @@ class ScalarMul(Operation):
         v = list(v)
         try:
             for lhs, rhs in zip(self.func(c, v), mul2.func(c, v)):
-                if not sp.sympify(lhs).equals(sp.sympify(rhs)):
+                if not sympify(lhs).equals(sympify(rhs)):
                     return False
             return True
         except Exception:

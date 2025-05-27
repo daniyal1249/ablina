@@ -242,7 +242,10 @@ class VectorSpace:
         if fn is not None:
             self.fn = fn
             return
-        self.fn = Fn(self.fn.field, self.fn.n, constraints)
+        
+        if constraints is not None:
+            constraints_fn = Fn(self.fn.field, self.fn.n, constraints)
+            self.fn = self.fn.intersection(constraints_fn)
 
         if basis is not None:
             if not self.is_independent(*basis):
