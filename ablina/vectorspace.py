@@ -1,39 +1,5 @@
 """
-Vector and affine spaces built on concrete subspaces of F^n.
-
-This module defines the core abstractions for finite-dimensional vector 
-spaces and their affine cosets in the `ablina` package. At its heart is 
-the `Fn` class, which models subspaces of the standard vector space F^n 
-(with F = R or C). On top of `Fn` sits the `VectorSpace` ABC, allowing 
-users to define arbitrary vector space types by supplying isomorphisms to 
-an `Fn` instance. The `AffineSpace` class provides affine coset 
-functionality. Factory functions (`fn`, `matrix_space`, `poly_space`, 
-`hom`, `rowspace`, `columnspace`, `nullspace`, `left_nullspace`) simplify 
-common constructions.
-
-Classes
--------
-Fn
-    Subspace of F^n defined by linear constraints.
-VectorSpace
-    Abstract base for arbitrary vector spaces.
-AffineSpace
-    Affine coset of a `VectorSpace`.
-
-Functions
----------
-fn
-    Factory for subspaces of standard F^n.
-matrix_space
-    Factory for subspaces of matrices of a given shape.
-poly_space
-    Factory for polynomial subspaces up to a given degree.
-hom
-    Factory for subspaces of linear maps between two vector spaces.
-rowspace, columnspace, nullspace, left_nullspace
-    Constructors of standard subspaces of a matrix.
-is_vectorspace
-    Check whether linear constraints define a valid subspace of F^n.
+A module for working with finite-dimensional vector and affine spaces.
 """
 
 
@@ -56,13 +22,13 @@ class NotAVectorSpaceError(Exception):
 
 class Fn:
     """
-    Concrete finite-dimensional subspace of the standard vector space F^n.
+    Subspace of the standard vector space F^n.
 
-    Represents a subspace of F^n (with F = R or C) specified by a list of 
-    linear constraints. Internally, it maintains matrices encoding the 
-    null space and row space of the subspace to support efficient 
-    membership tests, basis queries, subspace sums/intersections, and 
-    inner product operations.
+    Provides concrete implementations of the main vector space 
+    operations (sum, intersection, span, etc). This class should only be 
+    instantiated when subclassing ``VectorSpace`` in order to define a 
+    custom vector space. See the ``fn`` function for working with 
+    subspaces of F^n.
 
     Parameters
     ----------
@@ -71,7 +37,7 @@ class Fn:
     n : int
         Length of the vectors in the vector space.
     constraints : list of str, optional
-        Linear equations (e.g. "v0 + 2*v1 == 0") defining the subspace.
+        Constraints all vectors must satisfy (e.g. "v0 + 2*v1 == 0").
 
     Raises
     ------
@@ -85,9 +51,8 @@ class Fn:
         """
         Initialize an `Fn` instance.
 
-        Validates the scalar field and the list of linear constraints, 
-        then constructs the internal representation to enable all vector 
-        space operations (addition, scalar multiplication, membership, etc.).
+        Validates the list of constraints and constructs the null space 
+        and row space matrices to internally represent the subspace.
 
         Parameters
         ----------
@@ -96,7 +61,7 @@ class Fn:
         n : int
             Length of the vectors in the vector space.
         constraints : list of str, optional
-            Linear constraints defining the subspace.
+            Constraints all vectors must satisfy (e.g. "v0 + 2*v1 == 0").
 
         Raises
         ------
@@ -306,10 +271,10 @@ class VectorSpace:
     Abstract base class for defining arbitrary vector spaces.
 
     Provides the core interface for finite-dimensional vector spaces 
-    built on an underlying `Fn` model. Subclasses must define a ``set`` 
-    (of type `Set`), an ``fn`` (an `Fn` instance), and the methods 
-    ``__push__`` and ``__pull__`` to establish the isomorphism between 
-    abstract vectors and their concrete F^n representations.
+    built on an underlying `Fn` space. Subclasses must define a `set` (of 
+    type `Set`), an `fn` (of type `Fn`), and the methods `__push__` and 
+    `__pull__` to establish the isomorphism between abstract vectors and 
+    their concrete F^n representations.
     """
 
     def __init_subclass__(cls, name=None, **kwargs):
@@ -331,7 +296,7 @@ class VectorSpace:
         name : str
             The name of the vector space.
         constraints : list of str, optional
-            Linear constraints defining the subspace.
+            Constraints all vectors must satisfy (e.g. "v0 + 2*v1 == 0").
         basis : list of object, optional
             A basis for the subspace.
 
@@ -987,7 +952,7 @@ class VectorSpace:
         Parameters
         ----------
         representative : object
-            A vector in the vector space.
+            A vector in the ambient space.
 
         Returns
         -------
@@ -1064,8 +1029,8 @@ class AffineSpace:
     """
     Affine coset of a vector space.
 
-    Represents a translation of a `VectorSpace` by a fixed representative 
-    vector, supporting affine operations and membership tests.
+    Represents a translated vector space by a fixed representative 
+    vector. Implements various affine space operations.
     """
 
     def __init__(self, vectorspace, representative):
@@ -1077,7 +1042,7 @@ class AffineSpace:
         vectorspace : VectorSpace
             The underlying vector space being translated.
         representative : object
-            A vector in the ambient space serving as the coset representative.
+            A vector in the ambient space to translate by.
 
         Raises
         ------
@@ -1223,9 +1188,8 @@ class AffineSpace:
         """
         Subtract an affine space or vector from `self`.
 
-        If `other` is an AffineSpace, returns the sum with its negation. 
-        Otherwise, returns the translation of `self` by the additive 
-        inverse of `other`.
+        If `other` is an affine space, returns the sum with its negation. 
+        Otherwise, translates `self` by the additive inverse of `other`.
 
         Parameters
         ----------
@@ -1382,7 +1346,7 @@ def fn(name, field, n, constraints=None, basis=None, *,
     n : int
         Length of the vectors in the vector space.
     constraints : list of str, optional
-        Linear constraints defining the subspace.
+        Constraints all vectors must satisfy (e.g. "v0 + 2*v1 == 0").
     basis : list of object, optional
         A basis for the subspace.
 
@@ -1429,7 +1393,7 @@ def matrix_space(name, field, shape, constraints=None, basis=None):
     shape : tuple of int
         Shape (rows, cols) of the matrices.
     constraints : list of str, optional
-        Linear constraints defining the subspace.
+        Constraints all vectors must satisfy (e.g. "v0 + 2*v1 == 0").
     basis : list of object, optional
         A basis for the subspace.
 
@@ -1466,7 +1430,7 @@ def poly_space(name, field, max_degree, constraints=None, basis=None):
     max_degree : int
         Maximum degree of the polynomials.
     constraints : list of str, optional
-        Linear constraints defining the subspace.
+        Constraints all vectors must satisfy (e.g. "v0 + 2*v1 == 0").
     basis : list of object, optional
         A basis for the subspace.
 
