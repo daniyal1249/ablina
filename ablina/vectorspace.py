@@ -1,3 +1,42 @@
+"""
+Vector and affine spaces built on concrete subspaces of F^n.
+
+This module defines the core abstractions for finite-dimensional vector 
+spaces and their affine cosets in the `ablina` package. At its heart is 
+the `Fn` class, which models subspaces of the standard vector space F^n 
+(with F = R or C). On top of `Fn` sits the `VectorSpace` ABC, allowing 
+users to define arbitrary vector space types by supplying isomorphisms to 
+an `Fn` instance. The `AffineSpace` class provides affine coset 
+functionality. Factory functions (`fn`, `matrix_space`, `poly_space`, 
+`hom`, `rowspace`, `columnspace`, `nullspace`, `left_nullspace`) simplify 
+common constructions.
+
+Classes
+-------
+Fn
+    Subspace of F^n defined by linear constraints.
+VectorSpace
+    Abstract base for arbitrary vector spaces.
+AffineSpace
+    Affine coset of a `VectorSpace`.
+
+Functions
+---------
+fn
+    Factory for subspaces of standard F^n.
+matrix_space
+    Factory for subspaces of matrices of a given shape.
+poly_space
+    Factory for polynomial subspaces up to a given degree.
+hom
+    Factory for subspaces of linear maps between two vector spaces.
+rowspace, columnspace, nullspace, left_nullspace
+    Constructors of standard subspaces of a matrix.
+is_vectorspace
+    Check whether linear constraints define a valid subspace of F^n.
+"""
+
+
 from random import gauss
 
 import sympy as sp
@@ -17,19 +56,60 @@ class NotAVectorSpaceError(Exception):
 
 class Fn:
     """
-    pass
+    Concrete finite-dimensional subspace of the standard vector space F^n.
+
+    Represents a subspace of F^n (with F = R or C) specified by a list of 
+    linear constraints. Internally, it maintains matrices encoding the 
+    null space and row space of the subspace to support efficient 
+    membership tests, basis queries, subspace sums/intersections, and 
+    inner product operations.
+
+    Parameters
+    ----------
+    field : {R, C}
+        The field of scalars for the vector space.
+    n : int
+        Length of the vectors in the vector space.
+    constraints : list of str, optional
+        Linear equations (e.g. "v0 + 2*v1 == 0") defining the subspace.
+
+    Raises
+    ------
+    TypeError
+        If `field` is not ``R`` or ``C``.
+    NotAVectorSpaceError
+        If the constraints do not define a valid subspace.
     """
 
     def __init__(self, field, n, constraints=None, *, ns_matrix=None, rs_matrix=None):
         """
-        pass
+        Initialize an `Fn` instance.
+
+        Validates the scalar field and the list of linear constraints, 
+        then constructs the internal representation to enable all vector 
+        space operations (addition, scalar multiplication, membership, etc.).
+
+        Parameters
+        ----------
+        field : {R, C}
+            The field of scalars for the vector space.
+        n : int
+            Length of the vectors in the vector space.
+        constraints : list of str, optional
+            Linear constraints defining the subspace.
+
+        Raises
+        ------
+        TypeError
+            If `field` is not ``R`` or ``C``.
+        NotAVectorSpaceError
+            If the constraints do not define a valid subspace.
         """
         if constraints is None:
             constraints = []
         if field not in (R, C):
             raise TypeError('Field must be either R or C.')
 
-        # Verify whether constraints satisfy vector space properties
         if ns_matrix is None and rs_matrix is None:
             if not is_vectorspace(n, constraints):
                 raise NotAVectorSpaceError(
@@ -223,7 +303,13 @@ class Fn:
 
 class VectorSpace:
     """
-    pass
+    Abstract base class for defining arbitrary vector spaces.
+
+    Provides the core interface for finite-dimensional vector spaces 
+    built on an underlying `Fn` model. Subclasses must define a ``set`` 
+    (of type `Set`), an ``fn`` (an `Fn` instance), and the methods 
+    ``__push__`` and ``__pull__`` to establish the isomorphism between 
+    abstract vectors and their concrete F^n representations.
     """
 
     def __init_subclass__(cls, name=None, **kwargs):
@@ -238,7 +324,21 @@ class VectorSpace:
 
     def __init__(self, name, constraints=None, basis=None, *, fn=None):
         """
-        pass
+        Initialize a `VectorSpace` instance.
+
+        Parameters
+        ----------
+        name : str
+            The name of the vector space.
+        constraints : list of str, optional
+            Linear constraints defining the subspace.
+        basis : list of object, optional
+            A basis for the subspace.
+
+        Raises
+        ------
+        ValueError
+            If the provided basis vectors are not linearly independent.
         """
         self.name = name
         self.set = Set(name, self.set.cls, lambda vec: vec in self)
@@ -294,7 +394,7 @@ class VectorSpace:
     @property
     def field(self):
         """
-        {R, C}: The field of scalars.
+        {R, C}: The field of scalars for the vector space.
         """
         return self.fn.field
     
@@ -315,7 +415,7 @@ class VectorSpace:
     @property
     def additive_inv(self):
         """
-        callable: A function that returns the additive inverse of a given vector.
+        callable: Return the additive inverse of a vector.
         """
         return self._additive_inv
     
@@ -329,7 +429,7 @@ class VectorSpace:
     @property
     def basis(self):
         """
-        list: The basis of the vector space.
+        list of object: The basis of the vector space.
         """
         return [self.__pull__(vec) for vec in self.fn.basis]
     
@@ -347,6 +447,19 @@ class VectorSpace:
         return self.name
     
     def __eq__(self, vs2):
+        """
+        Check for equality of two vector spaces.
+
+        Parameters
+        ----------
+        vs2 : VectorSpace
+            The vector space to compare with.
+
+        Returns
+        -------
+        bool
+            True if both vector spaces are equal, otherwise False.
+        """
         if self is vs2:
             return True
         return self.is_subspace(vs2) and vs2.is_subspace(self)
@@ -383,7 +496,20 @@ class VectorSpace:
     
     def __add__(self, other):
         """
-        pass
+        Add a vector space or vector to `self`.
+
+        Same as ``VectorSpace.sum`` if `other` is a vector space. 
+        Otherwise, returns the affine coset of `self` through `other`.
+
+        Parameters
+        ----------
+        other : VectorSpace or object
+            The vector space or vector to add.
+
+        Returns
+        -------
+        VectorSpace or AffineSpace
+            The resulting subspace sum or coset.
         """
         if isinstance(other, VectorSpace):
             return self.sum(other)
@@ -394,7 +520,21 @@ class VectorSpace:
     
     def __sub__(self, other):
         """
-        pass
+        Subtract a vector space or vector from `self`.
+
+        Same as ``VectorSpace.sum`` if `other` is a vector space. 
+        Otherwise, returns the affine coset of `self` through the 
+        additive inverse of `other`.
+
+        Parameters
+        ----------
+        other : VectorSpace or object
+            The vector space or vector to subtract.
+
+        Returns
+        -------
+        VectorSpace or AffineSpace
+            The resulting subspace sum or coset.
         """
         if isinstance(other, VectorSpace):
             return self.sum(other)
@@ -418,6 +558,14 @@ class VectorSpace:
         return self.intersection(vs2)
 
     def info(self):
+        """
+        A description of the vector space.
+
+        Returns
+        -------
+        str
+            The formatted description.
+        """
         name = f'{self} (Subspace of {type(self).name})'
         lines = [
             name,
@@ -447,7 +595,7 @@ class VectorSpace:
         std : float
             The standard deviation used to generate weights.
         arbitrary : bool, default=False
-            Determines whether a random vector or arbitrary vector is returned.
+            Determines whether a random or arbitrary vector is returned.
         
         Returns
         -------
@@ -478,8 +626,8 @@ class VectorSpace:
         ----------
         vector : object
             A vector in the vector space.
-        basis : list, optional
-            pass
+        basis : list of object, optional
+            A basis for the vector space.
 
         Returns
         -------
@@ -489,8 +637,7 @@ class VectorSpace:
         Raises
         ------
         ValueError
-            If the provided basis vectors do not form a basis for the 
-            vector space.
+            If the provided basis vectors do not form a basis.
 
         See Also
         --------
@@ -531,8 +678,8 @@ class VectorSpace:
         ----------
         coord_vec : Matrix
             The coordinate vector to convert.
-        basis : list, optional
-            A basis of the vector space.
+        basis : list of object, optional
+            A basis for the vector space.
 
         Returns
         -------
@@ -581,7 +728,7 @@ class VectorSpace:
         Parameters
         ----------
         *vectors
-            The vectors in the vector space.
+            The vectors to check.
 
         Returns
         -------
@@ -613,7 +760,7 @@ class VectorSpace:
         Parameters
         ----------
         *vectors
-            The vectors in the vector space.
+            The vectors to check.
 
         Returns
         -------
@@ -627,7 +774,25 @@ class VectorSpace:
     
     def change_of_basis(self, basis):
         """
-        pass
+        Compute the change-of-basis matrix to a new basis.
+
+        Returns the matrix that transforms coordinate vectors from the 
+        current basis to the new one.
+
+        Parameters
+        ----------
+        basis : list of object
+            A new basis for the vector space.
+
+        Returns
+        -------
+        Matrix
+            The change-of-basis matrix.
+
+        Raises
+        ------
+        ValueError
+            If the provided vectors do not form a basis.
         """
         if not self.is_basis(*basis):
             raise ValueError('Provided vectors do not form a basis.')
@@ -744,8 +909,8 @@ class VectorSpace:
         name : str
             The name of the resulting subspace.
         *vectors
-            The vectors in the vector space.
-        basis : list, optional
+            The vectors to take the span of.
+        basis : list of object, optional
             A linearly independent list of vectors in the vector space.
 
         Returns
@@ -817,7 +982,7 @@ class VectorSpace:
     
     def coset(self, representative):
         """
-        pass
+        Return the affine coset through a point.
 
         Parameters
         ----------
@@ -827,7 +992,7 @@ class VectorSpace:
         Returns
         -------
         AffineSpace
-            pass
+            The affine coset of `self` through `representative`.
 
         See Also
         --------
@@ -897,12 +1062,27 @@ class VectorSpace:
 
 class AffineSpace:
     """
-    pass
+    Affine coset of a vector space.
+
+    Represents a translation of a `VectorSpace` by a fixed representative 
+    vector, supporting affine operations and membership tests.
     """
 
     def __init__(self, vectorspace, representative):
         """
-        pass
+        Initialize an `AffineSpace` instance.
+
+        Parameters
+        ----------
+        vectorspace : VectorSpace
+            The underlying vector space being translated.
+        representative : object
+            A vector in the ambient space serving as the coset representative.
+
+        Raises
+        ------
+        TypeError
+            If `representative` is not an element of the ambient space.
         """
         if not isinstance(vectorspace, VectorSpace):
             raise TypeError()
@@ -916,21 +1096,21 @@ class AffineSpace:
     @property
     def vectorspace(self):
         """
-        pass
+        VectorSpace: The underlying vector space.
         """
         return self._vectorspace
     
     @property
     def representative(self):
         """
-        pass
+        object: The representative point of the affine space.
         """
         return self._representative
     
     @property
     def set(self):
         """
-        Set: The set containing the points in the affine space.
+        Set: The set of points in the affine space.
         """
         vs = self.vectorspace
         return Set(self.name, vs.set.cls, lambda point: point in self)
@@ -952,6 +1132,19 @@ class AffineSpace:
         return self.name
     
     def __eq__(self, as2):
+        """
+        Check for equality of two affine spaces.
+
+        Parameters
+        ----------
+        as2 : AffineSpace
+            The affine space to compare with.
+
+        Returns
+        -------
+        bool
+            True if both affine spaces are equal, otherwise False.
+        """
         if not isinstance(as2, AffineSpace):
             return False
         return self.representative in as2
@@ -986,7 +1179,12 @@ class AffineSpace:
     
     def __neg__(self):
         """
-        pass
+        Return the affine space with negated representative.
+
+        Returns
+        -------
+        AffineSpace
+            The negation of `self`.
         """
         vs = self.vectorspace
         repr = vs.additive_inv(self.representative)
@@ -994,7 +1192,20 @@ class AffineSpace:
     
     def __add__(self, other):
         """
-        pass
+        Add an affine space or vector to `self`.
+
+        Same as ``AffineSpace.sum`` if `other` is an affine space. 
+        Otherwise, returns the translation of `self` by `other`.
+
+        Parameters
+        ----------
+        other : AffineSpace or object
+            The affine space or vector to add.
+
+        Returns
+        -------
+        AffineSpace
+            The sum of `self` and `other`.
         """
         vs = self.vectorspace
         if isinstance(other, AffineSpace):
@@ -1010,7 +1221,21 @@ class AffineSpace:
     
     def __sub__(self, other):
         """
-        pass
+        Subtract an affine space or vector from `self`.
+
+        If `other` is an AffineSpace, returns the sum with its negation. 
+        Otherwise, returns the translation of `self` by the additive 
+        inverse of `other`.
+
+        Parameters
+        ----------
+        other : AffineSpace or object
+            The affine space or vector to subtract.
+
+        Returns
+        -------
+        AffineSpace
+            The difference `self` - `other`.
         """
         vs = self.vectorspace
         if isinstance(other, AffineSpace):
@@ -1026,7 +1251,22 @@ class AffineSpace:
 
     def __mul__(self, scalar):
         """
-        pass
+        Scale the affine space by a scalar.
+
+        Parameters
+        ----------
+        scalar : number
+            A scalar from the field of the underlying vector space.
+
+        Returns
+        -------
+        AffineSpace
+            The scaled affine space.
+
+        Raises
+        ------
+        TypeError
+            If `scalar` is not an element of the field.
         """
         vs = self.vectorspace
         if scalar not in vs.field:
@@ -1038,6 +1278,14 @@ class AffineSpace:
         return self.__mul__(scalar)
     
     def info(self):
+        """
+        A description of the affine space.
+
+        Returns
+        -------
+        str
+            The formatted description.
+        """
         name = self.name
         lines = [
             name,
@@ -1058,7 +1306,7 @@ class AffineSpace:
         std : float
             The standard deviation used to generate weights.
         arbitrary : bool, default=False
-            Determines whether a random point or arbitrary point is returned.
+            Determines whether a random or arbitrary point is returned.
         
         Returns
         -------
@@ -1123,7 +1371,25 @@ class AffineSpace:
 def fn(name, field, n, constraints=None, basis=None, *, 
        ns_matrix=None, rs_matrix=None):
     """
-    pass
+    Factory for subspaces of standard F^n.
+
+    Parameters
+    ----------
+    name : str
+        The name of the subspace.
+    field : {R, C}
+        The field of scalars for the vector space.
+    n : int
+        Length of the vectors in the vector space.
+    constraints : list of str, optional
+        Linear constraints defining the subspace.
+    basis : list of object, optional
+        A basis for the subspace.
+
+    Returns
+    -------
+    VectorSpace
+        The resulting subspace of F^n.
     """
     if n == 1:
         cls_name = f'{field}'
@@ -1152,7 +1418,25 @@ def fn(name, field, n, constraints=None, basis=None, *,
 
 def matrix_space(name, field, shape, constraints=None, basis=None):
     """
-    pass
+    Factory for subspaces of matrices of a given shape.
+
+    Parameters
+    ----------
+    name : str
+        The name of the subspace.
+    field : {R, C}
+        The field of scalars for the vector space.
+    shape : tuple of int
+        Shape (rows, cols) of the matrices.
+    constraints : list of str, optional
+        Linear constraints defining the subspace.
+    basis : list of object, optional
+        A basis for the subspace.
+
+    Returns
+    -------
+    VectorSpace
+        The resulting subspace of matrices.
     """
     cls_name = f'{field}^({shape[0]} × {shape[1]})'
     n = sp.prod(shape)
@@ -1171,7 +1455,25 @@ def matrix_space(name, field, shape, constraints=None, basis=None):
 
 def poly_space(name, field, max_degree, constraints=None, basis=None):
     """
-    pass
+    Factory for polynomial subspaces up to a given degree.
+
+    Parameters
+    ----------
+    name : str
+        The name of the subspace.
+    field : {R, C}
+        The field of scalars for the vector space.
+    max_degree : int
+        Maximum degree of the polynomials.
+    constraints : list of str, optional
+        Linear constraints defining the subspace.
+    basis : list of object, optional
+        A basis for the subspace.
+
+    Returns
+    -------
+    VectorSpace
+        The resulting polynomial subspace.
     """
     cls_name = f'P_{max_degree}({field})'
     x = u.symbols('x')
@@ -1197,7 +1499,24 @@ def poly_space(name, field, max_degree, constraints=None, basis=None):
 
 def hom(vs1, vs2):
     """
-    pass
+    Factory for subspaces of linear maps between two vector spaces.
+
+    Parameters
+    ----------
+    vs1 : VectorSpace
+        Domain of the linear maps.
+    vs2 : VectorSpace
+        Codomain of the linear maps.
+
+    Returns
+    -------
+    VectorSpace
+        The matrix space representing hom(vs1, vs2).
+
+    Raises
+    ------
+    TypeError
+        If the fields of `vs1` and `vs2` are not the same.
     """
     if not (isinstance(vs1, VectorSpace) and isinstance(vs2, VectorSpace)):
         raise TypeError()
@@ -1210,20 +1529,19 @@ def hom(vs1, vs2):
 
 def is_vectorspace(n, constraints):
     """
-    Check whether F^n forms a vector space under the given constraints.
+    Check whether the given constraints define a valid subspace of F^n.
 
     Parameters
     ----------
     n : int
-        The length of the vectors in the vector space.
+        Length of the vectors in the vector space.
     constraints : list of str
         The constraints to check.
 
     Returns
     -------
     bool
-        True if the constraints permit a vector space under standard 
-        operations, otherwise False.
+        True if the constraints define a valid subspace, otherwise False.
     """
     exprs = set()
     for constraint in constraints:
