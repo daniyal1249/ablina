@@ -43,7 +43,7 @@ class LinearMap:
         LinearMapError
             If neither the mapping nor the matrix is provided.
         LinearMapError
-            If the field of the domain and codomain are not the same.
+            If the fields of the domain and codomain are not the same.
         """
         if not isinstance(domain, VectorSpace):
             raise TypeError('Domain must be a VectorSpace.')

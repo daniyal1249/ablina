@@ -383,7 +383,7 @@ class InnerProduct(SesquilinearForm):
         lines = [
             signature,
             '-' * len(signature),
-            f'Orthonormal Basis  [{', '.join(map(str, self.orthonormal_basis))}]',
+            f"Orthonormal Basis  [{', '.join(map(str, self.orthonormal_basis))}]",
             f'Matrix             {self.matrix}'
             ]
         return '\n'.join(lines)

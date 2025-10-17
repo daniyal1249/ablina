@@ -537,7 +537,7 @@ class VectorSpace:
             '-' * len(name),
             f'Field      {self.field}',
             f'Identity   {self.additive_id}',
-            f'Basis      [{', '.join(map(str, self.basis))}]',
+            f"Basis      [{', '.join(map(str, self.basis))}]",
             f'Dimension  {self.dim}',
             f'Vector     {self.vector(arbitrary=True)}'
             ]
@@ -1029,7 +1029,7 @@ class AffineSpace:
     """
     Affine coset of a vector space.
 
-    Represents a translated vector space by a fixed representative 
+    Represents a vector space translated by a fixed representative 
     vector. Implements various affine space operations.
     """
 
