@@ -1,13 +1,17 @@
+"""
+A module for parsing and processing mathematical expressions and constraints.
+"""
+
 from sympy import sympify as _sympify
 
 
 class ParsingError(Exception):
-    def __init__(self, msg=''):
+    def __init__(self, msg=""):
         super().__init__(msg)
 
 
 class ConstraintError(Exception):
-    def __init__(self, msg=''):
+    def __init__(self, msg=""):
         super().__init__(msg)
 
 
@@ -18,14 +22,14 @@ def sympify(expr, allowed_vars=None):
     Parameters
     ----------
     expr : str
-        pass
+        The expression to convert to a sympy representation.
     allowed_vars : iterable, optional
-        pass
+        The set of allowed variables in the expression.
 
     Returns
     -------
     Any
-        pass
+        The sympy representation of `expr`.
 
     Raises
     ------
@@ -37,7 +41,7 @@ def sympify(expr, allowed_vars=None):
     if allowed_vars is not None:
         if not all(var in allowed_vars for var in expr.free_symbols):
             invalid_vars = expr.free_symbols - set(allowed_vars)
-            raise ParsingError(f'Unrecognized variables found: {invalid_vars}')
+            raise ParsingError(f"Unrecognized variables found: {invalid_vars}")
     return expr
 
 
@@ -49,20 +53,21 @@ def split_constraint(constraint: str):
     Parameters
     ----------
     constraint : str
-        pass
+        The constraint string to split, containing one or more "==" operators.
 
     Returns
     -------
     relations : set of str
-        pass
+        A set of relation strings, each representing one equality from 
+        the constraint.
     """
-    exprs = constraint.split('==')
+    exprs = constraint.split("==")
     expr_count = len(exprs)
     if expr_count == 1:
         raise ConstraintError('Constraints must include at least one "==".')
     
     eqs = set()
     for i in range(expr_count - 1):
-        eq = f'{exprs[i]} - ({exprs[i + 1]})'
+        eq = f"{exprs[i]} - ({exprs[i + 1]})"
         eqs.add(eq)
     return eqs

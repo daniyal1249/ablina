@@ -1,3 +1,7 @@
+"""
+A module for experimental functionality related to vector space operations.
+"""
+
 import sympy as sp
 from sympy.solvers.solveset import NonlinearError
 
@@ -19,10 +23,12 @@ def additive_id(field, n, add):
 
     Returns
     -------
-    pass
+    list of list
+        A list of possible identity elements, where each element is a list 
+        of coordinates. Returns an empty list if no identity is found.
     """
     # Initialize an arbitrary vector (v) and the identity (e)
-    v, e = symbols((f'v:{n}', f'e:{n}'), field=field)
+    v, e = symbols((f"v:{n}", f"e:{n}"), field=field)
     v, e = list(v), list(e)
     
     # Equations that must be satisfied
@@ -46,9 +52,30 @@ def additive_id(field, n, add):
 def additive_inv(field, n, add, add_id, lambdify=False):
     """
     The additive inverse of an addition function on F^n.
+
+    Parameters
+    ----------
+    field : {Real, Complex}
+        The field of scalars.
+    n : int
+        The length of the vectors the addition function accepts.
+    add : callable
+        The addition function on F^n.
+    add_id : list
+        The additive identity element.
+    lambdify : bool, optional
+        If True, returns lambdified functions instead of symbolic expressions.
+
+    Returns
+    -------
+    list of list or list of callable
+        If `lambdify` is False, returns a list of possible inverse 
+        functions, where each element is a list of coordinates. If 
+        `lambdify` is True, returns a list of lambdified functions. 
+        Returns an empty list if no inverse is found.
     """
     # Initialize an arbitrary vector (v) and the inverse (u)
-    v, u = symbols((f'v:{n}', f'u:{n}'), field=field)
+    v, u = symbols((f"v:{n}", f"u:{n}"), field=field)
     v, u = list(v), list(u)
 
     # Equations that must be satisfied
@@ -88,12 +115,14 @@ def is_commutative(field, n, operation):
     operation : callable
         The operation to check.
 
-    Examples
-    --------
-    pass
+    Returns
+    -------
+    bool or None
+        True if the operation is commutative, False if not, or None if 
+        the result cannot be determined.
     """
     # Initialize two arbitrary vectors (u and v)
-    u, v = symbols((f'u:{n}', f'v:{n}'), field=field)
+    u, v = symbols((f"u:{n}", f"v:{n}"), field=field)
     u, v = list(u), list(v)
 
     for lhs, rhs in zip(operation(u, v), operation(v, u)):
@@ -116,12 +145,14 @@ def is_associative(field, n, operation):
     operation : callable
         The operation to check.
 
-    Examples
-    --------
-    pass
+    Returns
+    -------
+    bool or None
+        True if the operation is associative, False if not, or None if 
+        the result cannot be determined.
     """
     # Initialize three arbitrary vectors (u, v, and w)
-    u, v, w = symbols((f'u:{n}', f'v:{n}', f'w:{n}'), field=field)
+    u, v, w = symbols((f"u:{n}", f"v:{n}", f"w:{n}"), field=field)
     u, v, w = list(u), list(v), list(w)
 
     lhs_vec = operation(u, operation(v, w))
@@ -144,12 +175,13 @@ def is_consistent(equation):
     Parameters
     ----------
     equation : sympy.Eq
-        pass
+        The equation to check for consistency.
 
     Returns
     -------
-    bool
-        pass
+    bool or None
+        True if the equation is a tautology, False if it is a 
+        contradiction, or None if it cannot be determined.
     """
     eq = sp.simplify(equation)
     if isinstance(eq, sp.Eq):
@@ -158,12 +190,55 @@ def is_consistent(equation):
 
 
 def substitute_form(equation, f, form):
-    w = sp.Wild('w')
+    """
+    Substitute a function form into an equation.
+
+    Replaces occurrences of a function `f` in an equation with a specific 
+    form (e.g., linear, logarithmic).
+
+    Parameters
+    ----------
+    equation : sympy.Expr or sympy.Eq
+        The equation containing the function to substitute.
+    f : sympy.Function
+        The function to replace.
+    form : callable
+        The form to substitute for the function.
+
+    Returns
+    -------
+    sympy.Expr or sympy.Eq
+        The equation with the function substituted.
+    """
+    w = sp.Wild("w")
     return equation.replace(f(w), form(w))
 
 
 def find_valid_params(equation, f, form, params):
-    x = sp.symbols('x')
+    """
+    Find valid parameter values for a function form in an equation.
+
+    Attempts to solve for parameter values that make a given function 
+    form satisfy the equation.
+
+    Parameters
+    ----------
+    equation : sympy.Expr or sympy.Eq
+        The equation to solve.
+    f : sympy.Function
+        The function in the equation.
+    form : callable
+        The function form to test.
+    params : list of sympy.Symbol
+        The parameters in the form to solve for.
+
+    Returns
+    -------
+    sympy.Expr or None
+        The function form with valid parameter values substituted, or 
+        None if no valid solution is found.
+    """
+    x = sp.symbols("x")
     subbed_eq = substitute_form(equation, f, form)
     if is_consistent(subbed_eq):
         return form(x)
@@ -198,11 +273,11 @@ def solve_func_eq(equation, f):
 
     Returns
     -------
-    valid_funcs : set of sympy.Expr
-        pass
+    sympy.Expr or None
+        A solution to the functional equation if found, otherwise None.
     """
-    a0, a1 = sp.symbols('_a:2')
-    b0, b1 = sp.symbols('_b:2', nonzero=True)
+    a0, a1 = sp.symbols("_a:2")
+    b0, b1 = sp.symbols("_b:2", nonzero=True)
 
     forms = [
         # (lambda x: a, [a]),                       # Constant
@@ -225,20 +300,11 @@ def solve_func_eq(equation, f):
 
 
 def find_add_isomorphism(field, n, add):
-    f = sp.Function('f')
-    u, v = symbols((f'u:{n}', f'v:{n}'), field=field)
-    raise NotImplementedError()
-
-
-def find_mul_isomorphism(field, n, mul):
-    f = sp.Function('f')
-    u, v = symbols((f'u:{n}', f'v:{n}'), field=field)
-    raise NotImplementedError()
-
-
-def internal_isomorphism(field, n, add, mul):
     """
-    pass
+    Find an isomorphism for an addition operation.
+
+    Attempts to find an isomorphism from a vector space with a custom 
+    addition operation to the standard F^n representation.
 
     Parameters
     ----------
@@ -247,20 +313,85 @@ def internal_isomorphism(field, n, add, mul):
     n : int
         The length of the vectors in the vector space.
     add : callable
-        pass
-    mul : callable
-        pass
+        The addition function on F^n.
 
     Returns
     -------
-    pass
+    object
+        The isomorphism function if found.
+
+    Raises
+    ------
+    NotImplementedError
+        This function is not yet implemented.
+    """
+    f = sp.Function("f")
+    u, v = symbols((f"u:{n}", f"v:{n}"), field=field)
+    raise NotImplementedError()
+
+
+def find_mul_isomorphism(field, n, mul):
+    """
+    Find an isomorphism for a scalar multiplication operation.
+
+    Attempts to find an isomorphism from a vector space with a custom 
+    scalar multiplication operation to the standard F^n representation.
+
+    Parameters
+    ----------
+    field : {Real, Complex}
+        The field of scalars.
+    n : int
+        The length of the vectors in the vector space.
+    mul : callable
+        The scalar multiplication function on F^n.
+
+    Returns
+    -------
+    object
+        The isomorphism function if found.
+
+    Raises
+    ------
+    NotImplementedError
+        This function is not yet implemented.
+    """
+    f = sp.Function("f")
+    u, v = symbols((f"u:{n}", f"v:{n}"), field=field)
+    raise NotImplementedError()
+
+
+def internal_isomorphism(field, n, add, mul):
+    """
+    Find an internal isomorphism for a vector space with custom operations.
+
+    Attempts to find an isomorphism from a vector space with custom 
+    addition and scalar multiplication operations to the standard F^n 
+    representation.
+
+    Parameters
+    ----------
+    field : {Real, Complex}
+        The field of scalars.
+    n : int
+        The length of the vectors in the vector space.
+    add : callable
+        The addition function on F^n.
+    mul : callable
+        The scalar multiplication function on F^n.
+
+    Returns
+    -------
+    object
+        The isomorphism function if found, otherwise raises 
+        NotImplementedError.
     """
     # Need to support custom domains
     # Need to implement an intersection function
     # Return separate functions for each coordinate
 
-    # f = sp.Function('f')
-    # u, v = symbols((f'u:{n}', f'v:{n}'), field=field)
+    # f = sp.Function("f")
+    # u, v = symbols((f"u:{n}", f"v:{n}"), field=field)
 
     # init_set = False
     # for i in range(len(add)):
@@ -285,29 +416,37 @@ def internal_isomorphism(field, n, add, mul):
 
 def map_constraints(mapping, constraints):
     """
-    pass
+    Map constraints through a given mapping function.
+
+    Applies a mapping function to transform constraints from one 
+    coordinate system to another.
 
     Parameters
     ----------
     mapping : callable
-        pass
+        The mapping function to apply to the constraints.
     constraints : list of str
-        pass
+        The list of constraint strings to transform.
 
     Returns
     -------
     list of str
-        pass
+        The transformed constraint strings.
+
+    Raises
+    ------
+    NotImplementedError
+        This function is not yet implemented.
     """
     raise NotImplementedError()
 
 
 # Need to account for nested functions using while loop
 
-# x, y, a, b, c = sp.symbols('x y a b c', real=True)
-# xs, ys = sp.symbols((f'x:3', f'y:3'), real=True)
-# f = sp.Function('f')
-# g = sp.Function('g')
+# x, y, a, b, c = sp.symbols("x y a b c", real=True)
+# xs, ys = sp.symbols((f"x:3", f"y:3"), real=True)
+# f = sp.Function("f")
+# g = sp.Function("g")
 # eq = sp.Eq(f(x) * f(y), f(x + y))
 # # print(solve_func_eq(eq, f))
 

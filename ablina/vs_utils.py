@@ -1,3 +1,7 @@
+"""
+A module providing utility functions for vector space operations.
+"""
+
 from .matrix import M
 from .parser import ConstraintError, split_constraint, sympify
 from .utils import rref, symbols
@@ -10,7 +14,7 @@ def to_ns_matrix(n, constraints):
     Parameters
     ----------
     n : int
-        pass
+        The dimension of the vector space (length of vectors).
     constraints : list of str
         The list of constraints.
 
@@ -24,16 +28,16 @@ def to_ns_matrix(n, constraints):
         exprs.update(split_constraint(constraint))
 
     mat = []
-    allowed_vars = symbols(f'v:{n}')
+    allowed_vars = symbols(f"v:{n}")
     for expr in exprs:
         row = [0] * n
         try:
             expr = sympify(expr, allowed_vars)
         except Exception as e:
-            raise ConstraintError('Invalid constraint format.') from e
+            raise ConstraintError("Invalid constraint format.") from e
 
         for var in expr.free_symbols:
-            var_idx = int(var.name.lstrip('v'))
+            var_idx = int(var.name.lstrip("v"))
             var_coeff = expr.coeff(var, 1)
             row[var_idx] = var_coeff
         mat.append(row)
@@ -43,17 +47,24 @@ def to_ns_matrix(n, constraints):
 
 def to_complement(matrix):
     """
-    pass
+    Return the complement of a matrix.
+
+    This function works bidirectionally: if given a null space matrix, it 
+    returns a row space matrix, and if given a row space matrix, it 
+    returns a null space matrix. The complement is computed by finding the 
+    null space of the input matrix and returning its row space complement.
 
     Parameters
     ----------
     matrix : Matrix
-        pass
+        A matrix whose rows span either the null space or the row space.
 
     Returns
     -------
     Matrix
-        pass
+        If `matrix` represents a null space, returns a matrix whose rows 
+        form a basis for the row space. If `matrix` represents a row space, 
+        returns a matrix whose rows form a basis for the null space.
     """
     mat = M(matrix)
     if mat.rows == 0:

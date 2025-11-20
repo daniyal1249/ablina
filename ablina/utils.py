@@ -1,3 +1,7 @@
+"""
+A module providing utility functions for linear algebra operations.
+"""
+
 import inspect
 
 import sympy as sp
@@ -118,25 +122,53 @@ def of_arity(func, arity):
         If `func` is not callable.
     """
     sig = inspect.signature(func)
-    if len(sig.parameters) < arity:
-        return False
     
-    count_req_pos = 0  # Number of required positional args
+    # Check for required keyword-only parameters
+    # If any exist, function cannot be called with only positional args
     for param in sig.parameters.values():
-        # Return False if there are required keyword-only args
         if (param.kind == inspect.Parameter.KEYWORD_ONLY 
             and param.default == inspect.Parameter.empty):
             return False
-        if (param.kind in (inspect.Parameter.POSITIONAL_ONLY, 
-            inspect.Parameter.POSITIONAL_OR_KEYWORD) 
-            and param.default == inspect.Parameter.empty):
-            count_req_pos += 1
-
-        if count_req_pos > arity:
-            return False
-    return True
+    
+    has_var_positional = False
+    min_positional = 0
+    max_positional = 0
+    
+    for param in sig.parameters.values():
+        if param.kind == inspect.Parameter.VAR_POSITIONAL:
+            has_var_positional = True
+        elif param.kind in (inspect.Parameter.POSITIONAL_ONLY, 
+                            inspect.Parameter.POSITIONAL_OR_KEYWORD):
+            max_positional += 1
+            if param.default == inspect.Parameter.empty:
+                min_positional += 1
+    
+    if has_var_positional:
+        # Function can accept any number >= min_positional
+        return arity >= min_positional
+    else:
+        # Function can accept exactly min_positional to max_positional
+        return min_positional <= arity <= max_positional
 
 
 def add_attributes(cls, *attributes):
+    """
+    Dynamically create a subclass with additional attributes.
+
+    Creates a new class that inherits from the given class and adds the 
+    specified attributes as class attributes.
+
+    Parameters
+    ----------
+    cls : type
+        The base class to subclass.
+    *attributes
+        The attributes to add to the new class.
+
+    Returns
+    -------
+    type
+        A new subclass with the added attributes.
+    """
     attributes = {attr.__name__: attr for attr in attributes}
-    return type(f'{cls.__name__}_subclass', (cls,), attributes)
+    return type(f"{cls.__name__}_subclass", (cls,), attributes)

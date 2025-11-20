@@ -1,14 +1,21 @@
+"""
+A module for working with sets defined by predicates.
+"""
+
 from .utils import of_arity
 
 
 class Set:
     """
-    pass
+    A set defined by a class and predicates.
+    
+    A set is defined by a class that all elements must be instances of, 
+    and a list of predicates that all elements must satisfy.
     """
 
     def __init__(self, name, cls, *predicates):
         """
-        pass
+        Initialize a Set instance.
 
         Parameters
         ----------
@@ -22,10 +29,10 @@ class Set:
         Returns
         -------
         Set
-            pass
+            A new Set instance.
         """
         if not isinstance(cls, type):
-            raise TypeError('cls must be a class.')
+            raise TypeError("cls must be a class.")
         
         if len(predicates) == 1 and isinstance(predicates[0], list):
             predicates = predicates[0]
@@ -54,9 +61,9 @@ class Set:
     
     def __repr__(self):
         return (
-            f'Set({self.name!r}, '
-            f'{self.cls!r}, '
-            f'{self.predicates!r})'
+            f"Set({self.name!r}, "
+            f"{self.cls!r}, "
+            f"{self.predicates!r})"
             )
     
     def __str__(self):
@@ -132,7 +139,7 @@ class Set:
         Examples
         --------
 
-        >>> A = Set('A', list, lambda x: len(x) == 3)
+        >>> A = Set("A", list, lambda x: len(x) == 3)
         >>> B = A.complement()
         >>> [1, 2, 3] in A
         True
@@ -145,7 +152,7 @@ class Set:
         >>> None in B
         False
         """
-        name = f'{self}^C'
+        name = f"{self}^C"
         def complement_pred(obj):
             return not all(pred(obj) for pred in self.predicates)
         return Set(name, self.cls, complement_pred)
@@ -176,8 +183,8 @@ class Set:
         Examples
         --------
 
-        >>> A = Set('A', list, lambda x: len(x) == 3)
-        >>> B = Set('B', list, lambda x: 1 in x)
+        >>> A = Set("A", list, lambda x: len(x) == 3)
+        >>> B = Set("B", list, lambda x: 1 in x)
         >>> C = A.intersection(B)
         >>> [2, 3, 4] in C
         False
@@ -187,7 +194,7 @@ class Set:
         True
         """
         self._validate_type(set2)
-        name = f'{self} ∩ {set2}'
+        name = f"{self} ∩ {set2}"
         return Set(name, self.cls, self.predicates + set2.predicates)
 
     def union(self, set2):
@@ -216,8 +223,8 @@ class Set:
         Examples
         --------
 
-        >>> A = Set('A', list, lambda x: len(x) == 3)
-        >>> B = Set('B', list, lambda x: 1 in x)
+        >>> A = Set("A", list, lambda x: len(x) == 3)
+        >>> B = Set("B", list, lambda x: 1 in x)
         >>> C = A.union(B)
         >>> [2, 3, 4] in C
         True
@@ -227,7 +234,7 @@ class Set:
         True
         """
         self._validate_type(set2)
-        name = f'{self} ∪ {set2}'
+        name = f"{self} ∪ {set2}"
         def union_pred(obj):
             return (
                 all(pred(obj) for pred in self.predicates) 
@@ -253,14 +260,16 @@ class Set:
 
         Raises
         ------
+        TypeError
+            If `set2` is not a Set.
         ValueError
             If ``self.cls`` and ``set2.cls`` are not the same.
 
         Examples
         --------
 
-        >>> A = Set('A', list, lambda x: len(x) == 3)
-        >>> B = Set('B', list, lambda x: 1 in x)
+        >>> A = Set("A", list, lambda x: len(x) == 3)
+        >>> B = Set("B", list, lambda x: 1 in x)
         >>> C = A.difference(B)
         >>> [2, 3, 4] in C
         True
@@ -269,6 +278,7 @@ class Set:
         >>> [1, 2, 3] in C
         False
         """
+        self._validate_type(set2)
         return self.intersection(set2.complement())
     
     def is_subset(self, set2):
@@ -304,9 +314,9 @@ class Set:
 
         >>> def pred1(x): return len(x) == 3
         >>> def pred2(x): return 1 in x
-        >>> A = Set('A', list, pred1)
-        >>> B = Set('B', list, pred1, pred2)
-        >>> C = Set('C', list, pred1, lambda x: 1 in x)
+        >>> A = Set("A", list, pred1)
+        >>> B = Set("B", list, pred1, pred2)
+        >>> C = Set("C", list, pred1, lambda x: 1 in x)
         >>> A.is_subset(B)
         True
         >>> B.is_subset(A)
@@ -325,9 +335,9 @@ class Set:
 
     def _validate_type(self, set2):
         if not isinstance(set2, Set):
-            raise TypeError(f'Expected a Set, got {type(set2).__name__} instead.')
+            raise TypeError(f"Expected a Set, got {type(set2).__name__} instead.")
         if self.cls is not set2.cls:
-            raise ValueError('The cls attribute of both sets must be the same.')
+            raise ValueError("The cls attribute of both sets must be the same.")
 
 
 def remove_duplicates(seq):
@@ -380,5 +390,5 @@ def negate(pred):
     False
     """
     def negation(obj): return not pred(obj)
-    negation.__name__ = f'not_{pred.__name__}'
+    negation.__name__ = f"not_{pred.__name__}"
     return negation

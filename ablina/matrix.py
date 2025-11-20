@@ -1,9 +1,16 @@
+"""
+A module for working with matrices.
+"""
+
 from sympy import Matrix as _M
 
 
 class Matrix(_M):
     """
-    pass
+    A matrix class extending sympy's Matrix.
+    
+    Provides additional functionality and a custom representation for 
+    matrices used in the ablina package.
     """
 
     def __new__(cls, *args, **kwargs):

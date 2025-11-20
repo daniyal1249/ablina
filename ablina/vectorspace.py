@@ -16,7 +16,7 @@ from . import vs_utils as vsu
 
 
 class NotAVectorSpaceError(Exception):
-    def __init__(self, msg=''):
+    def __init__(self, msg=""):
         super().__init__(msg)
 
 
@@ -73,12 +73,12 @@ class Fn:
         if constraints is None:
             constraints = []
         if field not in (R, C):
-            raise TypeError('Field must be either R or C.')
+            raise TypeError("Field must be either R or C.")
 
         if ns_matrix is None and rs_matrix is None:
             if not is_vectorspace(n, constraints):
                 raise NotAVectorSpaceError(
-                    'Constraints do not satisfy vector space axioms.'
+                    "Constraints do not satisfy vector space axioms."
                     )
 
         add, mul, additive_inv = Fn._init_operations()
@@ -154,10 +154,10 @@ class Fn:
     
     def __repr__(self):
         return (
-            f'Fn(field={self.field!r}, '
-            f'n={self.n!r}, '
-            f'ns_matrix={self._ns_matrix!r}, '
-            f'rs_matrix={self._rs_matrix!r})'
+            f"Fn(field={self.field!r}, "
+            f"n={self.n!r}, "
+            f"ns_matrix={self._ns_matrix!r}, "
+            f"rs_matrix={self._rs_matrix!r})"
             )
     
     def __contains__(self, vector):
@@ -178,7 +178,7 @@ class Fn:
     def vector(self, std=1, arbitrary=False):
         size = self.dim
         if arbitrary:
-            weights = list(u.symbols(f'c:{size}', field=self.field))
+            weights = list(u.symbols(f"c:{size}", field=self.field))
         else:
             weights = [round(gauss(0, std)) for _ in range(size)]
         vec = M([weights]) @ self._rs_matrix
@@ -317,13 +317,13 @@ class VectorSpace:
         
         if basis is not None:
             if not self.is_independent(*basis):
-                raise ValueError('Basis vectors must be linearly independent.')
+                raise ValueError("Basis vectors must be linearly independent.")
             self.fn = self.fn.span(basis=[self.__push__(vec) for vec in basis])
 
     @classmethod
     def _validate_subclass_contract(cls):
-        attributes = ['set', 'fn']
-        methods = ['__push__', '__pull__']
+        attributes = ["set", "fn"]
+        methods = ["__push__", "__pull__"]
         
         for attr in attributes:
             if not hasattr(cls, attr):
@@ -333,9 +333,9 @@ class VectorSpace:
                 raise TypeError(f'{cls.__name__} must define the method "{method}".')
         
         if not isinstance(cls.set, Set):
-            raise TypeError(f'{cls.__name__}.set must be a Set.')
+            raise TypeError(f"{cls.__name__}.set must be a Set.")
         if not isinstance(cls.fn, Fn):
-            raise TypeError(f'{cls.__name__}.fn must be of type Fn.')
+            raise TypeError(f"{cls.__name__}.fn must be of type Fn.")
         
         cls.__push__ = staticmethod(cls.__push__)
         cls.__pull__ = staticmethod(cls.__pull__)
@@ -406,7 +406,7 @@ class VectorSpace:
         return self.fn.dim
     
     def __repr__(self):
-        return f'{type(self).__name__}(name={self.name!r}, basis={self.basis!r})'
+        return f"{type(self).__name__}(name={self.name!r}, basis={self.basis!r})"
     
     def __str__(self):
         return self.name
@@ -531,17 +531,17 @@ class VectorSpace:
         str
             The formatted description.
         """
-        name = f'{self} (Subspace of {type(self).name})'
+        name = f"{self} (Subspace of {type(self).name})"
         lines = [
             name,
-            '-' * len(name),
-            f'Field      {self.field}',
-            f'Identity   {self.additive_id}',
+            "-" * len(name),
+            f"Field      {self.field}",
+            f"Identity   {self.additive_id}",
             f"Basis      [{', '.join(map(str, self.basis))}]",
-            f'Dimension  {self.dim}',
-            f'Vector     {self.vector(arbitrary=True)}'
+            f"Dimension  {self.dim}",
+            f"Vector     {self.vector(arbitrary=True)}"
             ]
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     # Methods relating to vectors
 
@@ -570,7 +570,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> V = fn('V', R, 3, constraints=['2*v0 == v1'])
+        >>> V = fn("V", R, 3, constraints=["2*v0 == v1"])
         >>> V.vector()
         [1, 2, 0]
         >>> V.vector()
@@ -611,18 +611,18 @@ class VectorSpace:
         Examples
         --------
 
-        >>> V = fn('V', R, 3, constraints=['v0 == 2*v1'])
+        >>> V = fn("V", R, 3, constraints=["v0 == 2*v1"])
         >>> V.basis
         [[1, 1/2, 0], [0, 0, 1]]
         >>> V.to_coordinate([2, 1, 2])
         [2, 0]
         """
         if vector not in self:
-            raise TypeError('Vector must be an element of the vector space.')
+            raise TypeError("Vector must be an element of the vector space.")
         if basis is None:
             fn_basis = self.fn.basis
         elif not self.is_basis(*basis):
-            raise ValueError('Provided vectors do not form a basis.')
+            raise ValueError("Provided vectors do not form a basis.")
         else:
             fn_basis = [self.__push__(vec) for vec in basis]
 
@@ -663,7 +663,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> V = fn('V', R, 3, constraints=['v0 == 2*v1'])
+        >>> V = fn("V", R, 3, constraints=["v0 == 2*v1"])
         >>> V.basis
         [[1, 1/2, 0], [0, 0, 1]]
         >>> V.from_coordinate([1, 1])
@@ -676,7 +676,7 @@ class VectorSpace:
         if basis is None:
             fn_basis = self.fn.basis
         elif not self.is_basis(*basis):
-            raise ValueError('Provided vectors do not form a basis.')
+            raise ValueError("Provided vectors do not form a basis.")
         else:
             fn_basis = [self.__push__(vec) for vec in basis]
         
@@ -703,7 +703,7 @@ class VectorSpace:
         Examples
         --------
 
-        >>> V = fn('V', R, 3)
+        >>> V = fn("V", R, 3)
         >>> V.is_independent([1, 0, 0], [0, 1, 0])
         True
         >>> V.is_independent([1, 2, 3], [2, 4, 6])
@@ -714,7 +714,7 @@ class VectorSpace:
         True
         """
         if not all(vec in self for vec in vectors):
-            raise TypeError('Vectors must be elements of the vector space.')
+            raise TypeError("Vectors must be elements of the vector space.")
         fn_vecs = [self.__push__(vec) for vec in vectors]
         return self.fn.is_independent(*fn_vecs)
     
@@ -733,7 +733,7 @@ class VectorSpace:
             True if the vectors form a basis, otherwise False.
         """
         if not all(vec in self for vec in vectors):
-            raise TypeError('Vectors must be elements of the vector space.')
+            raise TypeError("Vectors must be elements of the vector space.")
         fn_vecs = [self.__push__(vec) for vec in vectors]
         return self.fn.is_basis(*fn_vecs)
     
@@ -760,7 +760,7 @@ class VectorSpace:
             If the provided vectors do not form a basis.
         """
         if not self.is_basis(*basis):
-            raise ValueError('Provided vectors do not form a basis.')
+            raise ValueError("Provided vectors do not form a basis.")
         basechange = [self.to_coordinate(vec) for vec in basis]
         basechange = M.hstack(*basechange)
         return basechange.inv()
@@ -808,8 +808,8 @@ class VectorSpace:
         Examples
         --------
 
-        >>> U = fn('U', R, 3, constraints=['v0 == v1'])
-        >>> V = fn('V', R, 3, constraints=['v1 == v2'])
+        >>> U = fn("U", R, 3, constraints=["v0 == v1"])
+        >>> V = fn("V", R, 3, constraints=["v1 == v2"])
         >>> W = U.sum(V)
         >>> W.basis
         [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
@@ -817,7 +817,7 @@ class VectorSpace:
         True
         """
         self._validate_type(vs2)
-        name = f'{self} + {vs2}'
+        name = f"{self} + {vs2}"
         fn = self.fn.sum(vs2.fn)
         return type(self)(name, fn=fn)
     
@@ -847,8 +847,8 @@ class VectorSpace:
         Examples
         --------
 
-        >>> U = fn('U', R, 3, constraints=['v0 == v1'])
-        >>> V = fn('V', R, 3, constraints=['v1 == v2'])
+        >>> U = fn("U", R, 3, constraints=["v0 == v1"])
+        >>> V = fn("V", R, 3, constraints=["v1 == v2"])
         >>> W = U.intersection(V)
         >>> W.basis
         [[1, 1, 1]]
@@ -856,7 +856,7 @@ class VectorSpace:
         True
         """
         self._validate_type(vs2)
-        name = f'{self} ∩ {vs2}'
+        name = f"{self} ∩ {vs2}"
         fn = self.fn.intersection(vs2.fn)
         return type(self)(name, fn=fn)
     
@@ -891,18 +891,18 @@ class VectorSpace:
         Examples
         --------
 
-        >>> V = fn('V', R, 3)
-        >>> V.span('span1', [1, 2, 3], [4, 5, 6]).basis
+        >>> V = fn("V", R, 3)
+        >>> V.span("span1", [1, 2, 3], [4, 5, 6]).basis
         [[1, 0, -1], [0, 1, 2]]
-        >>> V.span('span2', basis=[[1, 2, 3], [4, 5, 6]]).basis
+        >>> V.span("span2", basis=[[1, 2, 3], [4, 5, 6]]).basis
         [[1, 2, 3], [4, 5, 6]]
-        >>> V.span('span3').basis
+        >>> V.span("span3").basis
         []
         """
         if basis is not None:
             return type(self)(name, basis=basis)
         if not all(vec in self for vec in vectors):
-            raise TypeError('Vectors must be elements of the vector space.')
+            raise TypeError("Vectors must be elements of the vector space.")
         
         fn_vecs = [self.__push__(vec) for vec in vectors]
         fn = self.fn.span(*fn_vecs)
@@ -925,9 +925,9 @@ class VectorSpace:
         Examples
         --------
 
-        >>> V = fn('V', R, 3)
-        >>> U = fn('U', R, 3, constraints=['v0 == v1'])
-        >>> W = fn('W', R, 3, constraints=['v1 == v2'])
+        >>> V = fn("V", R, 3)
+        >>> U = fn("U", R, 3, constraints=["v0 == v1"])
+        >>> W = fn("W", R, 3, constraints=["v1 == v2"])
         >>> V.is_subspace(U)
         True
         >>> V.is_subspace(W)
@@ -992,10 +992,10 @@ class VectorSpace:
             raise TypeError()
         
         vs = self.ambient_space()
-        cls_name = f'{vs} / {subspace}'
+        cls_name = f"{vs} / {subspace}"
 
         def in_quotient_space(coset):
-            return coset.vectorspace == subspace  # FIX: check
+            return coset.vectorspace == subspace
 
         class quotient_space(VectorSpace, name=cls_name):
             set = Set(cls_name, AffineSpace, in_quotient_space)
@@ -1006,22 +1006,22 @@ class VectorSpace:
             def __pull__(vec):
                 return subspace.coset(vs.__pull__(vec))
 
-        name = f'{self} / {subspace}'
+        name = f"{self} / {subspace}"
         fn = self.fn.ortho_complement(subspace.fn)
         return quotient_space(name, fn=fn)
 
     def _validate_type(self, vs2):
         if not isinstance(vs2, VectorSpace):
-            raise TypeError(f'Expected a VectorSpace, got {type(vs2).__name__} instead.')
+            raise TypeError(f"Expected a VectorSpace, got {type(vs2).__name__} instead.")
         if type(self).name != type(vs2).name:
-            raise TypeError('Vector spaces must be subspaces of the same ambient space.')
+            raise TypeError("Vector spaces must be subspaces of the same ambient space.")
     
     def _validate_coordinate(self, coord_vec):
         vec = M(coord_vec)
         if vec.shape != (self.dim, 1):
-            raise ValueError('Coordinate vector has invalid shape.')
+            raise ValueError("Coordinate vector has invalid shape.")
         if not all(i in self.field for i in vec):
-            raise ValueError('Coordinates must be elements of the field.')
+            raise ValueError("Coordinates must be elements of the field.")
         return vec
 
 
@@ -1054,7 +1054,7 @@ class AffineSpace:
         if representative not in vectorspace.ambient_space():
             raise TypeError()
         
-        self.name = f'{vectorspace} + {representative}'
+        self.name = f"{vectorspace} + {representative}"
         self._vectorspace = vectorspace
         self._representative = representative
 
@@ -1089,8 +1089,8 @@ class AffineSpace:
     
     def __repr__(self):
         return (
-            f'AffineSpace(vectorspace={self.vectorspace!r}, '
-            f'representative={self.representative!r})'
+            f"AffineSpace(vectorspace={self.vectorspace!r}, "
+            f"representative={self.representative!r})"
             )
     
     def __str__(self):
@@ -1234,7 +1234,7 @@ class AffineSpace:
         """
         vs = self.vectorspace
         if scalar not in vs.field:
-            raise TypeError('Scalar must be an element of the field.')
+            raise TypeError("Scalar must be an element of the field.")
         repr = vs.mul(scalar, self.representative)
         return AffineSpace(vs, repr)
 
@@ -1253,13 +1253,13 @@ class AffineSpace:
         name = self.name
         lines = [
             name,
-            '-' * len(name),
-            f'Vector Space    {self.vectorspace}',
-            f'Representative  {self.representative}',
-            f'Dimension       {self.dim}',
-            f'Point           {self.point(arbitrary=True)}'
+            "-" * len(name),
+            f"Vector Space    {self.vectorspace}",
+            f"Representative  {self.representative}",
+            f"Dimension       {self.dim}",
+            f"Point           {self.point(arbitrary=True)}"
             ]
-        return '\n'.join(lines)
+        return "\n".join(lines)
     
     def point(self, std=1, arbitrary=False):
         """
@@ -1327,9 +1327,9 @@ class AffineSpace:
     
     def _validate_type(self, as2):
         if not isinstance(as2, AffineSpace):
-            raise TypeError(f'Expected an AffineSpace, got {type(as2).__name__} instead.')
+            raise TypeError(f"Expected an AffineSpace, got {type(as2).__name__} instead.")
         if self.vectorspace != as2.vectorspace:
-            raise TypeError('Affine spaces must be cosets of the same vector space.')
+            raise TypeError("Affine spaces must be cosets of the same vector space.")
 
 
 def fn(name, field, n, constraints=None, basis=None, *, 
@@ -1356,7 +1356,7 @@ def fn(name, field, n, constraints=None, basis=None, *,
         The resulting subspace of F^n.
     """
     if n == 1:
-        cls_name = f'{field}'
+        cls_name = f"{field}"
         class fn(VectorSpace, name=cls_name):
             set = Set(cls_name, object)
             fn = Fn(field, 1)
@@ -1367,7 +1367,7 @@ def fn(name, field, n, constraints=None, basis=None, *,
             try: return M(vec).shape == (n, 1)
             except Exception: return False
 
-        cls_name = f'{field}^{n}'
+        cls_name = f"{field}^{n}"
         class fn(VectorSpace, name=cls_name):
             set = Set(cls_name, object, in_fn)
             fn = Fn(field, n)
@@ -1402,7 +1402,7 @@ def matrix_space(name, field, shape, constraints=None, basis=None):
     VectorSpace
         The resulting subspace of matrices.
     """
-    cls_name = f'{field}^({shape[0]} × {shape[1]})'
+    cls_name = f"{field}^({shape[0]} × {shape[1]})"
     n = sp.prod(shape)
 
     def in_matrix_space(mat):
@@ -1439,11 +1439,10 @@ def poly_space(name, field, max_degree, constraints=None, basis=None):
     VectorSpace
         The resulting polynomial subspace.
     """
-    cls_name = f'P_{max_degree}({field})'
-    x = u.symbols('x')
+    cls_name = f"P_{max_degree}({field})"
+    x = u.symbols("x")
 
     def in_poly_space(poly):
-        # FIX: check (list)
         try: return sp.degree(sp.Poly(poly, x)) <= max_degree
         except Exception: return False
 
@@ -1487,7 +1486,7 @@ def hom(vs1, vs2):
     if vs1.field is not vs2.field:
         raise TypeError()
     
-    name = f'hom({vs1}, {vs2})'
+    name = f"hom({vs1}, {vs2})"
     return matrix_space(name, vs1.field, (vs2.dim, vs1.dim))
 
 
@@ -1511,7 +1510,7 @@ def is_vectorspace(n, constraints):
     for constraint in constraints:
         exprs.update(split_constraint(constraint))
     
-    allowed_vars = u.symbols(f'v:{n}')
+    allowed_vars = u.symbols(f"v:{n}")
     for expr in exprs:
         expr = sympify(expr, allowed_vars)
         if not u.is_linear(expr):
@@ -1550,7 +1549,7 @@ def rowspace(name, matrix, field=R):
     --------
 
     >>> matrix = [[1, 2], [3, 4]]
-    >>> V = rowspace('V', matrix)
+    >>> V = rowspace("V", matrix)
     >>> V.basis
     [[1, 0], [0, 1]]
     """
@@ -1586,10 +1585,10 @@ def columnspace(name, matrix, field=R):
     --------
 
     >>> matrix = [[1, 2], [3, 4]]
-    >>> V = columnspace('V', matrix)
+    >>> V = columnspace("V", matrix)
     >>> V.basis
     [[1, 0], [0, 1]]
-    >>> U = image('U', matrix)
+    >>> U = image("U", matrix)
     >>> U.basis
     [[1, 0], [0, 1]]
     """
@@ -1623,10 +1622,10 @@ def nullspace(name, matrix, field=R):
     --------
 
     >>> matrix = [[1, 2], [3, 4]]
-    >>> V = nullspace('V', matrix)
+    >>> V = nullspace("V", matrix)
     >>> V.basis
     []
-    >>> U = kernel('U', matrix)
+    >>> U = kernel("U", matrix)
     >>> U.basis
     []
     """
@@ -1662,10 +1661,10 @@ def left_nullspace(name, matrix, field=R):
     --------
 
     >>> matrix = [[1, 2], [3, 4]]
-    >>> V = left_nullspace('V', matrix)
+    >>> V = left_nullspace("V", matrix)
     >>> V.basis
     []
-    >>> U = nullspace('U', matrix.T)
+    >>> U = nullspace("U", matrix.T)
     >>> U.basis
     []
     """

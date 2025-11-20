@@ -1,20 +1,24 @@
+"""
+A module for working with fields.
+"""
+
 from sympy.sets.fancysets import Reals as _R, Complexes as _C
 
 
 class Field:
     """
-    pass
+    Base class for fields.
     """
     pass
 
 
 class Reals(Field, _R):
     """
-    pass
+    The field of real numbers.
     """
 
     def __repr__(self):
-        return 'R'
+        return "R"
     
     def __str__(self):
         return self.__repr__()
@@ -28,11 +32,11 @@ class Reals(Field, _R):
 
 class Complexes(Field, _C):
     """
-    pass
+    The field of complex numbers.
     """
 
     def __repr__(self):
-        return 'C'
+        return "C"
     
     def __str__(self):
         return self.__repr__()

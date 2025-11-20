@@ -1,3 +1,7 @@
+"""
+A module for working with sesquilinear forms, inner products, and quadratic forms.
+"""
+
 import sympy as sp
 
 from .field import R
@@ -10,23 +14,27 @@ from .vectorspace import VectorSpace
 
 
 class FormError(Exception):
-    def __init__(self, msg=''):
+    def __init__(self, msg=""):
         super().__init__(msg)
 
 
 class InnerProductError(FormError):
-    def __init__(self, msg=''):
+    def __init__(self, msg=""):
         super().__init__(msg)
 
 
 class SesquilinearForm:
     """
-    pass
+    A sesquilinear form on a vector space.
+    
+    A sesquilinear form is a function that takes two vectors and returns 
+    a scalar, satisfying certain linearity properties. For real vector 
+    spaces, this is equivalent to a bilinear form.
     """
 
     def __init__(self, name, vectorspace, mapping=None, matrix=None):
         """
-        pass
+        Initialize a SesquilinearForm instance.
 
         Parameters
         ----------
@@ -44,7 +52,7 @@ class SesquilinearForm:
         Returns
         -------
         SesquilinearForm
-            pass
+            A new SesquilinearForm instance.
 
         Raises
         ------
@@ -52,7 +60,7 @@ class SesquilinearForm:
             If neither the mapping nor the matrix is provided.
         """
         if not isinstance(vectorspace, VectorSpace):
-            raise TypeError('vectorspace must be of type VectorSpace.')
+            raise TypeError("vectorspace must be of type VectorSpace.")
         
         matrix = SesquilinearForm._to_matrix(vectorspace, mapping, matrix)
         mapping = SesquilinearForm._to_mapping(vectorspace, mapping, matrix)
@@ -67,9 +75,9 @@ class SesquilinearForm:
         if matrix is not None:
             return SesquilinearForm._validate_matrix(vectorspace, matrix)
         if mapping is None:
-            raise FormError('Either a matrix or mapping must be provided.')
+            raise FormError("Either a matrix or mapping must be provided.")
         if not of_arity(mapping, 2):
-            raise TypeError('Mapping must be a callable of arity 2.')
+            raise TypeError("Mapping must be a callable of arity 2.")
         
         basis = vectorspace.basis
         n = len(basis)
@@ -86,9 +94,9 @@ class SesquilinearForm:
     def _validate_matrix(vectorspace, matrix):
         mat = M(matrix)
         if not (mat.is_square and mat.rows == vectorspace.dim):
-            raise ValueError('Matrix has invalid shape.')
+            raise ValueError("Matrix has invalid shape.")
         if not all(i in vectorspace.field for i in mat):
-            raise ValueError('Matrix entries must be elements of the field.')
+            raise ValueError("Matrix entries must be elements of the field.")
         return mat
 
     @property
@@ -114,10 +122,10 @@ class SesquilinearForm:
     
     def __repr__(self):
         return (
-            f'SesquilinearForm(name={self.name!r}, '
-            f'vectorspace={self.vectorspace!r}, '
-            f'mapping={self.mapping!r}, '
-            f'matrix={self.matrix!r})'
+            f"SesquilinearForm(name={self.name!r}, "
+            f"vectorspace={self.vectorspace!r}, "
+            f"mapping={self.mapping!r}, "
+            f"matrix={self.matrix!r})"
             )
     
     def __str__(self):
@@ -134,22 +142,22 @@ class SesquilinearForm:
     def __call__(self, vec1, vec2):
         vs = self.vectorspace
         if not (vec1 in vs and vec2 in vs):
-            raise TypeError('Vectors must be elements of the vector space.')
+            raise TypeError("Vectors must be elements of the vector space.")
         return self.mapping(vec1, vec2)
     
     def info(self):
         vs = self.vectorspace
-        signature = f'{self} : {vs} × {vs} → {vs.field}'
+        signature = f"{self} : {vs} × {vs} → {vs.field}"
 
         lines = [
             signature,
-            '-' * len(signature),
-            f'Symmetric?          {self.is_symmetric()}',
-            f'Hermitian?          {self.is_hermitian()}',
-            f'Positive Definite?  {self.is_positive_definite()}',
-            f'Matrix              {self.matrix}'
+            "-" * len(signature),
+            f"Symmetric?          {self.is_symmetric()}",
+            f"Hermitian?          {self.is_hermitian()}",
+            f"Positive Definite?  {self.is_positive_definite()}",
+            f"Matrix              {self.matrix}"
             ]
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def inertia(self):
         if self.vectorspace.field is R:
@@ -305,12 +313,15 @@ class SesquilinearForm:
 
 class InnerProduct(SesquilinearForm):
     """
-    pass
+    An inner product on a vector space.
+    
+    An inner product is a positive definite, symmetric (for real spaces) 
+    or hermitian (for complex spaces) sesquilinear form.
     """
 
     def __init__(self, name, vectorspace, mapping=None, matrix=None):
         """
-        pass
+        Initialize an InnerProduct instance.
 
         Parameters
         ----------
@@ -328,7 +339,7 @@ class InnerProduct(SesquilinearForm):
         Returns
         -------
         InnerProduct
-            pass
+            A new InnerProduct instance.
 
         Raises
         ------
@@ -342,11 +353,11 @@ class InnerProduct(SesquilinearForm):
 
         if vs.field is R:
             if not self.is_symmetric():
-                raise InnerProductError('Real inner product must be symmetric.')
+                raise InnerProductError("Real inner product must be symmetric.")
         elif not self.is_hermitian():
-            raise InnerProductError('Complex inner product must be hermitian.')
+            raise InnerProductError("Complex inner product must be hermitian.")
         if not self.is_positive_definite():
-            raise InnerProductError('Inner product must be positive definite.')
+            raise InnerProductError("Inner product must be positive definite.")
 
         self._orthonormal_basis = self.gram_schmidt(*vs.basis)
         self._fn_orthonormal_basis = vs.fn.gram_schmidt(*vs.fn.basis)
@@ -356,11 +367,24 @@ class InnerProduct(SesquilinearForm):
         return self._orthonormal_basis
     
     def __repr__(self):
-        return super().__repr__().replace('SesquilinearForm', 'InnerProduct')
+        return super().__repr__().replace("SesquilinearForm", "InnerProduct")
     
     def __push__(self, vector):
         """
-        pass
+        Push a vector from the vector space to its F^n representation.
+
+        Maps a vector in the abstract vector space to its coordinate 
+        representation in F^n using the orthonormal basis.
+
+        Parameters
+        ----------
+        vector : object
+            A vector in the vector space.
+
+        Returns
+        -------
+        object
+            The coordinate representation of `vector` in F^n.
         """
         vs = self.vectorspace
         coord_vec = vs.to_coordinate(vector, basis=self.orthonormal_basis)
@@ -369,7 +393,20 @@ class InnerProduct(SesquilinearForm):
     
     def __pull__(self, vector):
         """
-        pass
+        Pull a vector from F^n to the vector space.
+
+        Maps a coordinate vector in F^n back to the abstract vector space 
+        using the orthonormal basis.
+
+        Parameters
+        ----------
+        vector : object
+            A coordinate vector in F^n.
+
+        Returns
+        -------
+        object
+            The corresponding vector in the vector space.
         """
         vs = self.vectorspace
         coord_vec = vs.fn.to_coordinate(vector, basis=self._fn_orthonormal_basis)
@@ -378,15 +415,15 @@ class InnerProduct(SesquilinearForm):
     
     def info(self):
         vs = self.vectorspace
-        signature = f'{self} : {vs} × {vs} → {vs.field}'
+        signature = f"{self} : {vs} × {vs} → {vs.field}"
 
         lines = [
             signature,
-            '-' * len(signature),
+            "-" * len(signature),
             f"Orthonormal Basis  [{', '.join(map(str, self.orthonormal_basis))}]",
-            f'Matrix             {self.matrix}'
+            f"Matrix             {self.matrix}"
             ]
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def norm(self, vector):
         """
@@ -444,7 +481,10 @@ class InnerProduct(SesquilinearForm):
     
     def gram_schmidt(self, *vectors):
         """
-        pass
+        Apply the Gram-Schmidt process to a set of vectors.
+
+        Returns an orthonormal list of vectors that span the same 
+        subspace as the input vectors.
 
         Parameters
         ----------
@@ -463,7 +503,7 @@ class InnerProduct(SesquilinearForm):
         """
         vs = self.vectorspace
         if not vs.is_independent(*vectors):
-            raise ValueError('Vectors must be linearly independent.')
+            raise ValueError("Vectors must be linearly independent.")
         
         orthonormal_vecs = []
         for v in vectors:
@@ -519,7 +559,7 @@ class InnerProduct(SesquilinearForm):
         if not vs.is_subspace(subspace):
             raise TypeError()
 
-        name = f'perp({subspace})'
+        name = f"perp({subspace})"
         fn_basis = [self.__push__(vec) for vec in subspace.basis]
         fn = vs.fn.span(*fn_basis)
         comp = vs.fn.ortho_complement(fn)
@@ -528,4 +568,10 @@ class InnerProduct(SesquilinearForm):
 
 
 class QuadraticForm:
+    """
+    A quadratic form on a vector space.
+    
+    A quadratic form is a function that takes a vector and returns a 
+    scalar, typically defined in terms of a symmetric bilinear form.
+    """
     pass
