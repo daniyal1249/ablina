@@ -23,13 +23,18 @@ class InnerProductError(FormError):
         super().__init__(msg)
 
 
+class BilinearForm:
+    pass
+
+
 class SesquilinearForm:
     """
     A sesquilinear form on a vector space.
-    
+
     A sesquilinear form is a function that takes two vectors and returns 
-    a scalar, satisfying certain linearity properties. For real vector 
-    spaces, this is equivalent to a bilinear form.
+    a scalar. It is conjugate-linear in the first argument and linear in 
+    the second. For real vector spaces, this is equivalent to a 
+    bilinear form.
     """
 
     def __init__(self, name, vectorspace, mapping=None, matrix=None):
@@ -132,6 +137,19 @@ class SesquilinearForm:
         return self.name
 
     def __eq__(self, form2):
+        """
+        Check for equality of two sesquilinear forms.
+
+        Parameters
+        ----------
+        form2 : SesquilinearForm
+            The form to compare with.
+
+        Returns
+        -------
+        bool
+            True if both forms are equal, otherwise False.
+        """
         if not isinstance(form2, SesquilinearForm):
             return False
         return (
@@ -140,12 +158,38 @@ class SesquilinearForm:
             )
     
     def __call__(self, vec1, vec2):
+        """
+        Apply the sesquilinear form to two vectors.
+
+        Parameters
+        ----------
+        vec1, vec2 : object
+            The vectors to apply the form to.
+
+        Returns
+        -------
+        object
+            The scalar value `<vec1, vec2>`.
+
+        Raises
+        ------
+        TypeError
+            If either vector is not an element of the vector space.
+        """
         vs = self.vectorspace
         if not (vec1 in vs and vec2 in vs):
             raise TypeError("Vectors must be elements of the vector space.")
         return self.mapping(vec1, vec2)
     
     def info(self):
+        """
+        A description of the sesquilinear form.
+
+        Returns
+        -------
+        str
+            The formatted description.
+        """
         vs = self.vectorspace
         signature = f"{self} : {vs} × {vs} → {vs.field}"
 
@@ -160,6 +204,24 @@ class SesquilinearForm:
         return "\n".join(lines)
 
     def inertia(self):
+        """
+        Compute the inertia of the sesquilinear form.
+
+        Returns a tuple (p, m, z) where:
+        - p is the number of positive eigenvalues
+        - m is the number of negative eigenvalues
+        - z is the number of zero eigenvalues
+
+        Returns
+        -------
+        tuple of (int, int, int)
+            The inertia (p, m, z) of the form.
+
+        Raises
+        ------
+        FormError
+            If the form is not symmetric (real) or hermitian (complex).
+        """
         if self.vectorspace.field is R:
             if not self.is_symmetric():
                 raise FormError()
@@ -173,6 +235,22 @@ class SesquilinearForm:
         return p, m, z
     
     def signature(self):
+        """
+        Compute the signature of the sesquilinear form.
+
+        The signature is the difference between the number of positive 
+        and negative eigenvalues.
+
+        Returns
+        -------
+        int
+            The signature of the form.
+
+        Raises
+        ------
+        FormError
+            If the form is not symmetric (real) or hermitian (complex).
+        """
         p, m, _ = self.inertia()
         return p - m
 
@@ -180,8 +258,7 @@ class SesquilinearForm:
         """
         Check whether the form is degenerate.
 
-        A form `<,>` is degenerate if there exists an x ≠ 0 such that 
-        `<x, y> = 0` for all y.
+        A sesquilinear form is degenerate if its matrix is not invertible.
 
         Returns
         -------
@@ -193,6 +270,8 @@ class SesquilinearForm:
     def is_symmetric(self):
         """
         Check whether the form is symmetric.
+
+        This method checks whether `<x, y> = <y, x>` for all `x` and `y`.
 
         Returns
         -------
@@ -209,8 +288,9 @@ class SesquilinearForm:
         """
         Check whether the form is hermitian.
 
-        Note that this method is equivalent to ``self.is_symmetric`` 
-        for forms defined on real vector spaces.
+        This method checks whether `<x, y> = conjugate(<y, x>)` for all 
+        `x` and `y`. Note that this method is equivalent to 
+        ``self.is_symmetric`` for forms defined on real vector spaces.
 
         Returns
         -------
@@ -227,8 +307,8 @@ class SesquilinearForm:
         """
         Check whether the form is positive definite.
 
-        This method checks whether `<x, x>` is positive for all x ≠ 0. 
-        Note that the form is not required to be symmetric/hermitian.
+        This method checks whether `<x, x> > 0` for all `x ≠ 0`. Note 
+        that the form is not required to be symmetric/hermitian.
 
         Returns
         -------
@@ -245,8 +325,8 @@ class SesquilinearForm:
         """
         Check whether the form is negative definite.
 
-        This method checks whether `<x, x>` is negative for all x ≠ 0. 
-        Note that the form is not required to be symmetric/hermitian.
+        This method checks whether `<x, x> < 0` for all `x ≠ 0`. Note 
+        that the form is not required to be symmetric/hermitian.
 
         Returns
         -------
@@ -263,8 +343,8 @@ class SesquilinearForm:
         """
         Check whether the form is positive semidefinite.
 
-        This method checks whether `<x, x>` is nonnegative for all x. 
-        Note that the form is not required to be symmetric/hermitian.
+        This method checks whether `<x, x> ≥ 0` for all `x`. Note that 
+        the form is not required to be symmetric/hermitian.
 
         Returns
         -------
@@ -281,8 +361,8 @@ class SesquilinearForm:
         """
         Check whether the form is negative semidefinite.
 
-        This method checks whether `<x, x>` is nonpositive for all x. 
-        Note that the form is not required to be symmetric/hermitian.
+        This method checks whether `<x, x> ≤ 0` for all `x`. Note that 
+        the form is not required to be symmetric/hermitian.
 
         Returns
         -------
@@ -299,9 +379,9 @@ class SesquilinearForm:
         """
         Check whether the form is indefinite.
 
-        This method checks whether there exists x, y such that `<x, x>` is 
-        positive and `<y, y>` is negative. Note that the form is not 
-        required to be symmetric/hermitian.
+        This method checks whether `<x, x> > 0` and `<y, y> < 0` for some 
+        `x` and `y`. Note that the form is not required to be 
+        symmetric/hermitian.
 
         Returns
         -------
@@ -364,6 +444,9 @@ class InnerProduct(SesquilinearForm):
 
     @property
     def orthonormal_basis(self):
+        """
+        list of object: An orthonormal basis for the vector space.
+        """
         return self._orthonormal_basis
     
     def __repr__(self):
@@ -414,6 +497,14 @@ class InnerProduct(SesquilinearForm):
         return vec
     
     def info(self):
+        """
+        A description of the inner product.
+
+        Returns
+        -------
+        str
+            The formatted description.
+        """
         vs = self.vectorspace
         signature = f"{self} : {vs} × {vs} → {vs.field}"
 
@@ -571,7 +662,372 @@ class QuadraticForm:
     """
     A quadratic form on a vector space.
     
-    A quadratic form is a function that takes a vector and returns a 
-    scalar, typically defined in terms of a symmetric bilinear form.
+    A quadratic form `Q` is a function that takes a vector and returns a 
+    scalar, satisfying the following properties:
+
+    - `Q(av) = a^2 Q(v)` for all scalars `a` and vectors `v`
+    - `Q(u + v) - Q(u) - Q(v)` is a bilinear form
     """
-    pass
+
+    def __init__(self, name, vectorspace, mapping=None, matrix=None):
+        """
+        Initialize a QuadraticForm instance.
+
+        Parameters
+        ----------
+        name : str
+            The name of the quadratic form.
+        vectorspace : VectorSpace
+            The vector space the quadratic form is defined on.
+        mapping : callable, optional
+            A function that takes a vector in the vector space and 
+            returns a scalar in the field.
+        matrix : Matrix, optional
+            The matrix representation of the quadratic form with respect 
+            to the basis of the vector space.
+
+        Returns
+        -------
+        QuadraticForm
+            A new QuadraticForm instance.
+
+        Raises
+        ------
+        FormError
+            If neither the mapping nor the matrix is provided.
+        """
+        if not isinstance(vectorspace, VectorSpace):
+            raise TypeError("vectorspace must be of type VectorSpace.")
+        
+        matrix = QuadraticForm._to_matrix(vectorspace, mapping, matrix)
+        mapping = QuadraticForm._to_mapping(vectorspace, mapping, matrix)
+        
+        self.name = name
+        self._vectorspace = vectorspace
+        self._mapping = mapping
+        self._matrix = matrix
+
+    @staticmethod
+    def _to_matrix(vectorspace, mapping, matrix):
+        if matrix is not None:
+            return QuadraticForm._validate_matrix(vectorspace, matrix)
+        if mapping is None:
+            raise FormError("Either a matrix or mapping must be provided.")
+        if not of_arity(mapping, 1):
+            raise TypeError("Mapping must be a callable of arity 1.")
+        
+        basis = vectorspace.basis
+        n = len(basis)
+        mat = M.zeros(n, n)
+        
+        for i in range(n):
+            mat[i, i] = mapping(basis[i])
+        
+        for i in range(n):
+            for j in range(i + 1, n):
+                u, v = basis[i], basis[j]
+                u_plus_v = vectorspace.add(u, v)
+                value = (mapping(u_plus_v) - mapping(u) - mapping(v)) / 2
+                mat[i, j], mat[j, i] = value, value
+        
+        return mat
+    
+    @staticmethod
+    def _to_mapping(vectorspace, mapping, matrix):
+        if mapping is not None:
+            return mapping
+        to_coord = vectorspace.to_coordinate
+        return lambda v: (to_coord(v).T @ matrix @ to_coord(v))[0]
+    
+    @staticmethod
+    def _validate_matrix(vectorspace, matrix):
+        mat = M(matrix)
+        if not (mat.is_square and mat.rows == vectorspace.dim):
+            raise ValueError("Matrix has invalid shape.")
+        if not all(i in vectorspace.field for i in mat):
+            raise ValueError("Matrix entries must be elements of the field.")
+        return (mat + mat.T) / 2
+
+    @property
+    def vectorspace(self):
+        """
+        VectorSpace: The vector space the quadratic form is defined on.
+        """
+        return self._vectorspace
+    
+    @property
+    def mapping(self):
+        """
+        callable: The function that maps vectors to scalars.
+        """
+        return self._mapping
+    
+    @property
+    def matrix(self):
+        """
+        Matrix: The matrix representation of the quadratic form.
+        """
+        return self._matrix
+    
+    @property
+    def polarization(self):
+        """
+        BilinearForm: The associated bilinear form.
+
+        Returns the symmetric bilinear form `B` such that `Q(v) = B(v, v)` 
+        for all vectors `v`.
+        """
+        name = f"B_{self.name}"
+        return BilinearForm(name, self.vectorspace, matrix=self.matrix)
+    
+    def __repr__(self):
+        return (
+            f"QuadraticForm(name={self.name!r}, "
+            f"vectorspace={self.vectorspace!r}, "
+            f"mapping={self.mapping!r}, "
+            f"matrix={self.matrix!r})"
+            )
+    
+    def __str__(self):
+        return self.name
+
+    def __eq__(self, form2):
+        """
+        Check for equality of two quadratic forms.
+
+        Parameters
+        ----------
+        form2 : QuadraticForm
+            The form to compare with.
+
+        Returns
+        -------
+        bool
+            True if both forms are equal, otherwise False.
+        """
+        if not isinstance(form2, QuadraticForm):
+            return False
+        return (
+            self.vectorspace == form2.vectorspace 
+            and self.matrix == form2.matrix
+            )
+    
+    def __call__(self, vector):
+        """
+        Apply the quadratic form to a vector.
+
+        Parameters
+        ----------
+        vector : object
+            The vector to map.
+
+        Returns
+        -------
+        object
+            The scalar that `vector` maps to.
+
+        Raises
+        ------
+        TypeError
+            If `vector` is not an element of the vector space.
+        """
+        vs = self.vectorspace
+        if vector not in vs:
+            raise TypeError("Vector must be an element of the vector space.")
+        return self.mapping(vector)
+    
+    def info(self):
+        """
+        A description of the quadratic form.
+
+        Returns
+        -------
+        str
+            The formatted description.
+        """
+        vs = self.vectorspace
+        signature = f"{self} : {vs} → {vs.field}"
+
+        lines = [
+            signature,
+            "-" * len(signature),
+            f"Matrix  {self.matrix}"
+            ]
+        return "\n".join(lines)
+
+    def inertia(self):
+        """
+        Compute the inertia of the quadratic form.
+
+        Returns a tuple (p, m, z) where:
+        - p is the number of positive eigenvalues
+        - m is the number of negative eigenvalues
+        - z is the number of zero eigenvalues
+
+        Returns
+        -------
+        tuple of (int, int, int)
+            The inertia (p, m, z) of the quadratic form.
+
+        Raises
+        ------
+        FormError
+            If the quadratic form is not defined on a real vector space.
+        """
+        self._validate_form()
+        tol = 1e-8
+        eigenvals = self.matrix.evalf().eigenvals().items()
+        p = sum(m for val, m in eigenvals if val >= tol)
+        m = sum(m for val, m in eigenvals if val <= -tol)
+        z = sum(m for val, m in eigenvals if abs(val) < tol)
+        return p, m, z
+    
+    def signature(self):
+        """
+        Compute the signature of the quadratic form.
+
+        The signature is the difference between the number of positive 
+        and negative eigenvalues.
+
+        Returns
+        -------
+        int
+            The signature of the quadratic form.
+
+        Raises
+        ------
+        FormError
+            If the quadratic form is not defined on a real vector space.
+        """
+        p, m, _ = self.inertia()
+        return p - m
+
+    def is_degenerate(self):
+        """
+        Check whether the quadratic form is degenerate.
+
+        A quadratic form is degenerate if its associated bilinear form 
+        is degenerate, i.e., if the matrix is not invertible.
+
+        Returns
+        -------
+        bool
+            True if `self` is degenerate, otherwise False.
+        """
+        return not is_invertible(self.matrix)
+    
+    def is_positive_definite(self):
+        """
+        Check whether the quadratic form is positive definite.
+
+        This method checks whether `Q(x) > 0` for all `x ≠ 0`.
+
+        Returns
+        -------
+        bool
+            True if `self` is positive definite, otherwise False.
+
+        Raises
+        ------
+        FormError
+            If the quadratic form is not defined on a real vector space.
+
+        See Also
+        --------
+        QuadraticForm.is_positive_semidefinite
+        """
+        self._validate_form()
+        return self.matrix.is_positive_definite
+
+    def is_negative_definite(self):
+        """
+        Check whether the quadratic form is negative definite.
+
+        This method checks whether `Q(x) < 0` for all `x ≠ 0`.
+
+        Returns
+        -------
+        bool
+            True if `self` is negative definite, otherwise False.
+
+        Raises
+        ------
+        FormError
+            If the quadratic form is not defined on a real vector space.
+
+        See Also
+        --------
+        QuadraticForm.is_negative_semidefinite
+        """
+        self._validate_form()
+        return self.matrix.is_negative_definite
+
+    def is_positive_semidefinite(self):
+        """
+        Check whether the quadratic form is positive semidefinite.
+
+        This method checks whether `Q(x) ≥ 0` for all `x`.
+
+        Returns
+        -------
+        bool
+            True if `self` is positive semidefinite, otherwise False.
+
+        Raises
+        ------
+        FormError
+            If the quadratic form is not defined on a real vector space.
+
+        See Also
+        --------
+        QuadraticForm.is_positive_definite
+        """
+        self._validate_form()
+        return self.matrix.is_positive_semidefinite
+
+    def is_negative_semidefinite(self):
+        """
+        Check whether the quadratic form is negative semidefinite.
+
+        This method checks whether `Q(x) ≤ 0` for all `x`.
+
+        Returns
+        -------
+        bool
+            True if `self` is negative semidefinite, otherwise False.
+
+        Raises
+        ------
+        FormError
+            If the quadratic form is not defined on a real vector space.
+
+        See Also
+        --------
+        QuadraticForm.is_negative_definite
+        """
+        self._validate_form()
+        return self.matrix.is_negative_semidefinite
+
+    def is_indefinite(self):
+        """
+        Check whether the quadratic form is indefinite.
+
+        This method checks whether `Q(x) > 0` and `Q(y) < 0` for some 
+        `x` and `y`.
+
+        Returns
+        -------
+        bool
+            True if `self` is indefinite, otherwise False.
+
+        Raises
+        ------
+        FormError
+            If the quadratic form is not defined on a real vector space.
+        """
+        self._validate_form()
+        return self.matrix.is_indefinite
+
+    def _validate_form(self):
+        if self.vectorspace.field is not R:
+            raise FormError("Form must be defined on a real vector space.")
