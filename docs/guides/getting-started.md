@@ -9,7 +9,7 @@
 To define a subspace of R^n or C^n, use ``fn``
 
 ```python
->>> V = fn('V', R, 3)
+>>> V = fn("V", R, 3)
 >>> print(V.info())
 ```
 
@@ -25,7 +25,7 @@ To define a subspace of R^n or C^n, use ``fn``
 You can provide a list of constraints 
 
 ```python
->>> U = fn('U', R, 3, constraints=['v0 == 0', '2*v1 == v2'])
+>>> U = fn("U", R, 3, constraints=["v0 == 0", "2*v1 == v2"])
 >>> print(U.info())
 ```
 
@@ -41,7 +41,7 @@ You can provide a list of constraints
 Or specify a basis 
 
 ```python
->>> W = fn('W', R, 3, basis=[[1, 0, 0], [0, 1, 0]])
+>>> W = fn("W", R, 3, basis=[[1, 0, 0], [0, 1, 0]])
 >>> print(W.info())
 ```
 
@@ -198,7 +198,7 @@ Take the span of a list of vectors
 
 
 ```python
->>> S = V.span('S', [1, 2, 3], [4, 5, 6])
+>>> S = V.span("S", [1, 2, 3], [4, 5, 6])
 >>> print(S.info())
 ```
 
@@ -217,7 +217,7 @@ Take the span of a list of vectors
 >>> def mapping(vec):
 >>>     return [vec[0], vec[1], 0]
 >>>
->>> T = LinearMap('T', domain=V, codomain=W, mapping=mapping)
+>>> T = LinearMap("T", domain=V, codomain=W, mapping=mapping)
 >>> print(T.info())
 ```
 
@@ -290,7 +290,7 @@ Here we define the standard dot product
 >>> def mapping(vec1, vec2):
 >>>     return sum(i * j for i, j in zip(vec1, vec2))
 >>>
->>> dot = InnerProduct('dot', vectorspace=V, mapping=mapping)
+>>> dot = InnerProduct("dot", vectorspace=V, mapping=mapping)
 >>> print(dot.info())
 ```
 
@@ -368,7 +368,7 @@ Take the orthogonal complement of a vector space
 >>> def mapping(vec):
 >>>     return [vec[0], 2*vec[1], 3*vec[2]]
 >>>
->>> T = LinearOperator('T', vectorspace=V, mapping=mapping)
+>>> T = LinearOperator("T", vectorspace=V, mapping=mapping)
 >>> print(T.info())
 ```
 
