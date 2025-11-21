@@ -208,6 +208,7 @@ class SesquilinearForm:
         Compute the inertia of the sesquilinear form.
 
         Returns a tuple (p, m, z) where:
+
         - p is the number of positive eigenvalues
         - m is the number of negative eigenvalues
         - z is the number of zero eigenvalues
@@ -860,6 +861,7 @@ class QuadraticForm:
         Compute the inertia of the quadratic form.
 
         Returns a tuple (p, m, z) where:
+
         - p is the number of positive eigenvalues
         - m is the number of negative eigenvalues
         - z is the number of zero eigenvalues
