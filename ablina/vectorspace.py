@@ -2,7 +2,6 @@
 A module for working with finite-dimensional vector and affine spaces.
 """
 
-
 from random import gauss
 
 import sympy as sp
@@ -1390,7 +1389,7 @@ def matrix_space(name, field, shape, constraints=None, basis=None):
         The name of the subspace.
     field : {R, C}
         The field of scalars for the vector space.
-    shape : tuple of int
+    shape : tuple of (int, int)
         Shape (rows, cols) of the matrices.
     constraints : list of str, optional
         Constraints all vectors must satisfy (e.g. "v0 + 2*v1 == 0").

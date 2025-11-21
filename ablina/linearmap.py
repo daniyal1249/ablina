@@ -17,8 +17,11 @@ class LinearMap:
     """
     A linear map between vector spaces.
     
-    Represents a linear transformation from one vector space to another, 
-    with support for both functional and matrix representations.
+    A linear map `T` is a function from one vector space to another, 
+    satisfying the following properties:
+
+    - `T(u + v) = T(u) + T(v)` for all vectors `u` and `v`
+    - `T(av) = a T(v)` for all scalars `a` and vectors `v`
     """
     
     def __init__(self, name, domain, codomain, mapping=None, matrix=None):
@@ -165,6 +168,19 @@ class LinearMap:
         return self.name
 
     def __eq__(self, map2):
+        """
+        Check for equality of two linear maps.
+
+        Parameters
+        ----------
+        map2 : LinearMap
+            The linear map to compare with.
+
+        Returns
+        -------
+        bool
+            True if both linear maps are equal, otherwise False.
+        """
         if not isinstance(map2, LinearMap):
             return False
         if not (self.domain == map2.domain and self.codomain == map2.codomain):
@@ -280,6 +296,14 @@ class LinearMap:
         return self.restriction(obj).image()
     
     def info(self):
+        """
+        A description of the linear map.
+
+        Returns
+        -------
+        str
+            The formatted description.
+        """
         signature = f"{self} : {self.domain} → {self.codomain}"
 
         lines = [
@@ -718,7 +742,7 @@ class LinearFunctional(LinearMap):
     A linear functional on a vector space.
     
     A linear map from a vector space to its field of scalars. This is a 
-    special case of a LinearMap where the codomain is one-dimensional.
+    special case of a LinearMap where the codomain is the underlying field.
     """
 
     def __init__(self, name, vectorspace, mapping=None, matrix=None):
@@ -803,6 +827,14 @@ class Isomorphism(LinearMap):
         return super().__repr__().replace("LinearMap", "Isomorphism")
     
     def info(self):
+        """
+        A description of the isomorphism.
+
+        Returns
+        -------
+        str
+            The formatted description.
+        """
         signature = f"{self} : {self.domain} → {self.codomain}"
 
         lines = [
@@ -855,6 +887,14 @@ class IdentityMap(LinearOperator):
         return f"IdentityMap(vectorspace={self.domain!r})"
     
     def info(self):
+        """
+        A description of the identity map.
+
+        Returns
+        -------
+        str
+            The formatted description.
+        """
         signature = f"{self} : {self.domain} → {self.codomain}"
 
         lines = [
