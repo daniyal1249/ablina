@@ -24,7 +24,7 @@ class Fn:
     Subspace of the standard vector space F^n.
 
     Provides concrete implementations of the main vector space 
-    operations (sum, intersection, span, etc). This class should only be 
+    operations (sum, intersection, span, etc.). This class should only be 
     instantiated when subclassing ``VectorSpace`` in order to define a 
     custom vector space. See the ``fn`` function for working with 
     subspaces of F^n.
@@ -503,7 +503,7 @@ class VectorSpace:
         if isinstance(other, VectorSpace):
             return self.sum(other)
         if other not in self.ambient_space():
-            raise TypeError()
+            raise TypeError("Vector must be an element of the ambient space.")
         return self.coset(self.additive_inv(other))
     
     def __rsub__(self, vector):
@@ -988,7 +988,7 @@ class VectorSpace:
         VectorSpace.coset
         """
         if not self.is_subspace(subspace):
-            raise TypeError()
+            raise TypeError("Subspace must be a subspace of the vector space.")
         
         vs = self.ambient_space()
         cls_name = f"{vs} / {subspace}"
@@ -1049,9 +1049,9 @@ class AffineSpace:
             If `representative` is not an element of the ambient space.
         """
         if not isinstance(vectorspace, VectorSpace):
-            raise TypeError()
+            raise TypeError("vectorspace must be of type VectorSpace.")
         if representative not in vectorspace.ambient_space():
-            raise TypeError()
+            raise TypeError("representative must be an element of the ambient space.")
         
         self.name = f"{vectorspace} + {representative}"
         self._vectorspace = vectorspace
@@ -1175,7 +1175,7 @@ class AffineSpace:
         if isinstance(other, AffineSpace):
             return self.sum(other)
         if other not in vs.ambient_space():
-            raise TypeError()
+            raise TypeError("Vector must be an element of the ambient space.")
         
         repr = vs.add(self.representative, other)
         return AffineSpace(vs, repr)
@@ -1204,7 +1204,7 @@ class AffineSpace:
         if isinstance(other, AffineSpace):
             return self.sum(-other)
         if other not in vs.ambient_space():
-            raise TypeError()
+            raise TypeError("Vector must be an element of the ambient space.")
         
         repr = vs.add(self.representative, vs.additive_inv(other))
         return AffineSpace(vs, repr)
@@ -1318,11 +1318,16 @@ class AffineSpace:
         AffineSpace
             The intersection of `self` and `as2`.
 
+        Raises
+        ------
+        NotImplementedError
+            This method is not yet implemented.
+
         See Also
         --------
         AffineSpace.sum
         """
-        raise NotImplementedError()
+        raise NotImplementedError("This method is not yet implemented.")
     
     def _validate_type(self, as2):
         if not isinstance(as2, AffineSpace):
@@ -1481,9 +1486,9 @@ def hom(vs1, vs2):
         If the fields of `vs1` and `vs2` are not the same.
     """
     if not (isinstance(vs1, VectorSpace) and isinstance(vs2, VectorSpace)):
-        raise TypeError()
+        raise TypeError("vs1 and vs2 must be of type VectorSpace.")
     if vs1.field is not vs2.field:
-        raise TypeError()
+        raise TypeError("Vector spaces must be over the same field.")
     
     name = f"hom({vs1}, {vs2})"
     return matrix_space(name, vs1.field, (vs2.dim, vs1.dim))

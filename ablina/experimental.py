@@ -14,7 +14,7 @@ def additive_id(field, n, add):
 
     Parameters
     ----------
-    field : {Real, Complex}
+    field : {R, C}
         The field of scalars.
     n : int
         The length of the vectors the addition function accepts.
@@ -55,7 +55,7 @@ def additive_inv(field, n, add, add_id, lambdify=False):
 
     Parameters
     ----------
-    field : {Real, Complex}
+    field : {R, C}
         The field of scalars.
     n : int
         The length of the vectors the addition function accepts.
@@ -108,7 +108,7 @@ def is_commutative(field, n, operation):
 
     Parameters
     ----------
-    field : {Real, Complex}
+    field : {R, C}
         The field of scalars.
     n : int
         The length of the vectors the operation accepts.
@@ -138,7 +138,7 @@ def is_associative(field, n, operation):
 
     Parameters
     ----------
-    field : {Real, Complex}
+    field : {R, C}
         The field of scalars.
     n : int
         The length of the vectors the operation accepts.
@@ -308,7 +308,7 @@ def find_add_isomorphism(field, n, add):
 
     Parameters
     ----------
-    field : {Real, Complex}
+    field : {R, C}
         The field of scalars.
     n : int
         The length of the vectors in the vector space.
@@ -327,7 +327,7 @@ def find_add_isomorphism(field, n, add):
     """
     f = sp.Function("f")
     u, v = symbols((f"u:{n}", f"v:{n}"), field=field)
-    raise NotImplementedError()
+    raise NotImplementedError("This function is not yet implemented.")
 
 
 def find_mul_isomorphism(field, n, mul):
@@ -339,7 +339,7 @@ def find_mul_isomorphism(field, n, mul):
 
     Parameters
     ----------
-    field : {Real, Complex}
+    field : {R, C}
         The field of scalars.
     n : int
         The length of the vectors in the vector space.
@@ -358,7 +358,7 @@ def find_mul_isomorphism(field, n, mul):
     """
     f = sp.Function("f")
     u, v = symbols((f"u:{n}", f"v:{n}"), field=field)
-    raise NotImplementedError()
+    raise NotImplementedError("This function is not yet implemented.")
 
 
 def internal_isomorphism(field, n, add, mul):
@@ -371,7 +371,7 @@ def internal_isomorphism(field, n, add, mul):
 
     Parameters
     ----------
-    field : {Real, Complex}
+    field : {R, C}
         The field of scalars.
     n : int
         The length of the vectors in the vector space.
@@ -383,8 +383,12 @@ def internal_isomorphism(field, n, add, mul):
     Returns
     -------
     object
-        The isomorphism function if found, otherwise raises 
-        NotImplementedError.
+        The isomorphism function if found.
+
+    Raises
+    ------
+    NotImplementedError
+        This function is not yet implemented.
     """
     # Need to support custom domains
     # Need to implement an intersection function
@@ -411,7 +415,7 @@ def internal_isomorphism(field, n, add, mul):
     #         return valid_funcs
     # return valid_funcs
     
-    raise NotImplementedError()
+    raise NotImplementedError("This function is not yet implemented.")
 
 
 def map_constraints(mapping, constraints):
@@ -438,7 +442,7 @@ def map_constraints(mapping, constraints):
     NotImplementedError
         This function is not yet implemented.
     """
-    raise NotImplementedError()
+    raise NotImplementedError("This function is not yet implemented.")
 
 
 # Need to account for nested functions using while loop
@@ -453,4 +457,4 @@ def map_constraints(mapping, constraints):
 # add = [i + j for i, j in zip(xs, ys)]
 # mul = [i * j for i, j in zip(xs, ys)]
 
-# print(isomorphism(Real, 3, add, mul))
+# print(isomorphism(R, 3, add, mul))

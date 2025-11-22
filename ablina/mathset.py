@@ -37,9 +37,9 @@ class Set:
         if len(predicates) == 1 and isinstance(predicates[0], list):
             predicates = predicates[0]
         if not all(callable(pred) for pred in predicates):
-            raise TypeError()
+            raise TypeError("All predicates must be callable.")
         if not all(of_arity(pred, 1) for pred in predicates):
-            raise ValueError()
+            raise ValueError("All predicates must have arity 1.")
         
         self.name = name
         self._cls = cls
@@ -260,8 +260,6 @@ class Set:
 
         Raises
         ------
-        TypeError
-            If `set2` is not a Set.
         ValueError
             If ``self.cls`` and ``set2.cls`` are not the same.
 

@@ -225,9 +225,9 @@ class SesquilinearForm:
         """
         if self.vectorspace.field is R:
             if not self.is_symmetric():
-                raise FormError()
+                raise FormError("Form must be symmetric for real vector spaces.")
         elif not self.is_hermitian():
-            raise FormError()
+            raise FormError("Form must be hermitian for complex vector spaces.")
         tol = 1e-8
         eigenvals = self.matrix.evalf().eigenvals().items()
         p = sum(m for val, m in eigenvals if val >= tol)
@@ -625,9 +625,9 @@ class InnerProduct(SesquilinearForm):
         """
         vs = self.vectorspace
         if vector not in vs:
-            raise TypeError()
+            raise TypeError("Vector must be an element of the vector space.")
         if not vs.is_subspace(subspace):
-            raise TypeError()
+            raise TypeError("Subspace must be a subspace of the vector space.")
         
         fn_vec = self.__push__(vector)
         proj = vs.fn.ortho_projection(fn_vec, subspace.fn)
@@ -649,7 +649,7 @@ class InnerProduct(SesquilinearForm):
         """
         vs = self.vectorspace
         if not vs.is_subspace(subspace):
-            raise TypeError()
+            raise TypeError("Subspace must be a subspace of the vector space.")
 
         name = f"perp({subspace})"
         fn_basis = [self.__push__(vec) for vec in subspace.basis]

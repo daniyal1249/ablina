@@ -373,7 +373,7 @@ class LinearMap:
             If `subspace` is not a subspace of the domain.
         """
         if not self.domain.is_subspace(subspace):
-            raise TypeError()
+            raise TypeError("Subspace must be a subspace of the domain.")
         name = f"{self} | {subspace}"
         return LinearMap(name, subspace, self.codomain, self.mapping)
 
@@ -427,7 +427,7 @@ class LinearMap:
         [6, 12, 18]
         """
         if not isinstance(map2, LinearMap):
-            raise TypeError()
+            raise TypeError("map2 must be of type LinearMap.")
         if self.domain != map2.codomain:
             raise LinearMapError("The linear maps are not compatible.")
         
@@ -477,13 +477,13 @@ class LinearMap:
         """
         The adjoint of the linear map.
         """
-        raise NotImplementedError()
+        raise NotImplementedError("This method is not yet implemented.")
     
     def pseudoinverse(self):
         """
         The pseudoinverse of the linear map.
         """
-        raise NotImplementedError()
+        raise NotImplementedError("This method is not yet implemented.")
 
     def is_injective(self):
         """
@@ -637,7 +637,7 @@ class LinearOperator(LinearMap):
             If `subspace` is not a subspace of the domain.
         """
         if not self.domain.is_subspace(subspace):
-            raise TypeError()
+            raise TypeError("Subspace must be a subspace of the domain.")
         return subspace.is_subspace(self(subspace))
     
     def is_symmetric(self, innerproduct):
@@ -662,7 +662,7 @@ class LinearOperator(LinearMap):
         LinearOperator.is_hermitian
         """
         if self.field is not R:
-            raise LinearMapError()
+            raise LinearMapError("Operator must be defined on a real vector space.")
         mat, _ = self.change_of_basis(innerproduct.orthonormal_basis)
         return mat.is_symmetric()
 
@@ -704,7 +704,7 @@ class LinearOperator(LinearMap):
         LinearOperator.is_unitary
         """
         if self.field is not R:
-            raise LinearMapError()
+            raise LinearMapError("Operator must be defined on a real vector space.")
         mat, _ = self.change_of_basis(innerproduct.orthonormal_basis)
         return u.is_orthogonal(mat)
 
@@ -804,7 +804,7 @@ class LinearFunctional(LinearMap):
             If `subspace` is not a subspace of the domain.
         """
         if not self.domain.is_subspace(subspace):
-            raise TypeError()
+            raise TypeError("Subspace must be a subspace of the domain.")
         name = f"{self} | {subspace}"
         return LinearFunctional(name, subspace, self.mapping)
 
