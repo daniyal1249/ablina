@@ -12,9 +12,23 @@ from .matrix import M
 
 def symbols(names, field=None, **kwargs):
     """
-    Returns sympy symbols with the specified names and field (``R`` or ``C``).
+    Return sympy symbols with the specified names and field.
 
-    Additional constraints can be specified as keyword args.
+    Parameters
+    ----------
+    names : str
+        The names of the symbols to create.
+    field : {R, C}, optional
+        The field to constrain the symbols to. If ``R``, symbols are 
+        real. If ``C``, symbols are complex. If None, no field constraint 
+        is applied.
+    **kwargs
+        Additional keyword arguments to pass to sympy.symbols.
+
+    Returns
+    -------
+    Symbol or tuple of Symbol
+        The created symbol(s) with the specified constraints.
     """
     if field is None:
         return sp.symbols(names, **kwargs)
@@ -25,10 +39,21 @@ def symbols(names, field=None, **kwargs):
 
 def is_linear(expr, vars=None):
     """
-    Determines if an equation or expression is linear with respect to the 
-    variables in `vars`. 
-    
-    If `vars` is None, all variables in `expr` are checked.
+    Check whether an expression is linear with respect to the given variables.
+
+    Parameters
+    ----------
+    expr : Expr
+        The expression to check.
+    vars : iterable of Symbol, optional
+        The variables to check linearity with respect to. If None, all 
+        variables in `expr` are checked.
+
+    Returns
+    -------
+    bool
+        True if the expression is linear with respect to the variables, 
+        otherwise False.
     """
     if vars is None:
         vars = expr.free_symbols
@@ -49,7 +74,17 @@ def is_linear(expr, vars=None):
 
 def is_empty(matrix):
     """
-    Returns True if the matrix contains no elements, otherwise False.
+    Check whether a matrix is empty.
+
+    Parameters
+    ----------
+    matrix : Matrix
+        The matrix to check.
+
+    Returns
+    -------
+    bool
+        True if the matrix contains no elements, otherwise False.
     """
     mat = M(matrix)
     return mat.rows == 0 or mat.cols == 0
@@ -57,7 +92,17 @@ def is_empty(matrix):
 
 def is_invertible(matrix):
     """
-    Returns True if the matrix is invertible, otherwise False.
+    Check whether a matrix is invertible.
+
+    Parameters
+    ----------
+    matrix : Matrix
+        The matrix to check.
+
+    Returns
+    -------
+    bool
+        True if the matrix is invertible, otherwise False.
     """
     mat = M(matrix)
     return mat.is_square and not mat.det().equals(0)
@@ -65,15 +110,46 @@ def is_invertible(matrix):
 
 def is_orthogonal(matrix):
     """
-    Returns True if the matrix is orthogonal, otherwise False.
+    Check whether a matrix is orthogonal.
+
+    Parameters
+    ----------
+    matrix : Matrix
+        The matrix to check.
+
+    Returns
+    -------
+    bool
+        True if the matrix is orthogonal, otherwise False.
+
+    See Also
+    --------
+    is_unitary
     """
-    # Make sure the matrix is real
-    return is_unitary(matrix)
+    mat = M(matrix)
+    if not mat.is_square:
+        return False
+    identity = M.eye(mat.rows)
+    return (mat @ mat.T).equals(identity)
 
 
 def is_unitary(matrix):
     """
-    Returns True if the matrix is unitary, otherwise False.
+    Check whether a matrix is unitary.
+
+    Parameters
+    ----------
+    matrix : Matrix
+        The matrix to check.
+
+    Returns
+    -------
+    bool
+        True if the matrix is unitary, otherwise False.
+
+    See Also
+    --------
+    is_orthogonal
     """
     mat = M(matrix)
     if not mat.is_square:
@@ -84,7 +160,17 @@ def is_unitary(matrix):
 
 def is_normal(matrix):
     """
-    Returns True if the matrix is normal, otherwise False.
+    Check whether a matrix is normal.
+
+    Parameters
+    ----------
+    matrix : Matrix
+        The matrix to check.
+
+    Returns
+    -------
+    bool
+        True if the matrix is normal, otherwise False.
     """
     mat = M(matrix)
     if not mat.is_square:
@@ -95,9 +181,19 @@ def is_normal(matrix):
 
 def rref(matrix, remove=False):
     """
-    Returns the rref of the matrix.
+    Compute the reduced row echelon form of a matrix.
 
-    If `remove` is True, all zero rows are removed.
+    Parameters
+    ----------
+    matrix : Matrix
+        The matrix to compute the rref of.
+    remove : bool, default=False
+        If True, all zero rows are removed from the result.
+
+    Returns
+    -------
+    Matrix
+        The reduced row echelon form of the matrix.
     """
     mat = M(matrix)
     rref, _ = mat.rref()
@@ -113,8 +209,20 @@ def rref(matrix, remove=False):
 
 def of_arity(func, arity):
     """
-    Returns True if the function can accept `arity` positional arguments, 
-    otherwise False.
+    Check whether a function can accept a given number of positional arguments.
+
+    Parameters
+    ----------
+    func : callable
+        The function to check.
+    arity : int
+        The number of positional arguments to check for.
+
+    Returns
+    -------
+    bool
+        True if the function can accept `arity` positional arguments, 
+        otherwise False.
 
     Raises
     ------

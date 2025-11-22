@@ -33,3 +33,4 @@ class Matrix(_M):
 
 
 M = Matrix
+"""An alias for the Matrix class."""

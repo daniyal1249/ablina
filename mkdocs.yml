@@ -1,11 +1,9 @@
 site_name: ablina documentation
 # site_url:
-
 repo_url: https://github.com/daniyal1249/ablina
 
-site_description: A Python package for abstract linear algebra.
+site_description: A Python package for abstract linear algebra
 site_author: Daniyal Akif
-
 
 theme:
   name: material
@@ -15,6 +13,8 @@ theme:
     - navigation.tabs
     - navigation.sections
     - navigation.top
+    # - navigation.expand
+    # - navigation.tracking
     # - toc.integrate
     - search.suggest
     # - search.highlight
@@ -23,10 +23,20 @@ theme:
     - content.code.copy
   language: en
   palette:
-    # - scheme: slate
-      # primary: white
-      # accent: blue
-
+    - scheme: default
+      primary: light blue
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: light blue
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
 
 nav:
   - Guides:
@@ -34,11 +44,13 @@ nav:
     - Installation: guides/installation.md
   - API reference:
     - Sets: reference/mathset.md
+    - Fields: reference/field.md
     - Vector spaces: reference/vectorspace.md
     - Linear maps: reference/linearmap.md
     - Forms: reference/form.md
+    - Matrices: reference/matrix.md
+    - Utilities: reference/utils.md
   - Resources: resources.md
-
 
 plugins:
   - search
@@ -47,11 +59,15 @@ plugins:
         python:
           options:
             docstring_style: numpy
-
+            show_root_heading: true
+            members_order: source
+            group_by_category: false
+            # separate_signature: true
 
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
+      # linenums: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - admonition

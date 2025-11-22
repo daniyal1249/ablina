@@ -1671,6 +1671,8 @@ def left_nullspace(name, matrix, field=R):
     return nullspace(name, mat, field)
 
 
-# Aliases
 image = columnspace
+"""An alias for the columnspace function."""
+
 kernel = nullspace
+"""An alias for the nullspace function."""

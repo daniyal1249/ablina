@@ -16,12 +16,17 @@ def to_ns_matrix(n, constraints):
     n : int
         The dimension of the vector space (length of vectors).
     constraints : list of str
-        The list of constraints.
+        The list of linear constraints.
 
     Returns
     -------
     Matrix
         A matrix with the linear constraints as rows.
+
+    Raises
+    ------
+    ConstraintError
+        If any constraint has an invalid format.
     """
     exprs = set()
     for constraint in constraints:
@@ -51,20 +56,17 @@ def to_complement(matrix):
 
     This function works bidirectionally: if given a null space matrix, it 
     returns a row space matrix, and if given a row space matrix, it 
-    returns a null space matrix. The complement is computed by finding the 
-    null space of the input matrix and returning its row space complement.
+    returns a null space matrix.
 
     Parameters
     ----------
     matrix : Matrix
-        A matrix whose rows span either the null space or the row space.
+        The matrix to take the complement of.
 
     Returns
     -------
     Matrix
-        If `matrix` represents a null space, returns a matrix whose rows 
-        form a basis for the row space. If `matrix` represents a row space, 
-        returns a matrix whose rows form a basis for the null space.
+        The complement of `matrix`.
     """
     mat = M(matrix)
     if mat.rows == 0:

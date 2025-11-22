@@ -49,4 +49,7 @@ class Complexes(Field, _C):
 
 
 R = Reals()
+"""Singleton instance representing the field of real numbers."""
+
 C = Complexes()
+"""Singleton instance representing the field of complex numbers."""
