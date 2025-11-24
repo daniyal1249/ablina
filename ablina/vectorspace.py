@@ -1040,7 +1040,7 @@ class VectorSpace:
         if not isinstance(vs2, VectorSpace):
             raise TypeError(f"Expected a VectorSpace, got {type(vs2).__name__} instead.")
         if type(self).name != type(vs2).name:
-            raise TypeError("Vector spaces must be subspaces of the same ambient space.")
+            raise TypeError("Vector spaces must share the same ambient space.")
     
     def _validate_coordinate(self, coord_vec: Any) -> Matrix:
         vec = M(coord_vec)

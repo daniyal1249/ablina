@@ -656,7 +656,7 @@ class InnerProduct(SesquilinearForm):
             f"matrix={self.matrix!r})"
             )
     
-    def __push__(self, vector: Any) -> Any:
+    def __push__(self, vector: Any) -> Matrix:
         """
         Push a vector from the vector space to its F^n representation.
 
@@ -670,7 +670,7 @@ class InnerProduct(SesquilinearForm):
 
         Returns
         -------
-        object
+        Matrix
             The coordinate representation of `vector` in F^n.
         """
         vs = self.vectorspace
@@ -678,7 +678,7 @@ class InnerProduct(SesquilinearForm):
         vec = vs.fn.from_coordinate(coord_vec, basis=self._fn_orthonormal_basis)
         return vec
     
-    def __pull__(self, vector: Any) -> Any:
+    def __pull__(self, vector: Matrix) -> Any:
         """
         Pull a vector from F^n to the vector space.
 
@@ -687,7 +687,7 @@ class InnerProduct(SesquilinearForm):
 
         Parameters
         ----------
-        vector : object
+        vector : Matrix
             A coordinate vector in F^n.
 
         Returns

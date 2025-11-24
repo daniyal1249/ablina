@@ -295,18 +295,18 @@ class LinearMap:
     def __rmul__(self, scalar: Any) -> LinearMap:
         return self.__mul__(scalar)
     
-    def __call__(self, obj: Any) -> Any:
+    def __call__(self, obj: Any | VectorSpace) -> Any | VectorSpace:
         """
         Apply the linear map to a vector or subspace.
 
         Parameters
         ----------
-        obj : object
+        obj : object or VectorSpace
             The vector or subspace to map.
 
         Returns
         -------
-        object
+        object or VectorSpace
             The vector or subspace that `obj` maps to.
 
         Examples
