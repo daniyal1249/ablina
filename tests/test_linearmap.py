@@ -636,13 +636,15 @@ class TestLinearMapMethods(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             lm.adjoint()
 
-    def test_pseudoinverse_not_implemented(self):
-        """Test pseudoinverse raises NotImplementedError."""
+    def test_pseudoinverse(self):
+        """Test pseudoinverse method."""
         domain = fn("V", R, 2)
         codomain = fn("W", R, 2)
         lm = LinearMap("T", domain, codomain, matrix=M.eye(2))
-        with self.assertRaises(NotImplementedError):
-            lm.pseudoinverse()
+        pinv = lm.pseudoinverse()
+        self.assertIsInstance(pinv, LinearMap)
+        self.assertEqual(pinv.domain, codomain)
+        self.assertEqual(pinv.codomain, domain)
 
     def test_inverse(self):
         """Test inverse method."""

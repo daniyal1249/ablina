@@ -482,8 +482,15 @@ class LinearMap:
     def pseudoinverse(self):
         """
         The pseudoinverse of the linear map.
+
+        Returns
+        -------
+        LinearMap
+            The pseudoinverse of `self`.
         """
-        raise NotImplementedError("This method is not yet implemented.")
+        name = f"{self}^+"
+        mat = self.matrix.pinv()
+        return LinearMap(name, self.codomain, self.domain, matrix=mat)
 
     def is_injective(self):
         """
