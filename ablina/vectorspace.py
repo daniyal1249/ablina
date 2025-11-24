@@ -6,7 +6,7 @@ from random import gauss
 
 import sympy as sp
 
-from .field import R, C
+from .field import Field, R
 from .mathset import Set
 from .matrix import M
 from .parser import split_constraint, sympify
@@ -31,7 +31,7 @@ class Fn:
 
     Parameters
     ----------
-    field : {R, C}
+    field : Field
         The field of scalars for the vector space.
     n : int
         Length of the vectors in the vector space.
@@ -40,8 +40,6 @@ class Fn:
 
     Raises
     ------
-    TypeError
-        If `field` is not ``R`` or ``C``.
     NotAVectorSpaceError
         If the constraints do not define a valid subspace.
     """
@@ -55,7 +53,7 @@ class Fn:
 
         Parameters
         ----------
-        field : {R, C}
+        field : Field
             The field of scalars for the vector space.
         n : int
             Length of the vectors in the vector space.
@@ -64,15 +62,13 @@ class Fn:
 
         Raises
         ------
-        TypeError
-            If `field` is not ``R`` or ``C``.
         NotAVectorSpaceError
             If the constraints do not define a valid subspace.
         """
         if constraints is None:
             constraints = []
-        if field not in (R, C):
-            raise TypeError("Field must be either R or C.")
+        if not isinstance(field, Field):
+            raise TypeError("field must be of type Field.")
 
         if ns_matrix is None and rs_matrix is None:
             if not is_vectorspace(n, constraints):
@@ -358,7 +354,7 @@ class VectorSpace:
     @property
     def field(self):
         """
-        {R, C}: The field of scalars for the vector space.
+        Field: The field of scalars for the vector space.
         """
         return self.fn.field
     
@@ -1299,8 +1295,8 @@ class AffineSpace:
         --------
         AffineSpace.intersection
         """
-        vs = self.vectorspace
         self._validate_type(as2)
+        vs = self.vectorspace
         repr = vs.add(self.representative, as2.representative)
         return AffineSpace(vs, repr)
 
@@ -1345,7 +1341,7 @@ def fn(name, field, n, constraints=None, basis=None, *,
     ----------
     name : str
         The name of the subspace.
-    field : {R, C}
+    field : Field
         The field of scalars for the vector space.
     n : int
         Length of the vectors in the vector space.
@@ -1392,7 +1388,7 @@ def matrix_space(name, field, shape, constraints=None, basis=None):
     ----------
     name : str
         The name of the subspace.
-    field : {R, C}
+    field : Field
         The field of scalars for the vector space.
     shape : tuple of (int, int)
         Shape (rows, cols) of the matrices.
@@ -1429,7 +1425,7 @@ def poly_space(name, field, max_degree, constraints=None, basis=None):
     ----------
     name : str
         The name of the subspace.
-    field : {R, C}
+    field : Field
         The field of scalars for the vector space.
     max_degree : int
         Maximum degree of the polynomials.
@@ -1488,7 +1484,7 @@ def hom(vs1, vs2):
     if not (isinstance(vs1, VectorSpace) and isinstance(vs2, VectorSpace)):
         raise TypeError("vs1 and vs2 must be of type VectorSpace.")
     if vs1.field is not vs2.field:
-        raise TypeError("Vector spaces must be over the same field.")
+        raise TypeError("vs1 and vs2 must be vector spaces over the same field.")
     
     name = f"hom({vs1}, {vs2})"
     return matrix_space(name, vs1.field, (vs2.dim, vs1.dim))
@@ -1537,7 +1533,7 @@ def rowspace(name, matrix, field=R):
         The name of the row space.
     matrix : Matrix
         The matrix to take the row space of.
-    field : {R, C}
+    field : Field
         The field of scalars.
 
     Returns
@@ -1573,7 +1569,7 @@ def columnspace(name, matrix, field=R):
         The name of the column space.
     matrix : Matrix
         The matrix to take the column space of.
-    field : {R, C}
+    field : Field
         The field of scalars.
 
     Returns
@@ -1610,7 +1606,7 @@ def nullspace(name, matrix, field=R):
         The name of the null space.
     matrix : Matrix
         The matrix to take the null space of.
-    field : {R, C}
+    field : Field
         The field of scalars.
 
     Returns
@@ -1649,7 +1645,7 @@ def left_nullspace(name, matrix, field=R):
         The name of the left null space.
     matrix : Matrix
         The matrix to take the left null space of.
-    field : {R, C}
+    field : Field
         The field of scalars.
 
     Returns

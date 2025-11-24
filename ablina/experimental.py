@@ -127,7 +127,7 @@ def is_commutative(field, n, operation):
 
     for lhs, rhs in zip(operation(u, v), operation(v, u)):
         value = sp.sympify(lhs).equals(sp.sympify(rhs))
-        if value is False or value is None:
+        if not value:
             return value
     return True
 
@@ -159,7 +159,7 @@ def is_associative(field, n, operation):
     rhs_vec = operation(operation(u, v), w)
     for lhs, rhs in zip(lhs_vec, rhs_vec):
         value = sp.sympify(lhs).equals(sp.sympify(rhs))
-        if value is False or value is None:
+        if not value:
             return value
     return True
 

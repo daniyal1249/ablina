@@ -2,7 +2,7 @@
 A module for working with fields.
 """
 
-from sympy.sets.fancysets import Reals as _R, Complexes as _C
+from sympy.sets.fancysets import Reals as _R, Complexes as _C, Rationals as _Q
 
 
 class Field:
@@ -48,8 +48,29 @@ class Complexes(Field, _C):
             return False
 
 
+class Rationals(Field, _Q):
+    """
+    The field of rational numbers.
+    """
+
+    def __repr__(self):
+        return "Q"
+    
+    def __str__(self):
+        return self.__repr__()
+    
+    def __contains__(self, other):
+        try:
+            return super().__contains__(other)
+        except Exception:
+            return False
+
+
 R = Reals()
 """Singleton instance representing the field of real numbers."""
 
 C = Complexes()
 """Singleton instance representing the field of complex numbers."""
+
+Q = Rationals()
+"""Singleton instance representing the field of rational numbers."""

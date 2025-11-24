@@ -109,7 +109,7 @@ class LinearMap:
     @property
     def field(self):
         """
-        {R, C}: The field of the domain and codomain.
+        Field: The field of the domain and codomain.
         """
         return self.domain.field
 
@@ -187,7 +187,7 @@ class LinearMap:
             return False
         basis1, basis2 = map2.domain.basis, map2.codomain.basis
         mat, _, _ = LinearMap.change_of_basis(self, basis1, basis2)
-        return map2.matrix.equals(mat)
+        return map2.matrix.equals(mat) is True
     
     def __add__(self, map2):
         """
