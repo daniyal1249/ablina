@@ -307,7 +307,6 @@ class TestSesquilinearFormProperties(unittest.TestCase):
         self.assertIsInstance(info_str, str)
         self.assertIn("f", info_str)
         self.assertIn("Symmetric?", info_str)
-        self.assertIn("Hermitian?", info_str)
         self.assertIn("Positive Definite?", info_str)
 
     def test_is_negative_definite(self):
@@ -470,7 +469,7 @@ class TestInnerProductMethods(unittest.TestCase):
         ip = InnerProduct("ip", vs, matrix=matrix)
         repr_str = repr(ip)
         self.assertIn("InnerProduct", repr_str)
-        self.assertNotIn("SesquilinearForm", repr_str)
+        self.assertIn("matrix", repr_str)
 
     def test_push(self):
         """Test __push__ method."""

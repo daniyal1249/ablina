@@ -5,3 +5,5 @@
 - ‌Strang, G. (2023). *Introduction to linear algebra* (6th ed.). Cambridge Press.
 
 - Artin, M. (1991). *Algebra*. Prentice Hall.
+
+- Osserman, B. (n.d.). *A primer on sesquilinear forms*. nLab.
