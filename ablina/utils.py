@@ -105,7 +105,7 @@ def is_invertible(matrix):
         True if the matrix is invertible, otherwise False.
     """
     mat = M(matrix)
-    return mat.is_square and not mat.det().equals(0)
+    return mat.is_square and mat.det().equals(0) is False
 
 
 def is_orthogonal(matrix):
@@ -130,7 +130,7 @@ def is_orthogonal(matrix):
     if not mat.is_square:
         return False
     identity = M.eye(mat.rows)
-    return (mat @ mat.T).equals(identity)
+    return (mat @ mat.T).equals(identity) is True
 
 
 def is_unitary(matrix):
@@ -155,7 +155,7 @@ def is_unitary(matrix):
     if not mat.is_square:
         return False
     identity = M.eye(mat.rows)
-    return (mat @ mat.H).equals(identity)
+    return (mat @ mat.H).equals(identity) is True
 
 
 def is_normal(matrix):
@@ -176,7 +176,7 @@ def is_normal(matrix):
     if not mat.is_square:
         return False
     adjoint = mat.H
-    return (mat @ adjoint).equals(adjoint @ mat)
+    return (mat @ adjoint).equals(adjoint @ mat) is True
 
 
 def rref(matrix, remove=False):
@@ -223,13 +223,11 @@ def of_arity(func, arity):
     bool
         True if the function can accept `arity` positional arguments, 
         otherwise False.
-
-    Raises
-    ------
-    TypeError
-        If `func` is not callable.
     """
-    sig = inspect.signature(func)
+    try:
+        sig = inspect.signature(func)
+    except Exception:
+        return False
     
     # Check for required keyword-only parameters
     # If any exist, function cannot be called with only positional args

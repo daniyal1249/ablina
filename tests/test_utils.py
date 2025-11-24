@@ -393,9 +393,8 @@ class TestOfArity(unittest.TestCase):
         self.assertTrue(of_arity(func, 2))
 
     def test_of_arity_not_callable(self):
-        """Test of_arity with non-callable raises TypeError."""
-        with self.assertRaises(TypeError):
-            of_arity("not a function", 1)
+        """Test of_arity with non-callable returns False."""
+        self.assertFalse(of_arity("not a function", 1))
 
     def test_of_arity_zero_arity(self):
         """Test of_arity with zero arity."""
