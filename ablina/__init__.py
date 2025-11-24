@@ -1,4 +1,4 @@
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Daniyal Akif"
 __email__ = "daniyalakif@gmail.com"
 __license__ = "MIT"
@@ -6,9 +6,10 @@ __description__ = "A Python package for abstract linear algebra"
 __url__ = "https://github.com/daniyal1249/ablina"
 
 
-from .field import Field, Reals, Complexes, R, C
+from .field import Field, Reals, Complexes, Rationals, R, C, Q
 from .form import (
-    FormError, InnerProductError, SesquilinearForm, InnerProduct, QuadraticForm
+    FormError, InnerProductError, SesquilinearForm, BilinearForm, 
+    InnerProduct, QuadraticForm
     )
 from .linearmap import (
     LinearMapError, LinearMap, LinearOperator, LinearFunctional, Isomorphism, 
@@ -30,8 +31,9 @@ from .vs_utils import to_ns_matrix, to_complement
 
 
 __all__ = [
-    "Field", "Reals", "Complexes", "R", "C",
-    "FormError", "InnerProductError", "SesquilinearForm", "InnerProduct", "QuadraticForm",
+    "Field", "Reals", "Complexes", "Rationals", "R", "C", "Q",
+    "FormError", "InnerProductError", "SesquilinearForm", "BilinearForm",
+    "InnerProduct", "QuadraticForm",
     "LinearMapError", "LinearMap", "LinearOperator", "LinearFunctional", "Isomorphism",
     "IdentityMap",
     "Set", "negate", "remove_duplicates",
