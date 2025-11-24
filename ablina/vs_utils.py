@@ -2,12 +2,16 @@
 A module providing utility functions for vector space operations.
 """
 
-from .matrix import M
+from __future__ import annotations
+
+from typing import Any
+
+from .matrix import Matrix, M
 from .parser import ConstraintError, split_constraint, sympify
 from .utils import rref, symbols
 
 
-def to_ns_matrix(n, constraints):
+def to_ns_matrix(n: int, constraints: list[str]) -> Matrix:
     """
     Return the matrix representation of the given linear constraints.
 
@@ -50,7 +54,7 @@ def to_ns_matrix(n, constraints):
     return rref(mat, remove=True) if mat else M.zeros(0, n)
 
 
-def to_complement(matrix):
+def to_complement(matrix: Any) -> Matrix:
     """
     Return the complement of a matrix.
 

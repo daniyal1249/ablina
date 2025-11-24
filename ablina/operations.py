@@ -2,12 +2,17 @@
 A module for working with vector space operations.
 """
 
+from __future__ import annotations
+
+from typing import Any, Callable
+
+from .field import Field
 from .parser import sympify
 from .utils import of_arity, symbols
 
 
 class OperationError(Exception):
-    def __init__(self, msg=""):
+    def __init__(self, msg: str = "") -> None:
         super().__init__(msg)
 
 
@@ -18,21 +23,21 @@ class Operation:
     Encapsulates a callable function along with its arity (number of 
     arguments), providing a consistent interface for operations.
     """
-    def __init__(self, func, arity):
+    def __init__(self, func: Callable[..., Any], arity: int) -> None:
         if not of_arity(func, arity):
             raise OperationError()
         self._func = func
         self._arity = arity
 
     @property
-    def func(self):
+    def func(self) -> Callable[..., Any]:
         return self._func
     
     @property
-    def arity(self):
+    def arity(self) -> int:
         return self._arity
     
-    def __call__(self, *args):
+    def __call__(self, *args: Any) -> Any:
         return self.func(*args)
 
 
@@ -44,20 +49,20 @@ class VectorAdd(Operation):
     given field. Provides equality checking by comparing the operation 
     symbolically.
     """
-    def __init__(self, field, n, func):
+    def __init__(self, field: Field, n: int, func: Callable[[Any, Any], Any]) -> None:
         super().__init__(func, 2)
         self._field = field
         self._n = n
 
     @property
-    def field(self):
+    def field(self) -> Field:
         return self._field
 
     @property
-    def n(self):
+    def n(self) -> int:
         return self._n
     
-    def __eq__(self, add2):
+    def __eq__(self, add2: Any) -> bool | None:
         if add2 is self:
             return True
         if not isinstance(add2, VectorAdd):
@@ -84,20 +89,20 @@ class ScalarMul(Operation):
     a vector of length n over a given field. Provides equality checking 
     by comparing the operation symbolically.
     """
-    def __init__(self, field, n, func):
+    def __init__(self, field: Field, n: int, func: Callable[[Any, Any], Any]) -> None:
         super().__init__(func, 2)
         self._field = field
         self._n = n
 
     @property
-    def field(self):
+    def field(self) -> Field:
         return self._field
 
     @property
-    def n(self):
+    def n(self) -> int:
         return self._n
     
-    def __eq__(self, mul2):
+    def __eq__(self, mul2: Any) -> bool | None:
         if mul2 is self:
             return True
         if not isinstance(mul2, ScalarMul):

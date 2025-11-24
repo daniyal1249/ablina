@@ -2,20 +2,24 @@
 A module for parsing and processing mathematical expressions and constraints.
 """
 
+from __future__ import annotations
+
+from typing import Any, Iterable
+
 from sympy import sympify as _sympify
 
 
 class ParsingError(Exception):
-    def __init__(self, msg=""):
+    def __init__(self, msg: str = "") -> None:
         super().__init__(msg)
 
 
 class ConstraintError(Exception):
-    def __init__(self, msg=""):
+    def __init__(self, msg: str = "") -> None:
         super().__init__(msg)
 
 
-def sympify(expr, allowed_vars=None):
+def sympify(expr: str, allowed_vars: Iterable[Any] | None = None) -> Any:
     """
     Return the sympy representation of the given expression.
 
@@ -45,7 +49,7 @@ def sympify(expr, allowed_vars=None):
     return expr
 
 
-def split_constraint(constraint: str):
+def split_constraint(constraint: str) -> set[str]:
     """
     Split a constraint with multiple relational operators into separate 
     relations.

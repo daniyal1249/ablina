@@ -2,6 +2,8 @@
 A module for visualizing linear algebra objects.
 """
 
+from __future__ import annotations
+
 try:
     import manim
 except ImportError:

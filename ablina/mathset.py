@@ -2,6 +2,10 @@
 A module for working with sets defined by predicates.
 """
 
+from __future__ import annotations
+
+from typing import Any, Callable, Iterable
+
 from .utils import of_arity
 
 
@@ -13,7 +17,12 @@ class Set:
     and a list of predicates that all elements must satisfy.
     """
 
-    def __init__(self, name, cls, *predicates):
+    def __init__(
+        self, 
+        name: str, 
+        cls: type, 
+        *predicates: Callable[[Any], bool]
+    ) -> None:
         """
         Initialize a Set instance.
 
@@ -46,35 +55,35 @@ class Set:
         self._predicates = remove_duplicates(predicates)
 
     @property
-    def cls(self):
+    def cls(self) -> type:
         """
         type: The class that all set elements are instances of.
         """
         return self._cls
     
     @property
-    def predicates(self):
+    def predicates(self) -> list[Callable[[Any], bool]]:
         """
         list of callable: The list of predicates all set elements must satisfy.
         """
         return self._predicates
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"Set({self.name!r}, "
             f"{self.cls!r}, "
             f"{self.predicates!r})"
             )
     
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
     
-    def __eq__(self, set2):
+    def __eq__(self, set2: Any) -> bool:
         if not isinstance(set2, Set):
             return False
         return self.name == set2.name
     
-    def __contains__(self, obj):
+    def __contains__(self, obj: Any) -> bool:
         """
         Check whether an object is an element of the set.
 
@@ -92,37 +101,37 @@ class Set:
             return False
         return all(pred(obj) for pred in self.predicates)
     
-    def __pos__(self):
+    def __pos__(self) -> Set:
         """
         Return `self`.
         """
         return self
     
-    def __neg__(self):
+    def __neg__(self) -> Set:
         """
         Same as ``Set.complement``.
         """
         return self.complement()
     
-    def __and__(self, set2):
+    def __and__(self, set2: Set) -> Set:
         """
         Same as ``Set.intersection``.
         """
         return self.intersection(set2)
     
-    def __or__(self, set2):
+    def __or__(self, set2: Set) -> Set:
         """
         Same as ``Set.union``.
         """
         return self.union(set2)
     
-    def __sub__(self, set2):
+    def __sub__(self, set2: Set) -> Set:
         """
         Same as ``Set.difference``.
         """
         return self.difference(set2)
 
-    def complement(self):
+    def complement(self) -> Set:
         """
         The complement of a set.
 
@@ -153,11 +162,11 @@ class Set:
         False
         """
         name = f"{self}^C"
-        def complement_pred(obj):
+        def complement_pred(obj: Any) -> bool:
             return not all(pred(obj) for pred in self.predicates)
         return Set(name, self.cls, complement_pred)
     
-    def intersection(self, set2):
+    def intersection(self, set2: Set) -> Set:
         """
         The intersection of two sets.
 
@@ -196,8 +205,8 @@ class Set:
         self._validate_type(set2)
         name = f"{self} ∩ {set2}"
         return Set(name, self.cls, self.predicates + set2.predicates)
-
-    def union(self, set2):
+    
+    def union(self, set2: Set) -> Set:
         """
         The union of two sets.
 
@@ -235,14 +244,14 @@ class Set:
         """
         self._validate_type(set2)
         name = f"{self} ∪ {set2}"
-        def union_pred(obj):
+        def union_pred(obj: Any) -> bool:
             return (
                 all(pred(obj) for pred in self.predicates) 
                 or all(pred(obj) for pred in set2.predicates)
                 )
         return Set(name, self.cls, union_pred)
-
-    def difference(self, set2):
+    
+    def difference(self, set2: Set) -> Set:
         """
         The difference of two sets.
 
@@ -279,7 +288,7 @@ class Set:
         self._validate_type(set2)
         return self.intersection(set2.complement())
     
-    def is_subset(self, set2):
+    def is_subset(self, set2: Set) -> bool:
         """
         Check whether `set2` is a subset of `self`.
 
@@ -331,14 +340,14 @@ class Set:
         self._validate_type(set2)
         return all(pred in set2.predicates for pred in self.predicates)
 
-    def _validate_type(self, set2):
+    def _validate_type(self, set2: Any) -> None:
         if not isinstance(set2, Set):
             raise TypeError(f"Expected a Set, got {type(set2).__name__} instead.")
         if self.cls is not set2.cls:
             raise ValueError("The cls attribute of both sets must be the same.")
 
 
-def remove_duplicates(seq):
+def remove_duplicates(seq: Iterable[Any]) -> list[Any]:
     """
     Remove duplicate elements in an iterable while preserving the order.
 
@@ -363,7 +372,7 @@ def remove_duplicates(seq):
     return [x for x in seq if not (x in elems or elems.add(x))]
 
 
-def negate(pred):
+def negate(pred: Callable[[Any], bool]) -> Callable[[Any], bool]:
     """
     The negation of a predicate.
 
@@ -387,6 +396,7 @@ def negate(pred):
     >>> pred2([1, 2, 3])
     False
     """
-    def negation(obj): return not pred(obj)
+    def negation(obj: Any) -> bool:
+        return not pred(obj)
     negation.__name__ = f"not_{pred.__name__}"
     return negation

@@ -2,14 +2,19 @@
 A module for working with linear maps between vector spaces.
 """
 
-from .field import R
-from .matrix import M
+from __future__ import annotations
+
+from typing import Any, Callable
+
+from .field import Field, R
+from .form import InnerProduct
+from .matrix import Matrix, M
 from . import utils as u
 from .vectorspace import VectorSpace, fn
 
 
 class LinearMapError(Exception):
-    def __init__(self, msg=""):
+    def __init__(self, msg: str = "") -> None:
         super().__init__(msg)
 
 
@@ -24,7 +29,14 @@ class LinearMap:
     - `T(av) = a T(v)` for all scalars `a` and vectors `v`
     """
     
-    def __init__(self, name, domain, codomain, mapping=None, matrix=None):
+    def __init__(
+        self, 
+        name: str, 
+        domain: VectorSpace, 
+        codomain: VectorSpace, 
+        mapping: Callable[[Any], Any] | None = None, 
+        matrix: Any | None = None
+    ) -> None:
         """
         Initialize a LinearMap instance.
 
@@ -74,7 +86,12 @@ class LinearMap:
         self._matrix = matrix
     
     @staticmethod
-    def _to_matrix(domain, codomain, mapping, matrix):
+    def _to_matrix(
+        domain: VectorSpace, 
+        codomain: VectorSpace, 
+        mapping: Callable[[Any], Any] | None, 
+        matrix: Any | None
+    ) -> Matrix:
         if matrix is not None:
             return LinearMap._validate_matrix(domain, codomain, matrix)
         if mapping is None:
@@ -90,7 +107,12 @@ class LinearMap:
         return M.hstack(*mat)
 
     @staticmethod
-    def _to_mapping(domain, codomain, mapping, matrix):
+    def _to_mapping(
+        domain: VectorSpace, 
+        codomain: VectorSpace, 
+        mapping: Callable[[Any], Any] | None, 
+        matrix: Matrix
+    ) -> Callable[[Any], Any]:
         if mapping is not None:
             return mapping
         to_coord = domain.to_coordinate
@@ -98,7 +120,11 @@ class LinearMap:
         return lambda vec: from_coord(matrix @ to_coord(vec))
     
     @staticmethod
-    def _validate_matrix(domain, codomain, matrix):
+    def _validate_matrix(
+        domain: VectorSpace, 
+        codomain: VectorSpace, 
+        matrix: Any
+    ) -> Matrix:
         mat = M(matrix)
         if mat.shape != (codomain.dim, domain.dim):
             raise ValueError("Matrix has invalid shape.")
@@ -107,55 +133,55 @@ class LinearMap:
         return mat
 
     @property
-    def field(self):
+    def field(self) -> Field:
         """
         Field: The field of the domain and codomain.
         """
         return self.domain.field
 
     @property
-    def domain(self):
+    def domain(self) -> VectorSpace:
         """
         VectorSpace: The domain of the linear map.
         """
         return self._domain
     
     @property
-    def codomain(self):
+    def codomain(self) -> VectorSpace:
         """
         VectorSpace: The codomain of the linear map.
         """
         return self._codomain
     
     @property
-    def mapping(self):
+    def mapping(self) -> Callable[[Any], Any]:
         """
         callable: The function that maps vectors from the domain to the codomain.
         """
         return self._mapping
     
     @property
-    def matrix(self):
+    def matrix(self) -> Matrix:
         """
         Matrix: The matrix representation of the linear map.
         """
         return self._matrix
     
     @property
-    def rank(self):
+    def rank(self) -> int:
         """
         int: The dimension of the image of the linear map.
         """
         return self.matrix.rank()
     
     @property
-    def nullity(self):
+    def nullity(self) -> int:
         """
         int: The dimension of the kernel of the linear map.
         """
         return self.matrix.cols - self.rank
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"LinearMap(name={self.name!r}, "
             f"domain={self.domain!r}, "
@@ -164,10 +190,10 @@ class LinearMap:
             f"matrix={self.matrix!r})"
             )
     
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
-    def __eq__(self, map2):
+    def __eq__(self, map2: Any) -> bool:
         """
         Check for equality of two linear maps.
 
@@ -189,7 +215,7 @@ class LinearMap:
         mat, _, _ = LinearMap.change_of_basis(self, basis1, basis2)
         return map2.matrix.equals(mat) is True
     
-    def __add__(self, map2):
+    def __add__(self, map2: LinearMap) -> LinearMap:
         """
         The sum of two linear maps.
 
@@ -222,14 +248,14 @@ class LinearMap:
             raise LinearMapError("The linear maps are not compatible.")
         
         name = f"{self} + {map2}"
-        def mapping(vec):
+        def mapping(vec: Any) -> Any:
             vec1 = self.mapping(vec)
             vec2 = map2.mapping(vec)
             return self.codomain.add(vec1, vec2)
         mat = self.matrix + map2.matrix
         return LinearMap(name, self.domain, self.codomain, mapping, mat)
     
-    def __mul__(self, scalar):
+    def __mul__(self, scalar: Any) -> LinearMap:
         """
         The product of the linear map and a scalar.
 
@@ -261,15 +287,15 @@ class LinearMap:
             raise TypeError("Scalar must be an element of the field.")
         
         name = f"{scalar} * {self}"
-        def mapping(vec):
+        def mapping(vec: Any) -> Any:
             return self.codomain.mul(scalar, self.mapping(vec))
         mat = scalar * self.matrix
         return LinearMap(name, self.domain, self.codomain, mapping, mat)
     
-    def __rmul__(self, scalar):
+    def __rmul__(self, scalar: Any) -> LinearMap:
         return self.__mul__(scalar)
     
-    def __call__(self, obj):
+    def __call__(self, obj: Any) -> Any:
         """
         Apply the linear map to a vector or subspace.
 
@@ -295,7 +321,7 @@ class LinearMap:
             return self.mapping(obj)
         return self.restriction(obj).image()
     
-    def info(self):
+    def info(self) -> str:
         """
         A description of the linear map.
 
@@ -312,14 +338,18 @@ class LinearMap:
             f"Field        {self.field}",
             f"Rank         {self.rank}",
             f"Nullity      {self.nullity}",
-            f"Injective?   {self.is_injective()}",
+            f"Injective?   {self.is_injective()}",  
             f"Surjective?  {self.is_surjective()}",
             f"Bijective?   {self.is_bijective()}",
             f"Matrix       {self.matrix}"
             ]
         return "\n".join(lines)
     
-    def change_of_basis(self, domain_basis=None, codomain_basis=None):
+    def change_of_basis(
+        self, 
+        domain_basis: list[Any] | None = None, 
+        codomain_basis: list[Any] | None = None
+    ) -> tuple[Matrix, Matrix, Matrix]:
         """
         Change the basis representation of the linear map.
 
@@ -353,7 +383,7 @@ class LinearMap:
         map_matrix = codomain_basechange @ self.matrix @ domain_basechange.inv()
         return map_matrix, domain_basechange, codomain_basechange
     
-    def restriction(self, subspace):
+    def restriction(self, subspace: VectorSpace) -> LinearMap:
         """
         Restrict the linear map to a subspace of the domain.
 
@@ -377,7 +407,7 @@ class LinearMap:
         name = f"{self} | {subspace}"
         return LinearMap(name, subspace, self.codomain, self.mapping)
 
-    def inverse(self):
+    def inverse(self) -> LinearMap:
         """
         The inverse of the linear map.
 
@@ -397,7 +427,7 @@ class LinearMap:
         mat = self.matrix.inv()
         return LinearMap(name, self.codomain, self.domain, matrix=mat)
 
-    def composition(self, map2):
+    def composition(self, map2: LinearMap) -> LinearMap:
         """
         The composition of two linear maps.
 
@@ -432,12 +462,12 @@ class LinearMap:
             raise LinearMapError("The linear maps are not compatible.")
         
         name = f"{self} ∘ {map2}"
-        def mapping(vec):
+        def mapping(vec: Any) -> Any:
             return self.mapping(map2.mapping(vec))
         mat = self.matrix @ map2.matrix
         return LinearMap(name, map2.domain, self.codomain, mapping, mat)
     
-    def image(self):
+    def image(self) -> VectorSpace:
         """
         The image, or range, of the linear map.
 
@@ -455,7 +485,7 @@ class LinearMap:
         basis = [self.codomain.from_coordinate(vec) for vec in basis]
         return self.codomain.span(name, *basis)
 
-    def kernel(self):
+    def kernel(self) -> VectorSpace:
         """
         The kernel, or null space, of the linear map.
 
@@ -473,13 +503,13 @@ class LinearMap:
         basis = [self.domain.from_coordinate(vec) for vec in basis]
         return self.domain.span(name, *basis)
     
-    def adjoint(self):
+    def adjoint(self) -> LinearMap:
         """
         The adjoint of the linear map.
         """
         raise NotImplementedError("This method is not yet implemented.")
     
-    def pseudoinverse(self):
+    def pseudoinverse(self) -> LinearMap:
         """
         The pseudoinverse of the linear map.
 
@@ -492,7 +522,7 @@ class LinearMap:
         mat = self.matrix.pinv()
         return LinearMap(name, self.codomain, self.domain, matrix=mat)
 
-    def is_injective(self):
+    def is_injective(self) -> bool:
         """
         Check whether the linear map is injective.
 
@@ -507,7 +537,7 @@ class LinearMap:
         """
         return self.matrix.cols == self.rank
 
-    def is_surjective(self):
+    def is_surjective(self) -> bool:
         """
         Check whether the linear map is surjective.
 
@@ -522,7 +552,7 @@ class LinearMap:
         """
         return self.matrix.rows == self.rank
     
-    def is_bijective(self):
+    def is_bijective(self) -> bool:
         """
         Check whether the linear map is bijective.
 
@@ -535,11 +565,14 @@ class LinearMap:
         --------
         LinearMap.is_injective, LinearMap.is_surjective
         """
-        return u.is_invertible(self.matrix)
+        return self.is_injective() and self.is_surjective()
 
     # Aliases
     range = image
+    """An alias for the image method."""
+
     nullspace = kernel
+    """An alias for the kernel method."""
 
 
 class LinearOperator(LinearMap):
@@ -550,10 +583,16 @@ class LinearOperator(LinearMap):
     a LinearMap where the domain and codomain are the same.
     """
 
-    def __init__(self, name, vectorspace, mapping=None, matrix=None):
+    def __init__(
+        self, 
+        name: str, 
+        vectorspace: VectorSpace, 
+        mapping: Callable[[Any], Any] | None = None, 
+        matrix: Any | None = None
+    ) -> None:
         super().__init__(name, vectorspace, vectorspace, mapping, matrix)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"LinearOperator(name={self.name!r}, "
             f"vectorspace={self.domain!r}, "
@@ -561,7 +600,7 @@ class LinearOperator(LinearMap):
             f"matrix={self.matrix!r})"
             )
     
-    def __pow__(self, exp):
+    def __pow__(self, exp: int) -> LinearOperator:
         """
         Raise the linear operator to a power.
 
@@ -579,7 +618,7 @@ class LinearOperator(LinearMap):
         mat = self.matrix ** exp
         return LinearOperator(name, self.domain, matrix=mat)
     
-    def change_of_basis(self, basis):
+    def change_of_basis(self, basis: list[Any]) -> tuple[Matrix, Matrix]:
         """
         Change the basis representation of the linear operator.
 
@@ -601,7 +640,7 @@ class LinearOperator(LinearMap):
         map_matrix = basechange @ self.matrix @ basechange.inv()
         return map_matrix, basechange
     
-    def inverse(self):
+    def inverse(self) -> LinearOperator:
         """
         The inverse of the linear operator.
 
@@ -621,7 +660,7 @@ class LinearOperator(LinearMap):
         mat = self.matrix.inv()
         return LinearOperator(name, self.domain, matrix=mat)
     
-    def is_invariant_subspace(self, subspace):
+    def is_invariant_subspace(self, subspace: VectorSpace) -> bool:
         """
         Check whether a subspace is invariant under the linear operator.
 
@@ -647,7 +686,7 @@ class LinearOperator(LinearMap):
             raise TypeError("Subspace must be a subspace of the domain.")
         return subspace.is_subspace(self(subspace))
     
-    def is_symmetric(self, innerproduct):
+    def is_symmetric(self, innerproduct: InnerProduct) -> bool | None:
         """
         Check whether the linear operator is symmetric.
 
@@ -673,7 +712,7 @@ class LinearOperator(LinearMap):
         mat, _ = self.change_of_basis(innerproduct.orthonormal_basis)
         return mat.is_symmetric()
 
-    def is_hermitian(self, innerproduct):
+    def is_hermitian(self, innerproduct: InnerProduct) -> bool | None:
         """
         Check whether the linear operator is hermitian.
 
@@ -689,7 +728,7 @@ class LinearOperator(LinearMap):
         mat, _ = self.change_of_basis(innerproduct.orthonormal_basis)
         return mat.is_hermitian
 
-    def is_orthogonal(self, innerproduct):
+    def is_orthogonal(self, innerproduct: InnerProduct) -> bool | None:
         """
         Check whether the linear operator is orthogonal.
 
@@ -715,7 +754,7 @@ class LinearOperator(LinearMap):
         mat, _ = self.change_of_basis(innerproduct.orthonormal_basis)
         return u.is_orthogonal(mat)
 
-    def is_unitary(self, innerproduct):
+    def is_unitary(self, innerproduct: InnerProduct) -> bool | None:
         """
         Check whether the linear operator is unitary.
 
@@ -731,7 +770,7 @@ class LinearOperator(LinearMap):
         mat, _ = self.change_of_basis(innerproduct.orthonormal_basis)
         return u.is_unitary(mat)
     
-    def is_normal(self, innerproduct):
+    def is_normal(self, innerproduct: InnerProduct) -> bool | None:
         """
         Check whether the linear operator is normal.
 
@@ -752,7 +791,13 @@ class LinearFunctional(LinearMap):
     special case of a LinearMap where the codomain is the underlying field.
     """
 
-    def __init__(self, name, vectorspace, mapping=None, matrix=None):
+    def __init__(
+        self, 
+        name: str, 
+        vectorspace: VectorSpace, 
+        mapping: Callable[[Any], Any] | None = None, 
+        matrix: Any | None = None
+    ) -> None:
         """
         Initialize a LinearFunctional instance.
 
@@ -783,7 +828,7 @@ class LinearFunctional(LinearMap):
         codomain = fn(str(field), field, 1)
         super().__init__(name, vectorspace, codomain, mapping, matrix)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"LinearFunctional(name={self.name!r}, "
             f"vectorspace={self.domain!r}, "
@@ -791,7 +836,7 @@ class LinearFunctional(LinearMap):
             f"matrix={self.matrix!r})"
             )
     
-    def restriction(self, subspace):
+    def restriction(self, subspace: VectorSpace) -> LinearFunctional:
         """
         Restrict the linear functional to a subspace of the domain.
 
@@ -824,16 +869,23 @@ class Isomorphism(LinearMap):
     of a LinearMap that is both injective and surjective.
     """
 
-    def __init__(self, name, domain, codomain, mapping=None, matrix=None):
+    def __init__(
+        self, 
+        name: str, 
+        domain: VectorSpace, 
+        codomain: VectorSpace, 
+        mapping: Callable[[Any], Any] | None = None, 
+        matrix: Any | None = None
+    ) -> None:
         super().__init__(name, domain, codomain, mapping, matrix)
 
         if not self.is_bijective():
             raise LinearMapError("Linear map is not invertible.")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return super().__repr__().replace("LinearMap", "Isomorphism")
     
-    def info(self):
+    def info(self) -> str:
         """
         A description of the isomorphism.
 
@@ -852,7 +904,7 @@ class Isomorphism(LinearMap):
             ]
         return "\n".join(lines)
     
-    def inverse(self):
+    def inverse(self) -> Isomorphism:
         """
         The inverse of the isomorphism.
 
@@ -874,7 +926,7 @@ class IdentityMap(LinearOperator):
     case of a LinearOperator.
     """
 
-    def __init__(self, vectorspace):
+    def __init__(self, vectorspace: VectorSpace) -> None:
         """
         Initialize an IdentityMap instance.
 
@@ -890,10 +942,10 @@ class IdentityMap(LinearOperator):
         """
         super().__init__("Id", vectorspace, lambda vec: vec)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"IdentityMap(vectorspace={self.domain!r})"
     
-    def info(self):
+    def info(self) -> str:
         """
         A description of the identity map.
 
@@ -912,7 +964,7 @@ class IdentityMap(LinearOperator):
             ]
         return "\n".join(lines)
     
-    def inverse(self):
+    def inverse(self) -> IdentityMap:
         """
         The inverse of the identity map.
 

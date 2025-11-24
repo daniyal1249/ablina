@@ -2,13 +2,18 @@
 A module for experimental functionality related to vector space operations.
 """
 
+from __future__ import annotations
+
+from typing import Any, Callable
+
 import sympy as sp
 from sympy.solvers.solveset import NonlinearError
 
+from .field import Field
 from .utils import symbols
 
 
-def additive_id(field, n, add):
+def additive_id(field: Field, n: int, add: Callable[[Any, Any], Any]) -> list[list[Any]]:
     """
     The identity element of an addition function on F^n.
 
@@ -49,7 +54,13 @@ def additive_id(field, n, add):
     return valid_ids
 
 
-def additive_inv(field, n, add, add_id, lambdify=False):
+def additive_inv(
+    field: Field, 
+    n: int, 
+    add: Callable[[Any, Any], Any], 
+    add_id: list[Any], 
+    lambdify: bool = False
+) -> list[list[Any]] | list[Callable[[Any], Any]]:
     """
     The additive inverse of an addition function on F^n.
 
@@ -102,7 +113,7 @@ def additive_inv(field, n, add, add_id, lambdify=False):
     return valid_invs
 
 
-def is_commutative(field, n, operation):
+def is_commutative(field: Field, n: int, operation: Callable[[Any, Any], Any]) -> bool | None:
     """
     Check whether a binary operation on F^n is commutative.
 
@@ -132,7 +143,7 @@ def is_commutative(field, n, operation):
     return True
 
 
-def is_associative(field, n, operation):
+def is_associative(field: Field, n: int, operation: Callable[[Any, Any], Any]) -> bool | None:
     """
     Check whether a binary operation on F^n is associative.
 
@@ -168,7 +179,7 @@ def is_associative(field, n, operation):
 # operation to be normal mul if both are scalars, and scalar mul otherwise
 
 
-def is_consistent(equation):
+def is_consistent(equation: Any) -> bool | None:
     """
     Check whether an equation is a tautology or contradiction.
 
@@ -189,7 +200,7 @@ def is_consistent(equation):
     return bool(eq)  # eq must be a sympy bool if not Eq
 
 
-def substitute_form(equation, f, form):
+def substitute_form(equation: Any, f: Any, form: Callable[[Any], Any]) -> Any:
     """
     Substitute a function form into an equation.
 
@@ -214,7 +225,12 @@ def substitute_form(equation, f, form):
     return equation.replace(f(w), form(w))
 
 
-def find_valid_params(equation, f, form, params):
+def find_valid_params(
+    equation: Any, 
+    f: Any, 
+    form: Callable[[Any], Any], 
+    params: list[Any]
+) -> Any | None:
     """
     Find valid parameter values for a function form in an equation.
 
@@ -259,7 +275,7 @@ def find_valid_params(equation, f, form, params):
             return form(x).subs(sol)
 
 
-def solve_func_eq(equation, f):
+def solve_func_eq(equation: Any, f: Any) -> Any | None:
     """
     Attempt to solve a univariate functional equation by guessing 
     common forms of solutions.
@@ -299,7 +315,7 @@ def solve_func_eq(equation, f):
             return sol
 
 
-def find_add_isomorphism(field, n, add):
+def find_add_isomorphism(field: Field, n: int, add: Callable[[Any, Any], Any]) -> Any:
     """
     Find an isomorphism for an addition operation.
 
@@ -330,7 +346,7 @@ def find_add_isomorphism(field, n, add):
     raise NotImplementedError("This function is not yet implemented.")
 
 
-def find_mul_isomorphism(field, n, mul):
+def find_mul_isomorphism(field: Field, n: int, mul: Callable[[Any, Any], Any]) -> Any:
     """
     Find an isomorphism for a scalar multiplication operation.
 
@@ -361,7 +377,12 @@ def find_mul_isomorphism(field, n, mul):
     raise NotImplementedError("This function is not yet implemented.")
 
 
-def internal_isomorphism(field, n, add, mul):
+def internal_isomorphism(
+    field: Field, 
+    n: int, 
+    add: Callable[[Any, Any], Any], 
+    mul: Callable[[Any, Any], Any]
+) -> Any:
     """
     Find an internal isomorphism for a vector space with custom operations.
 
@@ -418,7 +439,7 @@ def internal_isomorphism(field, n, add, mul):
     raise NotImplementedError("This function is not yet implemented.")
 
 
-def map_constraints(mapping, constraints):
+def map_constraints(mapping: Callable[[Any], Any], constraints: list[str]) -> list[str]:
     """
     Map constraints through a given mapping function.
 

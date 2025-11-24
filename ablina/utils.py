@@ -2,15 +2,18 @@
 A module providing utility functions for linear algebra operations.
 """
 
+from __future__ import annotations
+
 import inspect
+from typing import Any, Callable, Iterable
 
 import sympy as sp
 
-from .field import R
-from .matrix import M
+from .field import Field, R
+from .matrix import Matrix, M
 
 
-def symbols(names, field=None, **kwargs):
+def symbols(names: str, field: Field | None = None, **kwargs: Any) -> Any:
     """
     Return sympy symbols with the specified names and field.
 
@@ -37,7 +40,7 @@ def symbols(names, field=None, **kwargs):
     return sp.symbols(names, complex=True, **kwargs)
 
 
-def is_linear(expr, vars=None):
+def is_linear(expr: Any, vars: Iterable[Any] | None = None) -> bool:
     """
     Check whether an expression is linear with respect to the given variables.
 
@@ -72,7 +75,7 @@ def is_linear(expr, vars=None):
     return True
 
 
-def is_empty(matrix):
+def is_empty(matrix: Any) -> bool:
     """
     Check whether a matrix is empty.
 
@@ -90,7 +93,7 @@ def is_empty(matrix):
     return mat.rows == 0 or mat.cols == 0
 
 
-def is_invertible(matrix):
+def is_invertible(matrix: Any) -> bool | None:
     """
     Check whether a matrix is invertible.
 
@@ -105,10 +108,13 @@ def is_invertible(matrix):
         True if the matrix is invertible, otherwise False.
     """
     mat = M(matrix)
-    return mat.is_square and mat.det().equals(0) is False
+    if not mat.is_square:
+        return False
+    is_zero = mat.det().equals(0)
+    return None if is_zero is None else not is_zero
 
 
-def is_orthogonal(matrix):
+def is_orthogonal(matrix: Any) -> bool | None:
     """
     Check whether a matrix is orthogonal.
 
@@ -130,10 +136,10 @@ def is_orthogonal(matrix):
     if not mat.is_square:
         return False
     identity = M.eye(mat.rows)
-    return (mat @ mat.T).equals(identity) is True
+    return (mat @ mat.T).equals(identity)
 
 
-def is_unitary(matrix):
+def is_unitary(matrix: Any) -> bool | None:
     """
     Check whether a matrix is unitary.
 
@@ -155,10 +161,10 @@ def is_unitary(matrix):
     if not mat.is_square:
         return False
     identity = M.eye(mat.rows)
-    return (mat @ mat.H).equals(identity) is True
+    return (mat @ mat.H).equals(identity)
 
 
-def is_normal(matrix):
+def is_normal(matrix: Any) -> bool | None:
     """
     Check whether a matrix is normal.
 
@@ -176,10 +182,10 @@ def is_normal(matrix):
     if not mat.is_square:
         return False
     adjoint = mat.H
-    return (mat @ adjoint).equals(adjoint @ mat) is True
+    return (mat @ adjoint).equals(adjoint @ mat)
 
 
-def rref(matrix, remove=False):
+def rref(matrix: Any, remove: bool = False) -> Matrix:
     """
     Compute the reduced row echelon form of a matrix.
 
@@ -207,7 +213,7 @@ def rref(matrix, remove=False):
     return M(rref)
 
 
-def of_arity(func, arity):
+def of_arity(func: Callable[..., Any], arity: int) -> bool:
     """
     Check whether a function can accept a given number of positional arguments.
 
@@ -257,7 +263,7 @@ def of_arity(func, arity):
         return min_positional <= arity <= max_positional
 
 
-def add_attributes(cls, *attributes):
+def add_attributes(cls: type, *attributes: Any) -> type:
     """
     Dynamically create a subclass with additional attributes.
 

@@ -2,20 +2,23 @@
 A module for working with finite-dimensional vector and affine spaces.
 """
 
+from __future__ import annotations
+
 from random import gauss
+from typing import Any, Callable
 
 import sympy as sp
 
 from .field import Field, R
 from .mathset import Set
-from .matrix import M
+from .matrix import Matrix, M
 from .parser import split_constraint, sympify
 from . import utils as u
 from . import vs_utils as vsu
 
 
 class NotAVectorSpaceError(Exception):
-    def __init__(self, msg=""):
+    def __init__(self, msg: str = "") -> None:
         super().__init__(msg)
 
 
@@ -44,7 +47,15 @@ class Fn:
         If the constraints do not define a valid subspace.
     """
 
-    def __init__(self, field, n, constraints=None, *, ns_matrix=None, rs_matrix=None):
+    def __init__(
+        self, 
+        field: Field, 
+        n: int, 
+        constraints: list[str] | None = None, 
+        *, 
+        ns_matrix: Any | None = None, 
+        rs_matrix: Any | None = None
+    ) -> None:
         """
         Initialize an `Fn` instance.
 
@@ -90,14 +101,23 @@ class Fn:
         self._rs_matrix = rs
 
     @staticmethod
-    def _init_operations():
-        def add(vec1, vec2): return vec1 + vec2
-        def mul(scalar, vec): return scalar * vec
-        def additive_inv(vec): return -vec
+    def _init_operations() -> tuple[
+        Callable[[Matrix, Matrix], Matrix], 
+        Callable[[Any, Matrix], Matrix], 
+        Callable[[Matrix], Matrix]
+        ]:
+        def add(vec1: Matrix, vec2: Matrix) -> Matrix: return vec1 + vec2
+        def mul(scalar: Any, vec: Matrix) -> Matrix: return scalar * vec
+        def additive_inv(vec: Matrix) -> Matrix: return -vec
         return add, mul, additive_inv
 
     @staticmethod
-    def _init_matrices(n, constraints, ns, rs):
+    def _init_matrices(
+        n: int, 
+        constraints: list[str], 
+        ns: Any | None, 
+        rs: Any | None
+    ) -> tuple[Matrix, Matrix]:
         if ns is not None:
             ns = M.zeros(0, n) if u.is_empty(ns) else M(ns)
         if rs is not None:
@@ -116,38 +136,38 @@ class Fn:
         return ns, rs
 
     @property
-    def field(self):
+    def field(self) -> Field:
         return self._field
     
     @property
-    def n(self):
+    def n(self) -> int:
         return self._n
     
     @property
-    def add(self):
+    def add(self) -> Callable[[Matrix, Matrix], Matrix]:
         return self._add
     
     @property
-    def mul(self):
+    def mul(self) -> Callable[[Any, Matrix], Matrix]:
         return self._mul
     
     @property
-    def additive_inv(self):
+    def additive_inv(self) -> Callable[[Matrix], Matrix]:
         return self._additive_inv
     
     @property
-    def additive_id(self):
+    def additive_id(self) -> Matrix:
         return M.zeros(self.n, 1)
     
     @property
-    def basis(self):
+    def basis(self) -> list[Matrix]:
         return [M(vec) for vec in self._rs_matrix.tolist()]
     
     @property
-    def dim(self):
+    def dim(self) -> int:
         return self._rs_matrix.rows
-    
-    def __repr__(self):
+
+    def __repr__(self) -> str:
         return (
             f"Fn(field={self.field!r}, "
             f"n={self.n!r}, "
@@ -155,22 +175,22 @@ class Fn:
             f"rs_matrix={self._rs_matrix!r})"
             )
     
-    def __contains__(self, vector):
+    def __contains__(self, vector: Any) -> bool:
         if not (isinstance(vector, M) and vector.shape == (self.n, 1)):
             return False
         if not all(i in self.field for i in vector):
             return False
         # Check if vector satisfies vector space constraints
         prod = self._ns_matrix @ vector
-        return bool(prod.is_zero_matrix)
+        return prod.is_zero_matrix is True
 
-    def add_constraints(self, constraints):
+    def add_constraints(self, constraints: list[str]) -> Fn:
         constraints_fn = Fn(self.field, self.n, constraints)
         return self.intersection(constraints_fn)
 
     # Methods relating to vectors
 
-    def vector(self, std=1, arbitrary=False):
+    def vector(self, std: int | float = 1, arbitrary: bool = False) -> Matrix:
         size = self.dim
         if arbitrary:
             weights = list(u.symbols(f"c:{size}", field=self.field))
@@ -179,38 +199,38 @@ class Fn:
         vec = M([weights]) @ self._rs_matrix
         return vec.T
 
-    def to_coordinate(self, vector, basis):
+    def to_coordinate(self, vector: Matrix, basis: list[Matrix]) -> Matrix:
         if not basis:
             return M()
         mat = M.hstack(*basis)
         return mat.solve_least_squares(vector)
 
-    def from_coordinate(self, coord_vec, basis):
+    def from_coordinate(self, coord_vec: Matrix, basis: list[Matrix]) -> Matrix:
         if not basis:
             return self.additive_id
         mat = M.hstack(*basis)
         return mat @ coord_vec
     
-    def is_independent(self, *vectors):
+    def is_independent(self, *vectors: Matrix) -> bool:
         mat = M.hstack(*vectors)
         return mat.rank() == len(vectors)
     
-    def is_basis(self, *vectors):
+    def is_basis(self, *vectors: Matrix) -> bool:
         return self.is_independent(*vectors) and len(vectors) == self.dim
     
     # Methods relating to vector spaces
 
-    def sum(self, vs2):
+    def sum(self, vs2: Fn) -> Fn:
         rs = M.vstack(self._rs_matrix, vs2._rs_matrix)
         rs = u.rref(rs, remove=True)
         return Fn(self.field, self.n, rs_matrix=rs)
     
-    def intersection(self, vs2):
+    def intersection(self, vs2: Fn) -> Fn:
         ns = M.vstack(self._ns_matrix, vs2._ns_matrix)
         ns = u.rref(ns, remove=True)
         return Fn(self.field, self.n, ns_matrix=ns)
     
-    def span(self, *vectors, basis=None):
+    def span(self, *vectors: Matrix, basis: list[Matrix] | None = None) -> Fn:
         if basis is None:
             rs = M.hstack(*vectors).T
             rs = u.rref(rs, remove=True)
@@ -218,30 +238,30 @@ class Fn:
             rs = M.hstack(*basis).T
         return Fn(self.field, self.n, rs_matrix=rs)
 
-    def is_subspace(self, vs2):
+    def is_subspace(self, vs2: Fn) -> bool:
         return all(vec in self for vec in vs2.basis)
     
     # Methods involving the dot product
 
-    def dot(self, vec1, vec2):
+    def dot(self, vec1: Matrix, vec2: Matrix) -> Any:
         return M.dot(vec1, vec2)
 
-    def norm(self, vector):
+    def norm(self, vector: Matrix) -> Any:
         return sp.sqrt(self.dot(vector, vector))
     
-    def is_orthogonal(self, *vectors):
+    def is_orthogonal(self, *vectors: Matrix) -> bool:
         for i, vec1 in enumerate(vectors, 1):
             for vec2 in vectors[i:]:
                 if not self.dot(vec1, vec2).equals(0):
                     return False
         return True
 
-    def is_orthonormal(self, *vectors):
+    def is_orthonormal(self, *vectors: Matrix) -> bool:
         if not self.is_orthogonal(*vectors):
             return False
         return all(self.norm(vec).equals(1) for vec in vectors)
     
-    def gram_schmidt(self, *vectors):
+    def gram_schmidt(self, *vectors: Matrix) -> list[Matrix]:
         orthonormal_vecs = []
         for v in vectors:
             for q in orthonormal_vecs:
@@ -252,11 +272,11 @@ class Fn:
             orthonormal_vecs.append(unit_v)
         return orthonormal_vecs
     
-    def ortho_projection(self, vector, subspace):
+    def ortho_projection(self, vector: Matrix, subspace: Fn) -> Matrix:
         mat = subspace._rs_matrix.T
         return mat @ (mat.T @ mat).inv() @ mat.T @ vector
     
-    def ortho_complement(self, subspace):
+    def ortho_complement(self, subspace: Fn) -> Fn:
         comp = Fn(self.field, self.n, rs_matrix=subspace._ns_matrix)
         return self.intersection(comp)
 
@@ -272,7 +292,7 @@ class VectorSpace:
     their concrete F^n representations.
     """
 
-    def __init_subclass__(cls, name=None, **kwargs):
+    def __init_subclass__(cls, name: str | None = None, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         cls._validate_subclass_contract()
         add, mul, additive_inv = cls._init_operations()
@@ -282,7 +302,14 @@ class VectorSpace:
         cls._mul = staticmethod(mul)
         cls._additive_inv = staticmethod(additive_inv)
 
-    def __init__(self, name, constraints=None, basis=None, *, fn=None):
+    def __init__(
+        self, 
+        name: str, 
+        constraints: list[str] | None = None, 
+        basis: list[Any] | None = None, 
+        *, 
+        fn: Fn | None = None
+    ) -> None:
         """
         Initialize a `VectorSpace` instance.
 
@@ -316,7 +343,7 @@ class VectorSpace:
             self.fn = self.fn.span(basis=[self.__push__(vec) for vec in basis])
 
     @classmethod
-    def _validate_subclass_contract(cls):
+    def _validate_subclass_contract(cls) -> None:
         attributes = ["set", "fn"]
         methods = ["__push__", "__pull__"]
         
@@ -332,81 +359,85 @@ class VectorSpace:
         if not isinstance(cls.fn, Fn):
             raise TypeError(f"{cls.__name__}.fn must be of type Fn.")
         
-        cls.__push__ = staticmethod(cls.__push__)
-        cls.__pull__ = staticmethod(cls.__pull__)
+        cls.__push__: Callable[[Any], Matrix] = staticmethod(cls.__push__)
+        cls.__pull__: Callable[[Matrix], Any] = staticmethod(cls.__pull__)
 
     @classmethod
-    def _init_operations(cls):
-        def add(vec1, vec2):
+    def _init_operations(cls) -> tuple[
+        Callable[[Any, Any], Any], 
+        Callable[[Any, Any], Any], 
+        Callable[[Any], Any]
+        ]:
+        def add(vec1: Any, vec2: Any) -> Any:
             fn_vec1, fn_vec2 = cls.__push__(vec1), cls.__push__(vec2)
             sum = cls.fn.add(fn_vec1, fn_vec2)
             return cls.__pull__(sum)
-        def mul(scalar, vec):
+        def mul(scalar: Any, vec: Any) -> Any:
             fn_vec = cls.__push__(vec)
             prod = cls.fn.mul(scalar, fn_vec)
             return cls.__pull__(prod)
-        def additive_inv(vec):
+        def additive_inv(vec: Any) -> Any:
             fn_vec = cls.__push__(vec)
             inv = cls.fn.additive_inv(fn_vec)
             return cls.__pull__(inv)
         return add, mul, additive_inv
     
     @property
-    def field(self):
+    def field(self) -> Field:
         """
         Field: The field of scalars for the vector space.
         """
         return self.fn.field
     
     @property
-    def add(self):
+    def add(self) -> Callable[[Any, Any], Any]:
         """
         callable: The addition operator on the vector space.
         """
         return self._add
     
     @property
-    def mul(self):
+    def mul(self) -> Callable[[Any, Any], Any]:
         """
         callable: The multiplication operator on the vector space.
         """
         return self._mul
     
     @property
-    def additive_inv(self):
+    def additive_inv(self) -> Callable[[Any], Any]:
         """
         callable: Return the additive inverse of a vector.
         """
         return self._additive_inv
     
     @property
-    def additive_id(self):
+    def additive_id(self) -> Any:
         """
         object: The additive identity of the vector space.
         """
         return self.__pull__(self.fn.additive_id)
     
     @property
-    def basis(self):
+    def basis(self) -> list[Any]:
         """
         list of object: The basis of the vector space.
         """
         return [self.__pull__(vec) for vec in self.fn.basis]
     
     @property
-    def dim(self):
+    def dim(self) -> int:
         """
         int: The dimension of the vector space.
         """
         return self.fn.dim
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{type(self).__name__}(name={self.name!r}, basis={self.basis!r})"
     
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
     
-    def __eq__(self, vs2):
+    def __eq__(self, vs2: Any) -> bool:
         """
         Check for equality of two vector spaces.
 
@@ -424,7 +455,7 @@ class VectorSpace:
             return True
         return self.is_subspace(vs2) and vs2.is_subspace(self)
 
-    def __contains__(self, vector):
+    def __contains__(self, vector: Any) -> bool:
         """
         Check whether a vector is an element of the vector space.
 
@@ -442,19 +473,19 @@ class VectorSpace:
             return False
         return self.__push__(vector) in self.fn
     
-    def __pos__(self):
+    def __pos__(self) -> VectorSpace:
         """
         Return `self`.
         """
         return self
     
-    def __neg__(self):
+    def __neg__(self) -> VectorSpace:
         """
         Return `self`.
         """
         return self
     
-    def __add__(self, other):
+    def __add__(self, other: VectorSpace | Any) -> VectorSpace | AffineSpace:
         """
         Add a vector space or vector to `self`.
 
@@ -475,10 +506,10 @@ class VectorSpace:
             return self.sum(other)
         return self.coset(other)
     
-    def __radd__(self, vector):
+    def __radd__(self, vector: Any) -> AffineSpace:
         return self.coset(vector)
     
-    def __sub__(self, other):
+    def __sub__(self, other: VectorSpace | Any) -> VectorSpace | AffineSpace:
         """
         Subtract a vector space or vector from `self`.
 
@@ -502,22 +533,22 @@ class VectorSpace:
             raise TypeError("Vector must be an element of the ambient space.")
         return self.coset(self.additive_inv(other))
     
-    def __rsub__(self, vector):
+    def __rsub__(self, vector: Any) -> AffineSpace:
         return self.coset(vector)
     
-    def __truediv__(self, vs2):
+    def __truediv__(self, vs2: VectorSpace) -> VectorSpace:
         """
         Same as ``VectorSpace.quotient``.
         """
         return self.quotient(vs2)
     
-    def __and__(self, vs2):
+    def __and__(self, vs2: VectorSpace) -> VectorSpace:
         """
         Same as ``VectorSpace.intersection``.
         """
         return self.intersection(vs2)
 
-    def info(self):
+    def info(self) -> str:
         """
         A description of the vector space.
 
@@ -540,7 +571,7 @@ class VectorSpace:
 
     # Methods relating to vectors
 
-    def vector(self, std=1, arbitrary=False):
+    def vector(self, std: int | float = 1, arbitrary: bool = False) -> Any:
         """
         Return a vector from the vector space.
 
@@ -578,7 +609,7 @@ class VectorSpace:
         fn_vec = self.fn.vector(std, arbitrary)
         return self.__pull__(fn_vec)
     
-    def to_coordinate(self, vector, basis=None):
+    def to_coordinate(self, vector: Any, basis: list[Any] | None = None) -> Matrix:
         """
         Convert a vector to its coordinate vector representation.
 
@@ -624,7 +655,7 @@ class VectorSpace:
         fn_vec = self.__push__(vector)
         return self.fn.to_coordinate(fn_vec, fn_basis)
     
-    def from_coordinate(self, coord_vec, basis=None):
+    def from_coordinate(self, coord_vec: Any, basis: list[Any] | None = None) -> Any:
         """
         Convert a coordinate vector to the vector it represents.
 
@@ -678,7 +709,7 @@ class VectorSpace:
         fn_vec = self.fn.from_coordinate(vec, fn_basis)
         return self.__pull__(fn_vec)
     
-    def is_independent(self, *vectors):
+    def is_independent(self, *vectors: Any) -> bool:
         """
         Check whether the given vectors are linearly independent.
 
@@ -687,7 +718,7 @@ class VectorSpace:
 
         Parameters
         ----------
-        *vectors
+        *vectors : object
             The vectors to check.
 
         Returns
@@ -713,13 +744,13 @@ class VectorSpace:
         fn_vecs = [self.__push__(vec) for vec in vectors]
         return self.fn.is_independent(*fn_vecs)
     
-    def is_basis(self, *vectors):
+    def is_basis(self, *vectors: Any) -> bool:
         """
         Check whether the given vectors form a basis.
 
         Parameters
         ----------
-        *vectors
+        *vectors : object
             The vectors to check.
 
         Returns
@@ -732,7 +763,7 @@ class VectorSpace:
         fn_vecs = [self.__push__(vec) for vec in vectors]
         return self.fn.is_basis(*fn_vecs)
     
-    def change_of_basis(self, basis):
+    def change_of_basis(self, basis: list[Any]) -> Matrix:
         """
         Compute the change-of-basis matrix to a new basis.
 
@@ -762,7 +793,7 @@ class VectorSpace:
 
     # Methods relating to vector spaces
 
-    def ambient_space(self):
+    def ambient_space(self) -> VectorSpace:
         """
         The ambient space that `self` is a subspace of.
 
@@ -777,7 +808,7 @@ class VectorSpace:
         cls = type(self)
         return cls(name=cls.name)
 
-    def sum(self, vs2):
+    def sum(self, vs2: VectorSpace) -> VectorSpace:
         """
         The sum of two vector spaces.
 
@@ -816,7 +847,7 @@ class VectorSpace:
         fn = self.fn.sum(vs2.fn)
         return type(self)(name, fn=fn)
     
-    def intersection(self, vs2):
+    def intersection(self, vs2: VectorSpace) -> VectorSpace:
         """
         The intersection of two vector spaces.
 
@@ -855,7 +886,7 @@ class VectorSpace:
         fn = self.fn.intersection(vs2.fn)
         return type(self)(name, fn=fn)
     
-    def span(self, name, *vectors, basis=None):
+    def span(self, name: str, *vectors: Any, basis: list[Any] | None = None) -> VectorSpace:
         """
         The span of the given vectors.
 
@@ -868,7 +899,7 @@ class VectorSpace:
         ----------
         name : str
             The name of the resulting subspace.
-        *vectors
+        *vectors : object
             The vectors to take the span of.
         basis : list of object, optional
             A linearly independent list of vectors in the vector space.
@@ -903,7 +934,7 @@ class VectorSpace:
         fn = self.fn.span(*fn_vecs)
         return type(self)(name, fn=fn)
     
-    def is_subspace(self, vs2):
+    def is_subspace(self, vs2: VectorSpace) -> bool:
         """
         Check whether `vs2` is a linear subspace of `self`.
 
@@ -940,7 +971,7 @@ class VectorSpace:
     
     # Methods relating to affine spaces
     
-    def coset(self, representative):
+    def coset(self, representative: Any) -> AffineSpace:
         """
         Return the affine coset through a point.
 
@@ -960,7 +991,7 @@ class VectorSpace:
         """
         return AffineSpace(self, representative)
     
-    def quotient(self, subspace):
+    def quotient(self, subspace: VectorSpace) -> VectorSpace:
         """
         The quotient of two vector spaces.
 
@@ -989,29 +1020,29 @@ class VectorSpace:
         vs = self.ambient_space()
         cls_name = f"{vs} / {subspace}"
 
-        def in_quotient_space(coset):
+        def in_quotient_space(coset: AffineSpace) -> bool:
             return coset.vectorspace == subspace
 
         class quotient_space(VectorSpace, name=cls_name):
             set = Set(cls_name, AffineSpace, in_quotient_space)
             fn = vs.fn.ortho_complement(subspace.fn)
-            def __push__(coset):
+            def __push__(coset: AffineSpace) -> Matrix:
                 fn_vec = vs.__push__(coset.representative)
                 return vs.fn.ortho_projection(fn_vec, fn)
-            def __pull__(vec):
+            def __pull__(vec: Matrix) -> AffineSpace:
                 return subspace.coset(vs.__pull__(vec))
 
         name = f"{self} / {subspace}"
         fn = self.fn.ortho_complement(subspace.fn)
         return quotient_space(name, fn=fn)
 
-    def _validate_type(self, vs2):
+    def _validate_type(self, vs2: Any) -> None:
         if not isinstance(vs2, VectorSpace):
             raise TypeError(f"Expected a VectorSpace, got {type(vs2).__name__} instead.")
         if type(self).name != type(vs2).name:
             raise TypeError("Vector spaces must be subspaces of the same ambient space.")
     
-    def _validate_coordinate(self, coord_vec):
+    def _validate_coordinate(self, coord_vec: Any) -> Matrix:
         vec = M(coord_vec)
         if vec.shape != (self.dim, 1):
             raise ValueError("Coordinate vector has invalid shape.")
@@ -1028,7 +1059,7 @@ class AffineSpace:
     vector. Implements various affine space operations.
     """
 
-    def __init__(self, vectorspace, representative):
+    def __init__(self, vectorspace: VectorSpace, representative: Any) -> None:
         """
         Initialize an `AffineSpace` instance.
 
@@ -1054,21 +1085,21 @@ class AffineSpace:
         self._representative = representative
 
     @property
-    def vectorspace(self):
+    def vectorspace(self) -> VectorSpace:
         """
         VectorSpace: The underlying vector space.
         """
         return self._vectorspace
     
     @property
-    def representative(self):
+    def representative(self) -> Any:
         """
         object: The representative point of the affine space.
         """
         return self._representative
     
     @property
-    def set(self):
+    def set(self) -> Set:
         """
         Set: The set of points in the affine space.
         """
@@ -1076,22 +1107,22 @@ class AffineSpace:
         return Set(self.name, vs.set.cls, lambda point: point in self)
     
     @property
-    def dim(self):
+    def dim(self) -> int:
         """
         int: The dimension of the affine space.
         """
         return self.vectorspace.dim
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"AffineSpace(vectorspace={self.vectorspace!r}, "
             f"representative={self.representative!r})"
             )
     
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
     
-    def __eq__(self, as2):
+    def __eq__(self, as2: Any) -> bool:
         """
         Check for equality of two affine spaces.
 
@@ -1109,7 +1140,7 @@ class AffineSpace:
             return False
         return self.representative in as2
 
-    def __contains__(self, point):
+    def __contains__(self, point: Any) -> bool:
         """
         Check whether a point is an element of the affine space.
 
@@ -1131,13 +1162,13 @@ class AffineSpace:
         vec2 = vs.additive_inv(point)
         return vs.add(vec1, vec2) in vs
     
-    def __pos__(self):
+    def __pos__(self) -> AffineSpace:
         """
         Return `self`.
         """
         return self
     
-    def __neg__(self):
+    def __neg__(self) -> AffineSpace:
         """
         Return the affine space with negated representative.
 
@@ -1150,7 +1181,7 @@ class AffineSpace:
         repr = vs.additive_inv(self.representative)
         return AffineSpace(vs, repr)
     
-    def __add__(self, other):
+    def __add__(self, other: AffineSpace | Any) -> AffineSpace:
         """
         Add an affine space or vector to `self`.
 
@@ -1176,10 +1207,10 @@ class AffineSpace:
         repr = vs.add(self.representative, other)
         return AffineSpace(vs, repr)
 
-    def __radd__(self, vector):
+    def __radd__(self, vector: Any) -> AffineSpace:
         return self.__add__(vector)
     
-    def __sub__(self, other):
+    def __sub__(self, other: AffineSpace | Any) -> AffineSpace:
         """
         Subtract an affine space or vector from `self`.
 
@@ -1205,10 +1236,10 @@ class AffineSpace:
         repr = vs.add(self.representative, vs.additive_inv(other))
         return AffineSpace(vs, repr)
     
-    def __rsub__(self, vector):
+    def __rsub__(self, vector: Any) -> AffineSpace:
         return (-self).__add__(vector)
 
-    def __mul__(self, scalar):
+    def __mul__(self, scalar: Any) -> AffineSpace:
         """
         Scale the affine space by a scalar.
 
@@ -1233,10 +1264,10 @@ class AffineSpace:
         repr = vs.mul(scalar, self.representative)
         return AffineSpace(vs, repr)
 
-    def __rmul__(self, scalar):
+    def __rmul__(self, scalar: Any) -> AffineSpace:
         return self.__mul__(scalar)
     
-    def info(self):
+    def info(self) -> str:
         """
         A description of the affine space.
 
@@ -1256,7 +1287,7 @@ class AffineSpace:
             ]
         return "\n".join(lines)
     
-    def point(self, std=1, arbitrary=False):
+    def point(self, std: int | float = 1, arbitrary: bool = False) -> Any:
         """
         Return a point from the affine space.
 
@@ -1277,7 +1308,7 @@ class AffineSpace:
         point = vs.add(vector, self.representative)
         return point
     
-    def sum(self, as2):
+    def sum(self, as2: AffineSpace) -> AffineSpace:
         """
         The sum of two affine spaces.
 
@@ -1300,7 +1331,7 @@ class AffineSpace:
         repr = vs.add(self.representative, as2.representative)
         return AffineSpace(vs, repr)
 
-    def intersection(self, as2):
+    def intersection(self, as2: AffineSpace) -> AffineSpace:
         """
         The intersection of two affine spaces.
 
@@ -1325,15 +1356,23 @@ class AffineSpace:
         """
         raise NotImplementedError("This method is not yet implemented.")
     
-    def _validate_type(self, as2):
+    def _validate_type(self, as2: Any) -> None:
         if not isinstance(as2, AffineSpace):
             raise TypeError(f"Expected an AffineSpace, got {type(as2).__name__} instead.")
         if self.vectorspace != as2.vectorspace:
             raise TypeError("Affine spaces must be cosets of the same vector space.")
 
 
-def fn(name, field, n, constraints=None, basis=None, *, 
-       ns_matrix=None, rs_matrix=None):
+def fn(
+    name: str, 
+    field: Field, 
+    n: int, 
+    constraints: list[str] | None = None, 
+    basis: list[Any] | None = None, 
+    *, 
+    ns_matrix: Any | None = None, 
+    rs_matrix: Any | None = None
+) -> VectorSpace:
     """
     Factory for subspaces of standard F^n.
 
@@ -1360,10 +1399,10 @@ def fn(name, field, n, constraints=None, basis=None, *,
         class fn(VectorSpace, name=cls_name):
             set = Set(cls_name, object)
             fn = Fn(field, 1)
-            def __push__(vec): return M[vec]
-            def __pull__(vec): return vec[0]
+            def __push__(vec: Any) -> Matrix: return M[vec]
+            def __pull__(vec: Matrix) -> Any: return vec[0]
     else:
-        def in_fn(vec):
+        def in_fn(vec: Any) -> bool:
             try: return M(vec).shape == (n, 1)
             except Exception: return False
 
@@ -1371,8 +1410,8 @@ def fn(name, field, n, constraints=None, basis=None, *,
         class fn(VectorSpace, name=cls_name):
             set = Set(cls_name, object, in_fn)
             fn = Fn(field, n)
-            def __push__(vec): return M(vec)
-            def __pull__(vec): return vec
+            def __push__(vec: Any) -> Matrix: return M(vec)
+            def __pull__(vec: Matrix) -> Matrix: return vec
 
     if not (ns_matrix is None and rs_matrix is None):
         vs = Fn(field, n, constraints, ns_matrix=ns_matrix, rs_matrix=rs_matrix)
@@ -1380,7 +1419,13 @@ def fn(name, field, n, constraints=None, basis=None, *,
     return fn(name, constraints, basis)
 
 
-def matrix_space(name, field, shape, constraints=None, basis=None):
+def matrix_space(
+    name: str, 
+    field: Field, 
+    shape: tuple[int, int], 
+    constraints: list[str] | None = None, 
+    basis: list[Any] | None = None
+) -> VectorSpace:
     """
     Factory for subspaces of matrices of a given shape.
 
@@ -1405,19 +1450,25 @@ def matrix_space(name, field, shape, constraints=None, basis=None):
     cls_name = f"{field}^({shape[0]} × {shape[1]})"
     n = sp.prod(shape)
 
-    def in_matrix_space(mat):
+    def in_matrix_space(mat: Any) -> bool:
         try: return M(mat).shape == shape
         except Exception: return False
 
     class matrix_space(VectorSpace, name=cls_name):
         set = Set(cls_name, object, in_matrix_space)
         fn = Fn(field, n)
-        def __push__(mat): return M(mat).reshape(n, 1)
-        def __pull__(vec): return vec.reshape(*shape)
+        def __push__(mat: Any) -> Matrix: return M(mat).reshape(n, 1)
+        def __pull__(vec: Matrix) -> Matrix: return vec.reshape(*shape)
     return matrix_space(name, constraints, basis)
 
 
-def poly_space(name, field, max_degree, constraints=None, basis=None):
+def poly_space(
+    name: str, 
+    field: Field, 
+    max_degree: int, 
+    constraints: list[str] | None = None, 
+    basis: list[Any] | None = None
+) -> VectorSpace:
     """
     Factory for polynomial subspaces up to a given degree.
 
@@ -1442,25 +1493,25 @@ def poly_space(name, field, max_degree, constraints=None, basis=None):
     cls_name = f"P_{max_degree}({field})"
     x = u.symbols("x")
 
-    def in_poly_space(poly):
+    def in_poly_space(poly: Any) -> bool:
         try: return sp.degree(sp.Poly(poly, x)) <= max_degree
         except Exception: return False
 
     class poly_space(VectorSpace, name=cls_name):
         set = Set(cls_name, object, in_poly_space)
         fn = Fn(field, max_degree + 1)
-        def __push__(poly):
+        def __push__(poly: Any) -> Matrix:
             poly = sp.Poly(poly, x)
             coeffs = poly.all_coeffs()[::-1]  # Ascending order
             degree_diff = max_degree - len(coeffs) + 1
             return M(coeffs + [0] * degree_diff)
-        def __pull__(vec):
+        def __pull__(vec: Matrix) -> Any:
             poly = sp.Poly(vec[::-1], x)
             return poly.as_expr()
     return poly_space(name, constraints, basis)
 
 
-def hom(vs1, vs2):
+def hom(vs1: VectorSpace, vs2: VectorSpace) -> VectorSpace:
     """
     Factory for subspaces of linear maps between two vector spaces.
 
@@ -1490,7 +1541,7 @@ def hom(vs1, vs2):
     return matrix_space(name, vs1.field, (vs2.dim, vs1.dim))
 
 
-def is_vectorspace(n, constraints):
+def is_vectorspace(n: int, constraints: list[str]) -> bool:
     """
     Check whether the given constraints define a valid subspace of F^n.
 
@@ -1523,7 +1574,7 @@ def is_vectorspace(n, constraints):
     return True
 
 
-def rowspace(name, matrix, field=R):
+def rowspace(name: str, matrix: Any, field: Field = R) -> VectorSpace:
     """
     Return the row space of a matrix.
 
@@ -1559,7 +1610,7 @@ def rowspace(name, matrix, field=R):
     return fn(name, field, n, rs_matrix=rs)
 
 
-def columnspace(name, matrix, field=R):
+def columnspace(name: str, matrix: Any, field: Field = R) -> VectorSpace:
     """
     Return the column space, or image, of a matrix.
 
@@ -1596,7 +1647,7 @@ def columnspace(name, matrix, field=R):
     return rowspace(name, mat, field)
 
 
-def nullspace(name, matrix, field=R):
+def nullspace(name: str, matrix: Any, field: Field = R) -> VectorSpace:
     """
     Return the null space, or kernel, of a matrix.
 
@@ -1635,7 +1686,7 @@ def nullspace(name, matrix, field=R):
     return fn(name, field, n, ns_matrix=ns)
 
 
-def left_nullspace(name, matrix, field=R):
+def left_nullspace(name: str, matrix: Any, field: Field = R) -> VectorSpace:
     """
     Return the left null space of a matrix.
 

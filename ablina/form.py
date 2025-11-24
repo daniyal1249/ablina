@@ -2,10 +2,14 @@
 A module for working with forms and inner products.
 """
 
+from __future__ import annotations
+
+from typing import Any, Callable
+
 import sympy as sp
 
 from .field import R, C
-from .matrix import M
+from .matrix import Matrix, M
 from .utils import is_invertible, of_arity
 from .vectorspace import VectorSpace
 
@@ -14,12 +18,12 @@ from .vectorspace import VectorSpace
 
 
 class FormError(Exception):
-    def __init__(self, msg=""):
+    def __init__(self, msg: str = "") -> None:
         super().__init__(msg)
 
 
 class InnerProductError(FormError):
-    def __init__(self, msg=""):
+    def __init__(self, msg: str = "") -> None:
         super().__init__(msg)
 
 
@@ -36,7 +40,14 @@ class SesquilinearForm:
     - `<u, v + w> = <u, v> + <u, w>` for all vectors `u`, `v`, `w`
     """
 
-    def __init__(self, name, vectorspace, mapping=None, matrix=None, involution=None):
+    def __init__(
+        self, 
+        name: str, 
+        vectorspace: VectorSpace, 
+        mapping: Callable[[Any, Any], Any] | None = None, 
+        matrix: Any | None = None, 
+        involution: Callable[[Any], Any] | None = None
+    ) -> None:
         """
         Initialize a SesquilinearForm instance.
 
@@ -80,7 +91,7 @@ class SesquilinearForm:
         self._involution = involution
 
     @staticmethod
-    def _to_involution(involution):
+    def _to_involution(involution: Callable[[Any], Any] | None) -> Callable[[Any], Any]:
         if involution is None:
             return sp.conjugate
         if not of_arity(involution, 1):
@@ -88,7 +99,11 @@ class SesquilinearForm:
         return involution
 
     @staticmethod
-    def _to_matrix(vectorspace, mapping, matrix):
+    def _to_matrix(
+        vectorspace: VectorSpace, 
+        mapping: Callable[[Any, Any], Any] | None, 
+        matrix: Any | None
+    ) -> Matrix:
         if matrix is not None:
             return SesquilinearForm._validate_matrix(vectorspace, matrix)
         if mapping is None:
@@ -101,18 +116,23 @@ class SesquilinearForm:
         return M(n, n, lambda i, j: mapping(basis[i], basis[j]))
 
     @staticmethod
-    def _to_mapping(vectorspace, mapping, matrix, involution):
+    def _to_mapping(
+        vectorspace: VectorSpace, 
+        mapping: Callable[[Any, Any], Any] | None, 
+        matrix: Matrix, 
+        involution: Callable[[Any], Any]
+    ) -> Callable[[Any, Any], Any]:
         if mapping is not None:
             return mapping
         to_coord = vectorspace.to_coordinate
 
-        def mapping(u, v):
+        def mapping(u: Any, v: Any) -> Any:
             u = to_coord(u).applyfunc(involution)
             return (u.T @ matrix @ to_coord(v))[0]
         return mapping
     
     @staticmethod
-    def _validate_matrix(vectorspace, matrix):
+    def _validate_matrix(vectorspace: VectorSpace, matrix: Any) -> Matrix:
         mat = M(matrix)
         if not (mat.is_square and mat.rows == vectorspace.dim):
             raise ValueError("Matrix has invalid shape.")
@@ -121,34 +141,34 @@ class SesquilinearForm:
         return mat
 
     @property
-    def vectorspace(self):
+    def vectorspace(self) -> VectorSpace:
         """
         VectorSpace: The vector space the form is defined on.
         """
         return self._vectorspace
     
     @property
-    def mapping(self):
+    def mapping(self) -> Callable[[Any, Any], Any]:
         """
         callable: The function that maps vectors to scalars.
         """
         return self._mapping
     
     @property
-    def matrix(self):
+    def matrix(self) -> Matrix:
         """
         Matrix: The matrix representation of the form.
         """
         return self._matrix
     
     @property
-    def involution(self):
+    def involution(self) -> Callable[[Any], Any]:
         """
         callable: The involution the form is defined with respect to.
         """
         return self._involution
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"SesquilinearForm(name={self.name!r}, "
             f"vectorspace={self.vectorspace!r}, "
@@ -157,10 +177,10 @@ class SesquilinearForm:
             f"involution={self.involution!r})"
             )
     
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
-    def __eq__(self, form2):
+    def __eq__(self, form2: Any) -> bool:
         """
         Check for equality of two forms.
 
@@ -178,10 +198,10 @@ class SesquilinearForm:
             return False
         return (
             self.vectorspace == form2.vectorspace 
-            and self.matrix == form2.matrix
+            and self.matrix.equals(form2.matrix)
             )
     
-    def __call__(self, vec1, vec2):
+    def __call__(self, vec1: Any, vec2: Any) -> Any:
         """
         Apply the form to two vectors.
 
@@ -205,7 +225,7 @@ class SesquilinearForm:
             raise TypeError("Vectors must be elements of the vector space.")
         return self.mapping(vec1, vec2)
     
-    def info(self):
+    def info(self) -> str:
         """
         A description of the form.
 
@@ -231,7 +251,7 @@ class SesquilinearForm:
             ]
         return "\n".join(lines)
 
-    def inertia(self):
+    def inertia(self) -> tuple[int, int, int]:
         """
         Compute the inertia of the form.
 
@@ -260,7 +280,7 @@ class SesquilinearForm:
         z = sum(m for val, m in eigenvals if abs(val) < tol)
         return p, m, z
     
-    def signature(self):
+    def signature(self) -> int:
         """
         Compute the signature of the form.
 
@@ -280,7 +300,7 @@ class SesquilinearForm:
         p, m, _ = self.inertia()
         return p - m
 
-    def is_degenerate(self):
+    def is_degenerate(self) -> bool | None:
         """
         Check whether the form is degenerate.
 
@@ -291,9 +311,10 @@ class SesquilinearForm:
         bool
             True if `self` is degenerate, otherwise False.
         """
-        return not is_invertible(self.matrix)
+        is_inv = is_invertible(self.matrix)
+        return None if is_inv is None else not is_inv
     
-    def is_symmetric(self):
+    def is_symmetric(self) -> bool | None:
         """
         Check whether the form is symmetric.
 
@@ -307,9 +328,9 @@ class SesquilinearForm:
         """
         mat1 = self.matrix
         mat2 = mat1.applyfunc(self.involution).T
-        return mat1.equals(mat2) is True
+        return mat1.equals(mat2)
     
-    def is_skew_symmetric(self):
+    def is_skew_symmetric(self) -> bool | None:
         """
         Check whether the form is skew-symmetric.
 
@@ -327,9 +348,9 @@ class SesquilinearForm:
         """
         mat1 = self.matrix
         mat2 = -1 * mat1.applyfunc(self.involution).T
-        return mat1.equals(mat2) is True
+        return mat1.equals(mat2)
     
-    def is_alternating(self):
+    def is_alternating(self) -> bool | None:
         """
         Check whether the form is alternating.
 
@@ -344,9 +365,13 @@ class SesquilinearForm:
         --------
         SesquilinearForm.is_skew_symmetric
         """
-        return self.is_skew_symmetric() and self.matrix.diagonal().is_zero_matrix
+        is_skew = self.is_skew_symmetric()
+        is_zero = self.matrix.diagonal().is_zero_matrix
+        if is_skew is False or is_zero is False:
+            return False
+        return True if is_skew and is_zero else None
 
-    def is_hermitian(self):
+    def is_hermitian(self) -> bool | None:
         """
         Check whether the form is hermitian.
 
@@ -365,7 +390,7 @@ class SesquilinearForm:
         """
         return self.matrix.is_hermitian
 
-    def is_positive_definite(self):
+    def is_positive_definite(self) -> bool | None:
         """
         Check whether the form is positive definite.
 
@@ -390,7 +415,7 @@ class SesquilinearForm:
         self._validate_form()
         return self.matrix.is_positive_definite
 
-    def is_negative_definite(self):
+    def is_negative_definite(self) -> bool | None:
         """
         Check whether the form is negative definite.
 
@@ -415,7 +440,7 @@ class SesquilinearForm:
         self._validate_form()
         return self.matrix.is_negative_definite
 
-    def is_positive_semidefinite(self):
+    def is_positive_semidefinite(self) -> bool | None:
         """
         Check whether the form is positive semidefinite.
 
@@ -440,7 +465,7 @@ class SesquilinearForm:
         self._validate_form()
         return self.matrix.is_positive_semidefinite
 
-    def is_negative_semidefinite(self):
+    def is_negative_semidefinite(self) -> bool | None:
         """
         Check whether the form is negative semidefinite.
 
@@ -465,7 +490,7 @@ class SesquilinearForm:
         self._validate_form()
         return self.matrix.is_negative_semidefinite
 
-    def is_indefinite(self):
+    def is_indefinite(self) -> bool | None:
         """
         Check whether the form is indefinite.
 
@@ -486,7 +511,7 @@ class SesquilinearForm:
         self._validate_form()
         return self.matrix.is_indefinite
     
-    def _validate_form(self):
+    def _validate_form(self) -> None:
         field = self.vectorspace.field
         if field is R:
             if not self.is_symmetric():
@@ -498,6 +523,10 @@ class SesquilinearForm:
                 raise FormError("Form must be hermitian for complex vector spaces.")
         else:
             raise FormError("Form must be defined on a real or complex vector space.")
+
+    # Aliases
+    is_anti_symmetric = is_skew_symmetric
+    """An alias for the is_skew_symmetric method."""
 
 
 class BilinearForm(SesquilinearForm):
@@ -513,7 +542,13 @@ class BilinearForm(SesquilinearForm):
     - `<u, v + w> = <u, v> + <u, w>` for all vectors `u`, `v`, `w`
     """
 
-    def __init__(self, name, vectorspace, mapping=None, matrix=None):
+    def __init__(
+        self, 
+        name: str, 
+        vectorspace: VectorSpace, 
+        mapping: Callable[[Any, Any], Any] | None = None, 
+        matrix: Any | None = None
+    ) -> None:
         """
         Initialize a BilinearForm instance.
 
@@ -542,7 +577,7 @@ class BilinearForm(SesquilinearForm):
         """
         super().__init__(name, vectorspace, mapping, matrix, lambda c: c)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"BilinearForm(name={self.name!r}, "
             f"vectorspace={self.vectorspace!r}, "
@@ -559,7 +594,13 @@ class InnerProduct(SesquilinearForm):
     or hermitian (for complex spaces) sesquilinear form.
     """
 
-    def __init__(self, name, vectorspace, mapping=None, matrix=None):
+    def __init__(
+        self, 
+        name: str, 
+        vectorspace: VectorSpace, 
+        mapping: Callable[[Any, Any], Any] | None = None, 
+        matrix: Any | None = None
+    ) -> None:
         """
         Initialize an InnerProduct instance.
 
@@ -601,13 +642,13 @@ class InnerProduct(SesquilinearForm):
         self._fn_orthonormal_basis = vs.fn.gram_schmidt(*vs.fn.basis)
 
     @property
-    def orthonormal_basis(self):
+    def orthonormal_basis(self) -> list[Any]:
         """
         list of object: An orthonormal basis for the vector space.
         """
         return self._orthonormal_basis
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"InnerProduct(name={self.name!r}, "
             f"vectorspace={self.vectorspace!r}, "
@@ -615,7 +656,7 @@ class InnerProduct(SesquilinearForm):
             f"matrix={self.matrix!r})"
             )
     
-    def __push__(self, vector):
+    def __push__(self, vector: Any) -> Any:
         """
         Push a vector from the vector space to its F^n representation.
 
@@ -637,7 +678,7 @@ class InnerProduct(SesquilinearForm):
         vec = vs.fn.from_coordinate(coord_vec, basis=self._fn_orthonormal_basis)
         return vec
     
-    def __pull__(self, vector):
+    def __pull__(self, vector: Any) -> Any:
         """
         Pull a vector from F^n to the vector space.
 
@@ -659,7 +700,7 @@ class InnerProduct(SesquilinearForm):
         vec = vs.from_coordinate(coord_vec, basis=self.orthonormal_basis)
         return vec
     
-    def info(self):
+    def info(self) -> str:
         """
         A description of the inner product.
 
@@ -679,13 +720,13 @@ class InnerProduct(SesquilinearForm):
             ]
         return "\n".join(lines)
 
-    def norm(self, vector):
+    def norm(self, vector: Any) -> Any:
         """
         The norm, or magnitude, of a vector.
 
         Parameters
         ----------
-        vector
+        vector : object
             A vector in the vector space.
 
         Returns
@@ -695,13 +736,13 @@ class InnerProduct(SesquilinearForm):
         """
         return sp.sqrt(self(vector, vector))
     
-    def is_orthogonal(self, *vectors):
+    def is_orthogonal(self, *vectors: Any) -> bool:
         """
         Check whether the vectors are pairwise orthogonal.
 
         Parameters
         ----------
-        *vectors
+        *vectors : object
             The vectors in the vector space.
 
         Returns
@@ -715,13 +756,13 @@ class InnerProduct(SesquilinearForm):
                     return False
         return True
 
-    def is_orthonormal(self, *vectors):
+    def is_orthonormal(self, *vectors: Any) -> bool:
         """
         Check whether the vectors are orthonormal.
 
         Parameters
         ----------
-        *vectors
+        *vectors : object
             The vectors in the vector space.
 
         Returns
@@ -733,7 +774,7 @@ class InnerProduct(SesquilinearForm):
             return False
         return all(self.norm(vec).equals(1) for vec in vectors)
     
-    def gram_schmidt(self, *vectors):
+    def gram_schmidt(self, *vectors: Any) -> list[Any]:
         """
         Apply the Gram-Schmidt process to a set of vectors.
 
@@ -742,7 +783,7 @@ class InnerProduct(SesquilinearForm):
 
         Parameters
         ----------
-        *vectors
+        *vectors : object
             The vectors in the vector space.
 
         Returns
@@ -769,7 +810,7 @@ class InnerProduct(SesquilinearForm):
             orthonormal_vecs.append(unit_v)
         return orthonormal_vecs
 
-    def ortho_projection(self, vector, subspace):
+    def ortho_projection(self, vector: Any, subspace: VectorSpace) -> Any:
         """
         The orthogonal projection of a vector.
 
@@ -795,7 +836,7 @@ class InnerProduct(SesquilinearForm):
         proj = vs.fn.ortho_projection(fn_vec, subspace.fn)
         return self.__pull__(proj)
 
-    def ortho_complement(self, subspace):
+    def ortho_complement(self, subspace: VectorSpace) -> VectorSpace:
         """
         The orthogonal complement of a vector space.
 
@@ -832,7 +873,13 @@ class QuadraticForm:
     - `q(u + v) - q(u) - q(v)` is a bilinear form
     """
 
-    def __init__(self, name, vectorspace, mapping=None, matrix=None):
+    def __init__(
+        self, 
+        name: str, 
+        vectorspace: VectorSpace, 
+        mapping: Callable[[Any], Any] | None = None, 
+        matrix: Any | None = None
+    ) -> None:
         """
         Initialize a QuadraticForm instance.
 
@@ -871,7 +918,11 @@ class QuadraticForm:
         self._matrix = matrix
 
     @staticmethod
-    def _to_matrix(vectorspace, mapping, matrix):
+    def _to_matrix(
+        vectorspace: VectorSpace, 
+        mapping: Callable[[Any], Any] | None, 
+        matrix: Any | None
+    ) -> Matrix:
         if matrix is not None:
             return QuadraticForm._validate_matrix(vectorspace, matrix)
         if mapping is None:
@@ -896,14 +947,18 @@ class QuadraticForm:
         return mat
     
     @staticmethod
-    def _to_mapping(vectorspace, mapping, matrix):
+    def _to_mapping(
+        vectorspace: VectorSpace, 
+        mapping: Callable[[Any], Any] | None, 
+        matrix: Matrix
+    ) -> Callable[[Any], Any]:
         if mapping is not None:
             return mapping
         to_coord = vectorspace.to_coordinate
         return lambda v: (to_coord(v).T @ matrix @ to_coord(v))[0]
     
     @staticmethod
-    def _validate_matrix(vectorspace, matrix):
+    def _validate_matrix(vectorspace: VectorSpace, matrix: Any) -> Matrix:
         mat = M(matrix)
         if not (mat.is_square and mat.rows == vectorspace.dim):
             raise ValueError("Matrix has invalid shape.")
@@ -912,28 +967,28 @@ class QuadraticForm:
         return (mat + mat.T) / 2
 
     @property
-    def vectorspace(self):
+    def vectorspace(self) -> VectorSpace:
         """
         VectorSpace: The vector space the quadratic form is defined on.
         """
         return self._vectorspace
     
     @property
-    def mapping(self):
+    def mapping(self) -> Callable[[Any], Any]:
         """
         callable: The function that maps vectors to scalars.
         """
         return self._mapping
     
     @property
-    def matrix(self):
+    def matrix(self) -> Matrix:
         """
         Matrix: The matrix representation of the quadratic form.
         """
         return self._matrix
     
     @property
-    def polarization(self):
+    def polarization(self) -> BilinearForm:
         """
         BilinearForm: The associated bilinear form.
 
@@ -943,7 +998,7 @@ class QuadraticForm:
         name = f"b_{self.name}"
         return BilinearForm(name, self.vectorspace, matrix=self.matrix)
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"QuadraticForm(name={self.name!r}, "
             f"vectorspace={self.vectorspace!r}, "
@@ -951,10 +1006,10 @@ class QuadraticForm:
             f"matrix={self.matrix!r})"
             )
     
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
-    def __eq__(self, form2):
+    def __eq__(self, form2: Any) -> bool:
         """
         Check for equality of two quadratic forms.
 
@@ -972,10 +1027,10 @@ class QuadraticForm:
             return False
         return (
             self.vectorspace == form2.vectorspace 
-            and self.matrix == form2.matrix
+            and self.matrix.equals(form2.matrix)
             )
     
-    def __call__(self, vector):
+    def __call__(self, vector: Any) -> Any:
         """
         Apply the quadratic form to a vector.
 
@@ -999,7 +1054,7 @@ class QuadraticForm:
             raise TypeError("Vector must be an element of the vector space.")
         return self.mapping(vector)
     
-    def info(self):
+    def info(self) -> str:
         """
         A description of the quadratic form.
 
@@ -1018,7 +1073,7 @@ class QuadraticForm:
             ]
         return "\n".join(lines)
 
-    def inertia(self):
+    def inertia(self) -> tuple[int, int, int]:
         """
         Compute the inertia of the quadratic form.
 
@@ -1047,7 +1102,7 @@ class QuadraticForm:
         z = sum(m for val, m in eigenvals if abs(val) < tol)
         return p, m, z
     
-    def signature(self):
+    def signature(self) -> int:
         """
         Compute the signature of the quadratic form.
 
@@ -1067,7 +1122,7 @@ class QuadraticForm:
         p, m, _ = self.inertia()
         return p - m
 
-    def is_degenerate(self):
+    def is_degenerate(self) -> bool | None:
         """
         Check whether the quadratic form is degenerate.
 
@@ -1079,9 +1134,10 @@ class QuadraticForm:
         bool
             True if `self` is degenerate, otherwise False.
         """
-        return not is_invertible(self.matrix)
+        is_inv = is_invertible(self.matrix)
+        return None if is_inv is None else not is_inv
     
-    def is_positive_definite(self):
+    def is_positive_definite(self) -> bool | None:
         """
         Check whether the quadratic form is positive definite.
 
@@ -1104,7 +1160,7 @@ class QuadraticForm:
         self._validate_form()
         return self.matrix.is_positive_definite
 
-    def is_negative_definite(self):
+    def is_negative_definite(self) -> bool | None:
         """
         Check whether the quadratic form is negative definite.
 
@@ -1127,7 +1183,7 @@ class QuadraticForm:
         self._validate_form()
         return self.matrix.is_negative_definite
 
-    def is_positive_semidefinite(self):
+    def is_positive_semidefinite(self) -> bool | None:
         """
         Check whether the quadratic form is positive semidefinite.
 
@@ -1150,7 +1206,7 @@ class QuadraticForm:
         self._validate_form()
         return self.matrix.is_positive_semidefinite
 
-    def is_negative_semidefinite(self):
+    def is_negative_semidefinite(self) -> bool | None:
         """
         Check whether the quadratic form is negative semidefinite.
 
@@ -1173,7 +1229,7 @@ class QuadraticForm:
         self._validate_form()
         return self.matrix.is_negative_semidefinite
 
-    def is_indefinite(self):
+    def is_indefinite(self) -> bool | None:
         """
         Check whether the quadratic form is indefinite.
 
@@ -1193,6 +1249,6 @@ class QuadraticForm:
         self._validate_form()
         return self.matrix.is_indefinite
 
-    def _validate_form(self):
+    def _validate_form(self) -> None:
         if self.vectorspace.field is not R:
             raise FormError("Quadratic form must be defined on a real vector space.")
